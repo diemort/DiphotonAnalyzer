@@ -16,4 +16,11 @@ class diproton_candidate_t
     float xi1_, xi2_, xi1_err_, xi2_err_;
 };
 
+bool is_matched( int n_sigma, float x1, float x2, float err_x1, float err_x2 )
+{
+  const double combined_error = sqrt( err_x1*err_x1 + err_x2*err_x2 );
+  const double delta = fabs( x1-x2 );
+  return ( delta/combined_error <= n_sigma );
+}
+
 #endif

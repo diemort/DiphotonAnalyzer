@@ -2,6 +2,7 @@
 #define DiphotonAnalyzer_TreeProducer_TreeEvent_h
 
 #include "TTree.h"
+#include <string>
 
 struct TreeEvent
 {
@@ -16,6 +17,9 @@ struct TreeEvent
   static constexpr unsigned short MAX_VERTEX = 100;
   static constexpr unsigned short MAX_GEN_PHOTON = 10;
   static constexpr unsigned short MAX_GEN_PART = 20;
+
+  typedef enum { all, ebeb, ebee, eeee, invalid, num_classes } classes_;
+  static constexpr const char* classes[num_classes] = { "", "EBEB", "EBEE", "EEEE", "invalid" };
 
   void create( TTree* tree, bool data = false ) {
     if ( !tree ) return;

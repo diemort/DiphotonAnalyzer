@@ -1,6 +1,7 @@
 #ifndef DiphotonAnalyzer_Macros_pot_alignment_h
 #define DiphotonAnalyzer_Macros_pot_alignment_h
 
+#include <iostream>
 #include <fstream>
 #include <regex>
 #include <map>

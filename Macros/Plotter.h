@@ -9,6 +9,7 @@
 #include "TH1.h"
 #include "THStack.h"
 #include "TStyle.h"
+#include "TFitResult.h"
 
 #include <memory>
 #include <map>
@@ -27,7 +28,7 @@ class Plotter
     void plot_multihists( const char* name, HistsMap hm, float min_ratio_y = 0., float max_ratio_y = 0.55, bool draw_overflow = true ) const {
       if ( hm.size() == 0 ) return;
 
-      Canvas c( name, top_label_, hm.size() > 1 );
+      Canvas c( name, top_label_, "Preliminary", hm.size() > 1 );
       TH1* hist = 0;
 
       unsigned short i = 0;
@@ -196,9 +197,10 @@ class Plotter
     }
 
     void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, TString label = "", bool colours = true, bool logy = false ) const {
-      Canvas c( filename, top_label_, true );
+      std::string ratio_plot_filename = Form( "%s_ratio", filename );
+      Canvas c( filename, top_label_, "Preliminary", true );
       TH1D* h_data = 0;
-      double max_bin = -1.;
+      double max_bin = 0.;
       unsigned short i = 0;
       THStack hs_mc, /*hs_data,*/ hs_sig;
       TGraphAsymmErrors* hist_data = 0;
@@ -208,8 +210,10 @@ class Plotter
       c.SetLegendY1( 0.75-leg_size_y+0.15 );
       for ( auto& h : h_map_data ) {
         hist_data = asym_error_bars( ( TH1D* )h.second );
-        if ( i == 0 ) h_data = dynamic_cast<TH1D*>( ( TH1D* )h.second );
-        else h_data->Add( ( TH1D* )h.second );
+        if ( i == 0 )
+          h_data = dynamic_cast<TH1D*>( ( TH1D* )h.second );
+        else
+          h_data->Add( ( TH1D* )h.second );
         // draw the data distributions unstacked
         //hist_data->Sumw2();
         //hist_data->SetBinErrorOption( TH1::kPoisson );
@@ -218,8 +222,9 @@ class Plotter
         hist_data->SetLineColor( kBlack );
         hist_data->SetLineWidth( 2 );
         //hist->SetLineColor( hist_data->GetFillColor() );
-        if ( strcmp( h.first.c_str(), "" ) != 0 ) c.AddLegendEntry( hist_data, h.first.c_str(), "lp" );
-        max_bin = TMath::Max( max_bin, hist_data->GetMaximum() );
+        if ( strcmp( h.first.c_str(), "" ) != 0 )
+          c.AddLegendEntry( hist_data, h.first.c_str(), "lp" );
+        max_bin += hist_data->GetMaximum();
         //hs_data.Add( hist->GetHistogram() );
         i++;
       }
@@ -228,14 +233,17 @@ class Plotter
       i = 0;
       for ( auto& h : h_map_mc ) {
         hist = dynamic_cast<TH1D*>( h.second );
-        if ( i == 0 ) h_mc = dynamic_cast<TH1D*>( hist->Clone() );
-        else h_mc->Add( hist );
+        if ( i == 0 )
+          h_mc = dynamic_cast<TH1D*>( hist->Clone() );
+        else
+          h_mc->Add( hist );
         if ( colours ) hist->SetFillColorAlpha( colour_pool_[i+1], 0.66 );
         //hist->SetFillStyle( 3002 );
         //hist->SetLineColor( kBlack );
         hist->SetLineColor( hist->GetFillColor() );
         hist->SetLineWidth( 2 );
-        if ( strcmp( h.first.c_str(), "" ) != 0 ) { c.AddLegendEntry( hist, h.first.c_str(), "f" ); }
+        if ( strcmp( h.first.c_str(), "" ) != 0 )
+          c.AddLegendEntry( hist, h.first.c_str(), "f" );
         hs_mc.Add( hist );
         if ( i == 0 ) hs_mc.SetTitle( hist->GetTitle() );
         i++;
@@ -243,18 +251,22 @@ class Plotter
       i = 0;
       for ( auto& h : h_map_sig ) {
         hist = dynamic_cast<TH1D*>( h.second );
-        TH1D* hist_stacked = dynamic_cast<TH1D*>( hist->Clone() );
         hist->SetLineColor( kGreen+1 );
         hist->SetLineWidth( 3 );
-        hist->SetLineStyle( i );
-        if ( strcmp( h.first.c_str(), "" ) != 0 ) { c.AddLegendEntry( hist, h.first.c_str(), "l" ); }
+        TH1D* hist_stacked = dynamic_cast<TH1D*>( hist->Clone() );
+        hist->SetLineStyle( i+1 );
+        if ( i == 0 ) // SM prediction comes first
         hs_sig.Add( hist );
-        if ( i == 0 ) hs_sig.SetTitle( hist->GetTitle() );
+        if ( i == 0 )
+          hs_sig.SetTitle( hist->GetTitle() );
         //hist_stacked->SetLineColor( kBlack );
-        hist_stacked->SetLineColor( hist->GetFillColor() );
-        hist_stacked->SetLineWidth( 1 );
-        hist_stacked->SetFillColorAlpha( kGreen-9, 0.5 );
-        hs_mc.Add( hist_stacked );
+        if ( i == 0 ) { // only stack the SM prediction on the MC contributions
+          hist_stacked->SetFillColorAlpha( kGreen-9, 0.5 );
+          hs_mc.Add( hist_stacked );
+        }
+        hist_stacked->SetLineWidth( 3 );
+        if ( strcmp( h.first.c_str(), "" ) != 0 )
+          c.AddLegendEntry( hist_stacked, h.first.c_str(), ( i == 0 ) ? "lf" : "l" );
         //h_mc->Add( hist_stacked );
         i++;
       }
@@ -269,14 +281,16 @@ class Plotter
       }
       //gStyle->SetErrorX( 0. );
       gStyle->SetEndErrorSize( 0. );
-      if ( hist_data ) hist_data->Draw( "p same" );
+      if ( hist_data )
+        hist_data->Draw( "p same" );
+      max_bin = TMath::Max( hs_mc.GetMaximum(), max_bin );
       hist = ( TH1D* )hs_mc.GetHistogram();
-      max_bin = TMath::Max( hist->GetMaximum(), max_bin );
       if ( logy ) {
-        hs_mc.SetMaximum( max_bin*5. );
+        hs_mc.SetMaximum( max_bin*10. );
         if ( hs_mc.GetMinimum() == 0. ) hs_mc.SetMinimum( 0.1 );
       }
-      else { hs_mc.SetMaximum( max_bin*1.55 ); }
+      else
+        hs_mc.SetMaximum( max_bin*1.55 );
       c.Prettify( hist );
       if ( h_data ) {
         HistsMap hm;
@@ -287,10 +301,12 @@ class Plotter
         hm.emplace_back( "data", h_data );
         hs_mc.SetTitle( "" );
         c.RatioPlot( hm, -0.4, 2.4, "Data/MC", 1.0 );
+        //c.RatioPlot( hm, 0.05, 1.95, "Data/MC", 1.0 );
         c.cd( 1 );
       }
       if ( !label.IsNull() ) {
-        PaveText* lab = new PaveText( 0.135, 0.96, 0.2, 0.97 );
+        //FIXME PaveText* lab = new PaveText( 0.135, 0.96, 0.2, 0.97 );
+        auto lab = new PaveText( 0.16, 0.87, 0.2, 0.89 );
         lab->SetTextSize( 0.05 );
         lab->SetTextAlign( kVAlignTop+kHAlignLeft );
         lab->AddText( label );
@@ -298,6 +314,62 @@ class Plotter
       }
       if ( logy ) dynamic_cast<TPad*>( c.GetPad( 1 ) )->SetLogy();
       c.Save( "pdf,png", out_path_ );
+      {
+        Canvas c_ratio( ratio_plot_filename.c_str(), top_label_ );
+        auto h_ratio = (TH1D*)h_data->Clone();
+        h_ratio->Divide( h_mc );
+        h_ratio->Draw( "p" );
+        h_ratio->SetMarkerStyle( 24 );
+        h_ratio->SetMarkerColor( kBlack );
+        //h_ratio->GetYaxis()->SetRangeUser( -0.5, 2.5 );
+        //h_ratio->GetYaxis()->SetRangeUser( 0., 2. );
+        auto h_mc_ratio = (TH1D*)h_mc->Clone();
+        h_mc_ratio->Divide( h_mc );
+        h_mc_ratio->SetFillStyle( 3004 );
+        h_mc_ratio->Draw( "e2 same" );
+        auto line = new TF1( "line", "1", h_ratio->GetXaxis()->GetXmin(), h_ratio->GetXaxis()->GetXmax() );
+        line->SetLineStyle( 2 );
+        line->SetLineColor( kBlack );
+        line->Draw( "same" );
+        //auto fit_res = h_ratio->Fit( "pol1", "S" );
+        //auto fit_res = h_ratio->Fit( "pol0", "S" );
+        if ( !label.IsNull() ) {
+          //FIXME PaveText* lab = new PaveText( 0.135, 0.96, 0.2, 0.97 );
+          auto lab = new PaveText( 0.16, 0.8, 0.2, 0.92 );
+          lab->SetTextSize( 0.035 );
+          lab->SetTextAlign( kVAlignTop+kHAlignLeft );
+          lab->AddText( label );
+          /*if ( (int)fit_res == 0 ) {
+            //lab->AddText( Form( "Linear fit: %.3f + %.3f x", fit_res->Parameter( 0 ), fit_res->Parameter( 1 ) ) );
+            lab->AddText( Form( "Constant fit: %.3f", fit_res->Parameter( 0 ) ) );
+            lab->AddText( Form( "#chi^{2} / ndf = %.3f / %d", fit_res->Chi2(), fit_res->Ndf() ) );
+          }*/
+          lab->Draw( "same" );
+        }
+        c_ratio.Prettify( h_ratio );
+        h_ratio->GetYaxis()->SetTitle( "Data / MC" );
+        c_ratio.Save( "pdf,png", out_path_ );
+      }
+      /*if ( ( ratio_plot_filename.find( "_xip_" ) != std::string::npos
+          || ratio_plot_filename.find( "_xim_" ) != std::string::npos )
+        && ratio_plot_filename.find( "_EBEE_" ) == std::string::npos
+        && ratio_plot_filename.find( "_EBEB_" ) == std::string::npos ) {
+        std::cout << "---> " << ratio_plot_filename << std::endl;
+        if ( h_mc )
+          h_mc->Fit( "expo", "srn", "", 0., 0.2 );
+        for ( auto& h : h_map_mc ) {
+          auto hist_mc = dynamic_cast<TH1D*>( h.second );
+          double err_mc = 0., int_mc = hist_mc->IntegralAndError( 0, hist_mc->GetNbinsX()+1, err_mc );
+          std::cout << "   bck: " << int_mc << " +/- " << err_mc << " <-- " << h.first << std::endl;
+        }
+        for ( auto& h : h_map_sig ) {
+          auto hist_mc = dynamic_cast<TH1D*>( h.second );
+          double err_mc = 0., int_mc = hist_mc->IntegralAndError( 0, hist_mc->GetNbinsX()+1, err_mc );
+          std::cout << "   sig: " << int_mc << " +/- " << err_mc << " <-- " << h.first << std::endl;
+        }
+        double err_data = 0., int_data = h_data->IntegralAndError( 0, h_data->GetNbinsX()+1, err_data );
+        std::cout << "  data: " << int_data << " +/- " << err_data << std::endl;
+      }*/
     }
 
     void draw_multiplot( const char* filename, HistsMap h_map, bool compute_w2 = true, bool logy = false, float min_y = 0.5 ) const {

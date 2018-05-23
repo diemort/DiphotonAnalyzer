@@ -30,21 +30,24 @@ void mc_study()
 
   //const char* file = "Samples/output_0000_GammaGammaToGammaGamma_13TeV_fpmc.root";
   //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
-  const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root";
+  //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root";
+  //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_zeta1em14.root";
+  const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_justin_sm.root";
   //const char* file = "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root";
   TFile f( file );
   TTree* t = dynamic_cast<TTree*>( f.Get( "ntp" ) );
 
   unsigned int num_dipho;
   const unsigned short max_dipho = 50;
-  float photon1_pt[max_dipho], photon1_eta[max_dipho], photon1_phi[max_dipho], photon1_energy[max_dipho],
-        photon2_pt[max_dipho], photon2_eta[max_dipho], photon2_phi[max_dipho], photon2_energy[max_dipho];
+  float photon1_pt[max_dipho], photon1_eta[max_dipho], photon1_phi[max_dipho], photon1_energy[max_dipho], photon1_r9[max_dipho],
+        photon2_pt[max_dipho], photon2_eta[max_dipho], photon2_phi[max_dipho], photon2_energy[max_dipho], photon2_r9[max_dipho];
   float gen_photon1_pt[max_dipho], gen_photon1_eta[max_dipho], gen_photon1_phi[max_dipho], gen_photon1_energy[max_dipho],
         gen_photon2_pt[max_dipho], gen_photon2_eta[max_dipho], gen_photon2_phi[max_dipho], gen_photon2_energy[max_dipho];
   float dipho_vx[max_dipho], dipho_vy[max_dipho], dipho_vz[max_dipho];
-  float dipho_m[max_dipho];
+  float dipho_m[max_dipho], dipho_dphi[max_dipho];
   t->SetBranchAddress( "num_diphoton", &num_dipho );
   t->SetBranchAddress( "diphoton_mass", dipho_m );
+  t->SetBranchAddress( "diphoton_dphi", dipho_dphi );
   t->SetBranchAddress( "diphoton_pt1", photon1_pt );
   t->SetBranchAddress( "diphoton_eta1", photon1_eta );
   t->SetBranchAddress( "diphoton_phi1", photon1_phi );
@@ -53,6 +56,8 @@ void mc_study()
   t->SetBranchAddress( "diphoton_eta2", photon2_eta );
   t->SetBranchAddress( "diphoton_phi2", photon2_phi );
   t->SetBranchAddress( "diphoton_energy2", photon2_energy );
+  t->SetBranchAddress( "diphoton_r91", photon1_r9 );
+  t->SetBranchAddress( "diphoton_r92", photon2_r9 );
   t->SetBranchAddress( "diphoton_genpt1", gen_photon1_pt );
   t->SetBranchAddress( "diphoton_geneta1", gen_photon1_eta );
   t->SetBranchAddress( "diphoton_genphi1", gen_photon1_phi );
@@ -158,6 +163,14 @@ void mc_study()
       TVector3 dipho_vtx( dipho_vx[j], dipho_vy[j], dipho_vz[j] ),
                dipho_gen_vtx( dipho_vtx_smear_x, dipho_vtx_smear_y, dipho_vtx_smear_z );
 
+      if ( dipho_m[j] < 350. ) continue;
+      if ( photon1_pt[j] < 75. || photon2_pt[j] < 75. ) continue;
+      if ( fabs( photon1_eta[j] ) > 2.5 || fabs( photon2_eta[j] ) > 2.5 ) continue;
+      if ( fabs( photon1_eta[j] ) > 1.4442 && fabs( photon1_eta[j] ) < 1.566 ) continue;
+      if ( fabs( photon2_eta[j] ) > 1.4442 && fabs( photon2_eta[j] ) < 1.566 ) continue;
+      if ( photon1_r9[j] < 0.94 || photon2_r9[j] < 0.94 ) continue;
+      if ( 1.-fabs( dipho_dphi[j]/M_PI ) > 0.005 ) continue;
+
       const TVector3 pho1_sc( pho1_sc_x[j], pho1_sc_y[j], pho1_sc_z[j] );
       const TVector3 pho2_sc( pho2_sc_x[j], pho2_sc_y[j], pho2_sc_z[j] );
 
@@ -219,7 +232,7 @@ void mc_study()
 
       h_diph_ptdist_numer->Fill( pair_reco.Pt(), pu_weight/num_entries );
       h_diph_ptdist_denom->Fill( pair_gen.Pt(), pu_weight/num_entries );
-      
+
       h_ptpair_gen->Fill( pair_gen.Pt(), pu_weight/num_entries );
       h_ptpair_reco->Fill( pair_reco.Pt(), pu_weight/num_entries );
       h_match_mass->Fill( ( pair_reco.M()-pair_gen.M() )/pair_gen.M(), pu_weight/num_entries );
@@ -462,10 +475,12 @@ void plot_resol( const char* title, TH1D* h_resol, const char* top_title="" ) {
   h_resol->SetLineWidth( 2 );
   h_resol->SetFillColor( kBlack );
   h_resol->SetFillStyle( 3004 );
-  TFitResultPtr fit1 = h_resol->Fit( "gaus", "NS" );
+  //TFitResultPtr fit1 = h_resol->Fit( "gaus", "NS" );
+  TFitResultPtr fit1 = h_resol->Fit( "gaus", "S+" );
   if ( fit1.Get() ) {
     const double* params_fit1 = fit1->GetParams();
-    c.AddLegendEntry( h_resol, Form( "Mean = %.2e, RMS = %.3f", h_resol->GetMean(), h_resol->GetRMS() ), "f" );
+    c.AddLegendEntry( h_resol, Form( "Mean = %.1e, RMS = %.3f", h_resol->GetMean(), h_resol->GetRMS() ), "f" );
+    //c.AddLegendEntry( h_resol, Form( "Mean = %.2e, RMS = %.3f", params_fit1[1], params_fit1[2] ), "f" );
   }
   c.Prettify( h_resol );
 

@@ -23,7 +23,7 @@ void xi_accept()
   map<unsigned short,float> xi_accept = { { 2, 0.033 }, { 3, 0.024 }, { 102, 0.050 }, { 103, 0.037 } };
   map<unsigned short,float> xi_accept_new = { { 2, 0.033 }, { 3, 0.024 }, { 102, 0.040 }, { 103, 0.032 } };
 
-  const vector<unsigned short> fills_to_study = { 4947, 4985, 5017, 5030 };
+//  const vector<unsigned short> fills_to_study = { 4947, 4985, 5017, 5030 };
 
   unsigned int fill_number;
   tr->SetBranchAddress( "fill_number", &fill_number );
@@ -117,7 +117,7 @@ void xi_accept()
       double y_max = 1.3;
       TGraph* gr_accept = new TGraph; // brilliant ROOT, brilliant...
       unsigned short i = 0;
-      for ( double xi_cut = 0.; xi_cut<=0.11 ; xi_cut+=0.01 ) {
+      for ( double xi_cut = 0.; xi_cut<=0.16 ; xi_cut+=0.01 ) {
         TH1D* plot = combined_plots[pot.first];
         double num_inside = plot->Integral( plot->GetXaxis()->FindBin( xi_cut ), plot->GetXaxis()->FindBin( plot->GetXaxis()->GetXmax() )+1 );
         double num_total = plot->Integral();
@@ -136,7 +136,7 @@ void xi_accept()
       gr_accept->Draw( "acf" );
       gr_accept->GetXaxis()->SetTitle( Form( "Lower cut on #xi(%s)", pot_name ) );
       gr_accept->GetYaxis()->SetTitle( "Ev.fraction outside pot accept." );
-      gr_accept->GetXaxis()->SetRangeUser( 0., 0.1 );
+      gr_accept->GetXaxis()->SetRangeUser( 0., 0.15 );
       gr_accept->GetYaxis()->SetRangeUser( 0., y_max );
       gr_accept->SetFillColor( kBlack );
       gr_accept->SetFillStyle( 3004 );

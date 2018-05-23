@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+#define EXPERIMENT "CMS"
+
 class PaveText : public TPaveText
 {
  public:
@@ -30,17 +32,18 @@ class PaveText : public TPaveText
 class Canvas : public TCanvas
 {
  public:
-  inline Canvas( const char* name, const char* title = "", bool ratio = false ) :
+  inline Canvas( const char* name, const char* title = "", const char* type = "Preliminary", bool ratio = false ) :
     //TCanvas(name, "", 450, 450),
     TCanvas( name, "", 600, 600 ),
-    fTitle( title ), fTopLabel( 0 ),
-    fLeg( 0 ), fLegXpos( 0.5 ), fLegYpos( 0.75 ), fLegXsize( 0.35 ), fLegYsize( 0.15 ),
+    fTitle( title ), /*fBanner( nullptr ),*/ fTopLabel( nullptr ), fPlotType( type ),
+    fLeg( nullptr ), fLegXpos( 0.5 ), fLegYpos( 0.75 ), fLegXsize( 0.35 ), fLegYsize( 0.15 ),
     fRatio( ratio ), divided_( false )
   {
     Build();
   }
   inline ~Canvas() {
     if ( fLeg ) delete fLeg;
+    //if ( fBanner ) delete fBanner;
     if ( fTopLabel ) delete fTopLabel;
   }
 
@@ -208,13 +211,12 @@ class Canvas : public TCanvas
 
   inline void Save( const char* ext, const char* out_dir = "." ) {
     TCanvas::cd();
-    if ( fLeg && TCanvas::FindObject( fLeg ) == 0 ) {
-      //if ( fLeg ) {
+    if ( fLeg && TCanvas::FindObject( fLeg ) == 0 )
       fLeg->Draw();
-    }
-    if ( fTopLabel && TCanvas::FindObject( fTopLabel ) == 0 ) {
+    /*if ( fBanner && TCanvas::FindObject( fBanner ) == 0 )
+      fBanner->Draw();*/
+    if ( fTopLabel && TCanvas::FindObject( fTopLabel ) == 0 )
       fTopLabel->Draw();
-    }
 
     const TString ext_str( ext );
     TObjArray* tok = TString( ext ).Tokenize( "," );
@@ -235,6 +237,12 @@ class Canvas : public TCanvas
     TCanvas::SetRightMargin( 0.1 );
     TCanvas::SetBottomMargin( 0.12 );
     TCanvas::SetTicks( 1, 1 );
+
+    /*fBanner = new PaveText( 0.16, 0.86, 0.18, 0.94 );
+    fBanner->AddText( Form( "#font[62]{%s}", EXPERIMENT ) );
+    fBanner->AddText( Form( "#scale[0.66]{#font[52]{%s}}", fPlotType.Data() ) );
+    fBanner->SetTextAlign( kHAlignLeft+kVAlignTop );
+    fBanner->SetTextSize( 0.045 );*/
 
     SetTopLabel();
     if ( fRatio ) DivideCanvas();
@@ -281,8 +289,8 @@ class Canvas : public TCanvas
     return ( h->GetXaxis()->GetXmax() - h->GetXaxis()->GetXmin() ) / h->GetXaxis()->GetNbins();
   }
 
-  TString fTitle;
-  PaveText* fTopLabel;
+  TString fTitle, fPlotType;
+  PaveText* /*fBanner, **/fTopLabel;
   TLegend* fLeg;
   double fLegXpos, fLegYpos, fLegXsize, fLegYsize;
   bool fRatio;

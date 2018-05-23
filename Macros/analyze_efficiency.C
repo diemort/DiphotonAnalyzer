@@ -32,8 +32,9 @@ void analyze_efficiency()
   xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
 
   map<unsigned short,const char*> pot_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
-  map<unsigned short,pair<double,double> > pot_fit_limits = { { 2, { 9., 14. } }, { 3, { 6., 14. } }, { 102, { 7., 12. }  }, { 103, { 6., 12. } } };
-  map<unsigned short,double> pot_x_mineff = { { 2, 8.2 }, { 3, 7.3 }, { 102, 6.2 }, { 103, 5.2 } }; // x such as eff(x) > 95%
+  map<unsigned short,pair<double,double> > pot_fit_limits = { { 2, { 9., 14. } }, { 3, { 12., 14. } }, { 102, { 7., 12. }  }, { 103, { 6., 12. } } };
+  map<unsigned short,double> pot_x_mineff = { { 2, 7.6 }, { 3, 7.0 }, { 102, 5.5 }, { 103, 4.8 } }; // x such as eff(x) > 95%
+  map<unsigned short,double> erf_fit_min_xi = { { 2, 0.045 }, { 3, 0.042 }, { 102, 0.045 }, { 103, 0.038 } };
   map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_y_win, h_denom_y_win, h_num_xi, h_denom_xi, h_num_xi_optbins, h_denom_xi_optbins;
   map<unsigned short,TH2D*> h2_num_xy, h2_denom_xy;
   double y_bins[] = {
@@ -273,12 +274,7 @@ void analyze_efficiency()
             range_max = 12.;
           }
           else {
-            switch ( p.first ) {
-              case 2: range_min = 0.045; break;
-              case 3: range_min = 0.038; break;
-              case 102: range_min = 0.045; break;
-              case 103: range_min = 0.038; break;
-            }
+            range_min = erf_fit_min_xi[p.first];
             range_max = 0.15;
           }
           auto erf = new TF1( "myErf", effErf, range_min, range_max, 3 );
@@ -298,13 +294,13 @@ void analyze_efficiency()
             line90->SetLineStyle( 2 );
             line90->SetLineWidth( 3 );
             line90->SetLineColor( kGray+2 );
-            c.AddLegendEntry( line90, "90% threshold", "l" );
+            c.AddLegendEntry( line90, Form( "90%% threshold (%.3f)", erf->GetX( 0.9 ) ), "l" );
             auto line95 = new TLine( erf->GetX( 0.95 ), 0.01, erf->GetX( 0.95 ), 0.95 );
             line95->Draw( "same" );
             line95->SetLineStyle( 2 );
             line95->SetLineWidth( 3 );
             line95->SetLineColor( kGray+3 );
-            c.AddLegendEntry( line95, "95% threshold", "l" );
+            c.AddLegendEntry( line95, Form( "95%% threshold (%.3f)", erf->GetX( 0.95 ) ), "l" );
           }
         }
         if ( distrib == "x" ) range->Draw( "same" );
