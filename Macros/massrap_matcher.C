@@ -46,9 +46,12 @@ void plot_matching( double num_sigma, const char* name, TGraphErrors&, TGraphErr
 vector<pair<float,float> > merge_nearfar( const vector<track_t>& near_tracks, const vector<track_t>& far_tracks, float xdiff_cut=0.01 );
 
 map<unsigned short,float> pots_accept = { { 2, 0.033 }, { 3, 0.024 }, { 102, 0.050 }, { 103, 0.037 } };
+//map<unsigned short,float> pots_accept = { { 2, 0.067 }, { 3, 0.066 }, { 102, 0.070 }, { 103, 0.067 } }; // less than 10% radiation damage
 map<unsigned short,float> pots_accept_match = { { 2, 0.034 }, { 3, 0.023 }, { 102, 0.042 }, { 103, 0.032 } };
-map<unsigned short,float> pots_accept_90pc = { { 2, 0.067 }, { 3, 0.066 }, { 102, 0.070 }, { 103, 0.067 } };
+map<unsigned short,float> pots_accept_90pc = { { 2, 0.067 }, { 3, 0.066 }, { 102, 0.070 }, { 103, 0.067 } }; // less than 10% radiation damage
 map<unsigned short,const char*> pots_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
+
+//pots_accept = pots_accept_90pc;
 
 void massrap_matcher( double num_sigma = 2.0 )
 {
@@ -75,10 +78,13 @@ void massrap_matcher( double num_sigma = 2.0 )
   map<unsigned short,TH1D*> m_h_xi;
   for ( const auto& pid : pots_names )
     m_h_xi[pid.first] = new TH1D( Form( "h_xi_%d", pid.first ), Form( "#xi (%s)@@Events", pid.second ), 50, 0., 0.25 );
-  TH1D* h_num_45 = new TH1D( "num_45", "Forward tracks multiplicity@@Events with an elastic diphoton", 3, -0.5, 2.5 );
+  TH1D* h_num_45 = new TH1D( "num_45", "Forward tracks multiplicity@@Events with an elastic diphoton cand.", 3, -0.5, 2.5 );
   TH1D* h_num_56 = (TH1D*)h_num_45->Clone( "num_56" );
-  auto h_massratio = new TH1D( "mass_ratio", "m_{pp}/m_{#gamma#gamma}@@Events@@?.g", 20, -2., 4. );
-  auto h_rapdiff = new TH1D( "rap_diff", "y_{pp}-y_{#gamma#gamma}@@Events@@?.g", 20, -2.5, 2.5 );
+  TH1D* h_num_sect = new TH1D( "num_sect", ";;Events with an elastic diphoton cand.", 4, -0.5, 3.5 );
+  /*auto h_massratio = new TH1D( "mass_ratio", "m_{pp}/m_{#gamma#gamma}@@Events@@?.g", 20, -2., 4. );
+  auto h_rapdiff = new TH1D( "rap_diff", "y_{pp}-y_{#gamma#gamma}@@Events@@?.g", 20, -2.5, 2.5 );*/
+  auto h_massratio = new TH1D( "mass_ratio", "(m_{#gamma#gamma}-m_{pp})/#sigma(m_{#gamma#gamma}-m_{pp})@@Events", 20, -20., 20. );
+  auto h_rapdiff = new TH1D( "rap_diff", "(y_{#gamma#gamma}-y_{pp})/#sigma(y_{#gamma#gamma}-y_{pp})@@Events", 20, -20., 20. );
 
   const unsigned long long num_events = tr->GetEntriesFast();
   for ( unsigned long long i = 0; i < num_events; ++i ) {
@@ -99,11 +105,18 @@ void massrap_matcher( double num_sigma = 2.0 )
       double xi, xi_err;
       xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_side[j], ev.proton_track_pot[j], xi, xi_err );
 
+      if ( xi < pots_accept[pot_id] )
+        continue;
+
       //----- associate each track to a RP
-      if      ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 3 ) xi_45f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_side[j] == 1 && ev.proton_track_pot[j] == 2 ) xi_56n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_side[j] == 1 && ev.proton_track_pot[j] == 3 ) xi_56f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      if ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 2 )
+        xi_45n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      else if ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 3 )
+        xi_45f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      else if ( ev.proton_track_side[j] == 1 && ev.proton_track_pot[j] == 2 )
+        xi_56n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      else if ( ev.proton_track_side[j] == 1 && ev.proton_track_pot[j] == 3 )
+        xi_56f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
     }
 
     //----- merge 2 tracks in one if N-F pot content is similar
@@ -144,13 +157,19 @@ void massrap_matcher( double num_sigma = 2.0 )
       // EB: 0 < |eta| < 1.4442
       // EE: |eta| > 1.566
       unsigned short ev_class = TreeEvent::invalid;
-      if ( ev.diphoton_eta1[j] < min_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = TreeEvent::ebee;
+      /*if ( ev.diphoton_eta1[j] < min_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = TreeEvent::ebee;
       if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] < min_etaveto ) ev_class = TreeEvent::ebee;
       else if ( ev.diphoton_eta1[j] < min_etaveto && ev.diphoton_eta2[j] < min_etaveto ) ev_class = TreeEvent::ebeb;
-      else if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = TreeEvent::eeee;
+      else if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = TreeEvent::eeee;*/
+      if ( fabs( ev.diphoton_eta1[j] ) <= eta_cut && fabs( ev.diphoton_eta2[j] ) <= eta_cut ) {
+        if ( fabs( ev.diphoton_eta1[j] ) < min_etaveto && fabs( ev.diphoton_eta2[j] ) > max_etaveto ) ev_class = TreeEvent::ebee;
+        else if ( fabs( ev.diphoton_eta2[j] ) < min_etaveto && fabs( ev.diphoton_eta1[j] ) > max_etaveto ) ev_class = TreeEvent::ebee;
+        else if ( fabs( ev.diphoton_eta1[j] ) < min_etaveto && fabs( ev.diphoton_eta2[j] ) < min_etaveto ) ev_class = TreeEvent::ebeb;
+        else if ( fabs( ev.diphoton_eta1[j] ) > max_etaveto && fabs( ev.diphoton_eta2[j] ) > max_etaveto ) ev_class = TreeEvent::eeee;
+      }
       //----- only keep EBEE and EBEB diphoton events
       if ( ev_class == TreeEvent::invalid ) continue;
-      //if ( ev_class == TreeEvent::eeee ) continue; //FIXME FIXME
+      if ( ev_class == TreeEvent::eeee ) continue; //FIXME FIXME
 
       if ( ev.diphoton_pt1[j] < 75. ) continue;
       if ( ev.diphoton_pt2[j] < 75. ) continue;
@@ -170,8 +189,8 @@ void massrap_matcher( double num_sigma = 2.0 )
       const float xip = ( ev.diphoton_pt1[j]*exp( +ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( +ev.diphoton_eta2[j] ) ) / sqrt_s,
                   xim = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
 
-      //if ( ( xim < pots_accept[102] && xim < pots_accept[103] ) || xim > 0.15 ) continue;
-      //if ( ( xip < pots_accept[2] && xip < pots_accept[3] ) || xip > 0.15 ) continue;
+//      if ( ( xim < pots_accept[102] && xim < pots_accept[103] ) || xim > 0.15 ) continue;
+//      if ( ( xip < pots_accept[2] && xip < pots_accept[3] ) || xip > 0.15 ) continue;
 
       //----- search for associated leptons
 
@@ -222,13 +241,19 @@ void massrap_matcher( double num_sigma = 2.0 )
         h_rap_all->Fill( cand.rapidity() );
         bool mass_match = is_matched( num_sigma, cms.M(), cand.mass(), diphoton_mass_error, cand.mass_error() );
         bool rap_match = is_matched( num_sigma, cms.Rapidity(), cand.rapidity(), diphoton_rapidity_error, cand.rapidity_error() );
-        h_massratio->Fill( cand.mass()/cms.M() );
-        h_rapdiff->Fill( cand.rapidity()-cms.Rapidity() );
+        /*h_massratio->Fill( cand.mass()/cms.M() );
+        h_rapdiff->Fill( cand.rapidity()-cms.Rapidity() );*/
+        h_massratio->Fill( ( cms.M()-cand.mass() )/std::hypot( diphoton_mass_error, cand.mass_error() ) );
+        h_rapdiff->Fill( ( cms.Rapidity()-cand.rapidity() )/std::hypot( diphoton_rapidity_error, cand.rapidity_error() ) );
         if ( mass_match && rap_match ) {
           cout << "@@@ DOUBLE TAGGING" << endl;
           cout << "event:" << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;
           cout << "masses: central system: " << cms.M() << ", diphoton: " << ev.diphoton_mass[j] << " +/- " << diphoton_mass_error << ", diproton: " << cand.mass() << " +/- " << cand.mass_error() << endl;
           cout << "rapidities: central system: " << cms.Rapidity() << ", diphoton: " << ev.diphoton_rapidity[j] << " +/- " << diphoton_rapidity_error << ", diproton: " << cand.rapidity() << " +/- " << cand.rapidity_error() << endl;
+          cout << "xi-per-pot: " << "45-near: " << ( xi_45n.size() > 0 ? xi_45n[0].first : "n/a" )
+               << ", 45-far: " << ( xi_45f.size() > 0 ? xi_45n[0].first : "n/a" )
+               << ", 56-near: " << ( xi_56n.size() > 0 ? xi_56n[0].first : "n/a" )
+               << ", 56-far: " << ( xi_56f.size() > 0 ? xi_56f[0].first : "n/a" ) << endl;
           gr_mass_massrapmatch.SetPoint( num_massrapmatch, cand.mass(), cms.M() );
           gr_mass_massrapmatch.SetPointError( num_massrapmatch, cand.mass_error(), diphoton_mass_error );
           gr_rap_massrapmatch.SetPoint( num_massrapmatch, cand.rapidity(), cms.Rapidity() );
@@ -279,6 +304,14 @@ void massrap_matcher( double num_sigma = 2.0 )
       }
       h_num_45->Fill( num_45 );
       h_num_56->Fill( num_56 );
+      if ( num_45 > 0 && num_56 > 0 )
+        h_num_sect->Fill( 3 );
+      else if ( num_45 > 0 )
+        h_num_sect->Fill( 1 );
+      else if ( num_56 > 0 )
+        h_num_sect->Fill( 2 );
+      else
+        h_num_sect->Fill( 0 );
     }
   } // loop on events
 cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " << num_massmatch << "\n\trap match: " << num_rapmatch << "\n\tboth match: " << num_massrapmatch << endl;
@@ -293,27 +326,29 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
   plot_matching( num_sigma, "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -2., 2., 0.15 );
 
   const string up_label = "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}";
-  {
-    Canvas c( "1d_massmatch", up_label.c_str() );
-    h_mass_all->Sumw2();
-    h_mass_all->Draw();
-    c.Prettify( h_mass_all );
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
-  }
-  {
-    Canvas c( "1d_rapmatch", up_label.c_str() );
-    h_rap_all->Sumw2();
-    h_rap_all->Draw();
-    c.Prettify( h_rap_all );
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
-  }
-  for ( auto& nh : map<const char*,TH1D*>{ { "mass_ratio", h_massratio }, { "rapidity_difference", h_rapdiff } } ) {
+  for ( auto& nh : map<const char*,TH1D*>{ { "1d_massmatch", h_mass_all }, { "1d_rapmatch", h_rap_all } } ) {
     Canvas c( nh.first, up_label.c_str() );
     nh.second->Sumw2();
     nh.second->Draw();
-    nh.second->SetMarkerStyle( 24 );
-    nh.second->SetLineColor( kBlack );
     c.Prettify( nh.second );
+    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  }
+  {
+    gStyle->SetOptStat( 0 );
+    Canvas c( "elastic_numsect", up_label.c_str() );
+    h_num_sect->Sumw2();
+    h_num_sect->Draw( "p" );
+    h_num_sect->SetLineColor( kBlack );
+    h_num_sect->SetLineWidth( 2 );
+    h_num_sect->SetMarkerStyle( 20 );
+    auto axis = h_num_sect->GetXaxis();
+    axis->SetBinLabel( 1, "No forward track" );
+    axis->SetBinLabel( 2, "Sector 45 only" );
+    axis->SetBinLabel( 3, "Sector 56 only" );
+    axis->SetBinLabel( 4, "Both sectors" );
+    h_num_sect->SetMinimum( 0. );
+    c.Prettify( h_num_sect );
+    c.SetGrid( 0, 1 );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   {
@@ -322,9 +357,11 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     h_num_45->SetLineColor( kBlue+1 );
     h_num_45->SetLineWidth( 2 );
     h_num_45->SetMarkerStyle( 24 );
+    h_num_45->SetMarkerColor( kBlue+1 );
     h_num_56->SetLineColor( kRed+1 );
     h_num_56->SetLineWidth( 2 );
     h_num_56->SetMarkerStyle( 25 );
+    h_num_56->SetMarkerColor( kRed+1 );
     c.AddLegendEntry( h_num_45, "Sector 45" );
     c.AddLegendEntry( h_num_56, "Sector 56" );
     hs.Add( h_num_45 );
@@ -333,6 +370,35 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     hs.GetHistogram()->SetTitle( h_num_45->GetTitle() );
     c.Prettify( hs.GetHistogram() );
     hs.GetHistogram()->GetXaxis()->SetNdivisions( 5 );
+    c.SetGrid( 0, 1 );
+    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  }
+  for ( auto& nh : map<const char*,TH1D*>{ { "mass_ratio", h_massratio }, { "rapidity_difference", h_rapdiff } } ) {
+    gStyle->SetOptStat( 0 );
+    Canvas c( nh.first, up_label.c_str() );
+    nh.second->Sumw2();
+    nh.second->Draw();
+    nh.second->SetMarkerStyle( 24 );
+    nh.second->SetLineColor( kBlack );
+    TLine lim;
+    lim.SetLineColor( kRed+1 );
+    lim.SetLineStyle( 2 );
+    lim.SetLineWidth( 3 );
+    //const double min = nh.second->GetMinimum(), max = nh.second->GetMaximum()*1.55;
+    //const double min = nh.second->GetYaxis()->GetXmin(), max = nh.second->GetYaxis()->GetXmax();
+    //const double min = nh.second->GetMinimum(), max = nh.second->GetMaximum()*1.445;
+    const double min = 0., max = 9.5;
+    nh.second->GetYaxis()->SetRangeUser( min, max );
+    auto l_2sigma = lim.DrawLine( -2., min, -2., max );
+    lim.DrawLine( 2., min, 2., max );
+    lim.SetLineStyle( 1 );
+    auto l_3sigma = lim.DrawLine( -3., min, -3., max );
+    lim.DrawLine( 3., min, 3., max );
+    nh.second->Draw( "same" );
+    c.SetLegendX1( 0.65 );
+    c.AddLegendEntry( l_2sigma, "#pm 2#sigma", "l" );
+    c.AddLegendEntry( l_3sigma, "#pm 3#sigma", "l" );
+    c.Prettify( nh.second );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   for ( const auto& p : pots_names ) {

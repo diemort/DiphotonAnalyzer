@@ -3,6 +3,15 @@
 
 void plot_resol( const char* title, TH1D* h_resol, const char* top_title="" );
 const char* output_dir = "/afs/cern.ch/user/l/lforthom/www/private/twophoton/mc_study";
+//const char* file = "Samples/output_0000_GammaGammaToGammaGamma_13TeV_fpmc.root";
+//const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
+//const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root";
+//const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_zeta1em14.root";
+const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_justin_sm.root";
+//const char* file = "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root";
+const string typ_lab = "FPMC, SM pred.";
+//const char* file = "Samples/output_GammaGammaToGammaGamma_13TeV_superchic2_27jun.root";
+//const string typ_lab = "SuperChic 2, SM pred.";
 
 void mc_study()
 {
@@ -28,12 +37,6 @@ void mc_study()
 
   const float dr_cut = 0.1;
 
-  //const char* file = "Samples/output_0000_GammaGammaToGammaGamma_13TeV_fpmc.root";
-  //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
-  //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root";
-  //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_zeta1em14.root";
-  const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_justin_sm.root";
-  //const char* file = "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root";
   TFile f( file );
   TTree* t = dynamic_cast<TTree*>( f.Get( "ntp" ) );
 
@@ -454,12 +457,13 @@ void mc_study()
     }
     c.Prettify( h_xiresol1 );
 
-    PaveText lab( 0.8, 0.6, 0.85, 0.7 );
-    lab.SetTextSize( 0.04 );
+    PaveText lab( 0.8, 0.6, 0.87, 0.7 );
+    //PaveText lab( 0.8, 0.6, 0.85, 0.7 );
+    lab.SetTextSize( 0.035 );
     lab.SetFillStyle( 0 );
     lab.SetLineWidth( 0 );
     lab.AddText( "Elastic #gamma#gamma#rightarrow#gamma#gamma" );
-    lab.AddText( "FPMC, SM pred." );
+    lab.AddText( typ_lab.c_str() );
     lab.Draw( "same" );
 
     c.GetLegend()->SetLineColor( kWhite );
@@ -484,12 +488,12 @@ void plot_resol( const char* title, TH1D* h_resol, const char* top_title="" ) {
   }
   c.Prettify( h_resol );
 
-  PaveText lab( 0.8, 0.6, 0.85, 0.7 );
-  lab.SetTextSize( 0.04 );
+  PaveText lab( 0.8, 0.6, 0.87, 0.7 );
+  lab.SetTextSize( 0.035 );
   lab.SetFillStyle( 0 );
   lab.SetLineWidth( 0 );
   lab.AddText( "Elastic #gamma#gamma#rightarrow#gamma#gamma" );
-  lab.AddText( "FPMC, SM pred." );
+  lab.AddText( typ_lab.c_str() );
   lab.Draw( "same" );
 
   c.GetLegend()->SetY1( 0.85 );
