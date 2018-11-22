@@ -9,11 +9,13 @@
 void test_xireco()
 {
   TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
-  TTree* tr = dynamic_cast<TTree*>( f.Get( "ntp" ) );
+  auto tr = dynamic_cast<TTree*>( f.Get( "ntp" ) );
 
+  // initialise the alignment LUT/optics curves
   pot_align::load_file( "TreeProducer/data/alignment_collection_v2.out" );
   xi_reco::load_optics_file( "TreeProducer/data/optics_17may22.root" );
 
+  // feed the tree reader
   TreeEvent ev;
   ev.attach( tr, true );
 
@@ -21,17 +23,18 @@ void test_xireco()
   for ( unsigned long long i = 0; i < num_events; ++i ) {
     tr->GetEntry( i );
 
-    // first loop to identify the tracks and their respective pot
-
+    // retrieve the alignment corrections for this fill
     auto align = pot_align::get_alignments( ev.fill_number );
 
+    // loop over the forward tracks collection
     for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
       const unsigned short pot_id = 100*ev.proton_track_side[j]+ev.proton_track_pot[j];
       const auto& al = align[pot_id];
 
-      //----- reconstruct the kinematics
+      // reconstruct xi and its associated error
       double xi = 0., xi_err = 0.;
       xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_side[j], ev.proton_track_pot[j], xi, xi_err );
+      cout << ">> in event " << i << ", track " << j << " has xi = " << xi << " +/- " << xi_err << endl;
     }
 
   } // loop on events
