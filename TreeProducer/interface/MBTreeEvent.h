@@ -23,6 +23,7 @@ struct MBTreeEvent
     tree->Branch( "strips_track_tx", strips_track_tx, "strips_track_tx[num_strips_track]/F" );
     tree->Branch( "strips_track_ty", strips_track_ty, "strips_track_ty[num_strips_track]/F" );
     tree->Branch( "strips_track_arm", strips_track_arm, "strips_track_arm[num_strips_track]/i" );
+    tree->Branch( "strips_track_station", strips_track_station, "strips_track_station[num_strips_track]/i" );
     tree->Branch( "strips_track_pot", strips_track_pot, "strips_track_pot[num_strips_track]/i" );
     tree->Branch( "strips_track_chi2", strips_track_chi2, "strips_track_chi2[num_strips_track]/F" );
     tree->Branch( "strips_track_normchi2", strips_track_normchi2, "strips_track_normchi2[num_strips_track]/F" );
@@ -60,6 +61,7 @@ struct MBTreeEvent
     tree->SetBranchAddress( "strips_track_tx", strips_track_tx );
     tree->SetBranchAddress( "strips_track_ty", strips_track_ty );
     tree->SetBranchAddress( "strips_track_arm", strips_track_arm );
+    tree->SetBranchAddress( "strips_track_station", strips_track_station );
     tree->SetBranchAddress( "strips_track_pot", strips_track_pot );
     tree->SetBranchAddress( "strips_track_chi2", strips_track_chi2 );
     tree->SetBranchAddress( "strips_track_normchi2", strips_track_normchi2 );
@@ -90,7 +92,7 @@ struct MBTreeEvent
       strips_track_tx[i] = strips_track_ty[i] = -1.;
       strips_track_chi2[i] = strips_track_normchi2[i] = -1.;
       strips_track_arm[i] = 2; //invalid
-      strips_track_pot[i] = 0; //invalid
+      strips_track_station[i] = strips_track_pot[i] = 0; //invalid
     }
 
     num_vertex = 0;
@@ -110,7 +112,7 @@ struct MBTreeEvent
   float strips_track_x[MAX_PROTON_TRK], strips_track_y[MAX_PROTON_TRK];
   float strips_track_tx[MAX_PROTON_TRK], strips_track_ty[MAX_PROTON_TRK];
   float strips_track_chi2[MAX_PROTON_TRK], strips_track_normchi2[MAX_PROTON_TRK];
-  unsigned int strips_track_arm[MAX_PROTON_TRK], strips_track_pot[MAX_PROTON_TRK];
+  unsigned int strips_track_arm[MAX_PROTON_TRK], strips_track_station[MAX_PROTON_TRK], strips_track_pot[MAX_PROTON_TRK];
 
   unsigned int num_vertex;
   float vertex_x[MAX_VERTEX], vertex_y[MAX_VERTEX], vertex_z[MAX_VERTEX];

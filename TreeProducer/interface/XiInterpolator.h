@@ -3,8 +3,8 @@
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
-#include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
-#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
 #include "DataFormats/Provenance/interface/RunID.h"
 
 #include "DiphotonAnalyzer/TreeProducer/interface/ProtonKinematicsUtils.h"
@@ -31,15 +31,15 @@ namespace ProtonUtils
       void setCalibrationConstants( const edm::RunNumber_t& run_id );
       void setAlignmentConstants( const CTPPSAlCa::RPAlignmentConstants& ac ) { align_ = ac; }
 
-      void computeXiLinear( const TotemRPDetId& detid, const TotemRPLocalTrack& trk, float& xi, float& err_xi );
-      void computeXiSpline( const TotemRPDetId& detid, const TotemRPLocalTrack& trk, float& xi, float& err_xi );
+      void computeXiLinear( const CTPPSDetId& detid, const CTPPSLocalTrackLite& trk, float& xi, float& err_xi );
+      void computeXiSpline( const CTPPSDetId& detid, const CTPPSLocalTrackLite& trk, float& xi, float& err_xi );
 
     private:
       void extractSpline( const TGraph* gr_in, const char* name_out, TGraph* gr_out, TSpline3* sp_out );
 
       TSpline3 *isLF_, *isLN_, *isRF_, *isRN_;
       CTPPSAlCa::RPAlignmentConstants align_;
-      CTPPSAlCa::RPCalibrationConstants calib_;     
+      CTPPSAlCa::RPCalibrationConstants calib_;
   };
 }
 

@@ -2,7 +2,7 @@
 //
 // Package:    DiphotonAnalyzer/TreeProducer
 // Class:      MBTreeProducer
-// 
+//
 /**\class MBTreeProducer MBTreeProducer.cc DiphotonAnalyzer/TreeProducer/plugins/MBTreeProducer.cc
 
  Description: [one line class summary]
@@ -32,8 +32,8 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
-#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
-#include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
 
 #include "DiphotonAnalyzer/TreeProducer/interface/SelectionUtils.h"
 #include "DiphotonAnalyzer/TreeProducer/interface/FillNumberLUTHandler.h"
@@ -56,7 +56,7 @@ class MBTreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 
     // ----------member data ---------------------------
 
-    edm::EDGetTokenT<edm::DetSetVector<TotemRPLocalTrack> > totemRPTracksToken_;
+    edm::EDGetTokenT<edm::View<CTPPSLocalTrackLite> > totemRPTracksToken_;
     edm::EDGetTokenT<edm::View<reco::Vertex> > vtxToken_;
     edm::EDGetTokenT<reco::BeamSpot> beamSpotToken_;
 
@@ -70,9 +70,9 @@ class MBTreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 };
 
 MBTreeProducer::MBTreeProducer( const edm::ParameterSet& iConfig ) :
-  totemRPTracksToken_ ( consumes<edm::DetSetVector<TotemRPLocalTrack> >  ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
-  vtxToken_           ( consumes<edm::View<reco::Vertex> >               ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
-  beamSpotToken_      ( consumes<reco::BeamSpot>                         ( iConfig.getParameter<edm::InputTag>( "beamSpotLabel" ) ) ),
+  totemRPTracksToken_ ( consumes<edm::View<CTPPSLocalTrackLite> >  ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
+  vtxToken_           ( consumes<edm::View<reco::Vertex> >         ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
+  beamSpotToken_      ( consumes<reco::BeamSpot>                   ( iConfig.getParameter<edm::InputTag>( "beamSpotLabel" ) ) ),
   filename_           ( iConfig.getParameter<std::string>( "outputFilename" ) ),
   fillLUTHandler_ ( new CTPPSAlCa::FillNumberLUTHandler( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() ) ),
   file_( 0 ), tree_( 0 )
@@ -156,27 +156,23 @@ MBTreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup
 
   //----- forward RP tracks -----
 
-  edm::Handle<edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
+  edm::Handle<edm::View<CTPPSLocalTrackLite> > rpLocalTracks;
   iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
 
   ev_.num_strips_track = 0;
-  for ( const auto& dsv : *rpLocalTracks) {
-    const TotemRPDetId detid( TotemRPDetId::decToRawId( dsv.detId()*10 ) );
-    const unsigned short arm = detid.arm(), pot = detid.romanPot();
+  for ( const auto& trk : *rpLocalTracks) {
+    const CTPPSDetId detid( trk.getRPId() );
 
-    for ( const auto& trk : dsv ) {
-      if ( !trk.isValid() ) continue;
+    ev_.strips_track_x[ev_.num_strips_track] = trk.getX() * 1.e-3; // store in m
+    ev_.strips_track_y[ev_.num_strips_track] = trk.getY() * 1.e-3; // store in m
+    ev_.strips_track_arm[ev_.num_strips_track] = detid.arm(); // 0 = left (45) ; 1 = right (56)
+    ev_.strips_track_station[ev_.num_strips_track] = detid.station();
+    ev_.strips_track_pot[ev_.num_strips_track] = detid.rp(); // 2 = 210m ; 3 = 220m
 
-      ev_.strips_track_x[ev_.num_strips_track] = trk.getX0() * 1.e-3; // store in m
-      ev_.strips_track_y[ev_.num_strips_track] = trk.getY0() * 1.e-3; // store in m
-      ev_.strips_track_arm[ev_.num_strips_track] = arm; // 0 = left (45) ; 1 = right (56)
-      ev_.strips_track_pot[ev_.num_strips_track] = pot; // 2 = 210m ; 3 = 220m
+    //ev_.strips_track_chi2[ev_.num_strips_track] = trk.getChiSquared();
+    //ev_.strips_track_normchi2[ev_.num_strips_track] = trk.getChiSquaredOverNDF();
 
-      ev_.strips_track_chi2[ev_.num_strips_track] = trk.getChiSquared();
-      ev_.strips_track_normchi2[ev_.num_strips_track] = trk.getChiSquaredOverNDF();
-
-      ev_.num_strips_track++;
-    }
+    ev_.num_strips_track++;
   }
   if ( ev_.num_strips_track == 0 ) return; // do not store in the tree if no valid tracks are found
 

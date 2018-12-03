@@ -10,11 +10,13 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
 
     # input collections
     hltMenuLabel = cms.string('HLT'),
-    metLabel = cms.InputTag('flashggMets'),
+    metLabel = cms.InputTag('flashggMetsCorr'),
     diphotonLabel = cms.InputTag('flashggDiPhotons'),
     vertexLabel = cms.InputTag('offlineSlimmedPrimaryVertices'),
-    electronLabel = cms.InputTag('flashggElectrons'),
-    muonLabel = cms.InputTag('flashggMuons'),
+    #electronLabel = cms.InputTag('flashggElectrons'),
+    electronLabel = cms.InputTag('flashggSelectedElectrons'),
+    #muonLabel = cms.InputTag('flashggMuons'),
+    muonLabel = cms.InputTag('flashggSelectedMuons'),
     jetLabel = cms.InputTag('flashggFinalJets'),
     beamSpotLabel = cms.InputTag('offlineBeamSpot'),
 
@@ -25,7 +27,7 @@ treeProducer = cms.EDAnalyzer('TreeProducer',
     minMassDiPhoton = cms.double(500.),
 
     # totem RP information extraction
-    totemRPTracksLabel = cms.InputTag('totemRPLocalTrackFitter'),
+    totemRPTracksLabel = cms.InputTag('ctppsLocalTrackLiteProducer'),
     useXiInterpolation = cms.bool(True),
     xiInterpolationFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/ctpps_optics_9mar2017.root'),
     fillNumLUTFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/fill_run_lut_v2.dat'),

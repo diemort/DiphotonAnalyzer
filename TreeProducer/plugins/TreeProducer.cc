@@ -2,7 +2,7 @@
 //
 // Package:    DiphotonAnalyzer/TreeProducer
 // Class:      TreeProducer
-// 
+//
 /**\class TreeProducer TreeProducer.cc DiphotonAnalyzer/TreeProducer/plugins/TreeProducer.cc
 
  Description: [one line class summary]
@@ -42,8 +42,8 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
-#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
-#include "DataFormats/CTPPSReco/interface/TotemRPLocalTrack.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
 //                               JW
 #include "flashgg/DataFormats/interface/Electron.h"
 #include "flashgg/DataFormats/interface/Muon.h"
@@ -78,15 +78,15 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     // ----------member data ---------------------------
 
     void analyzeTriggers( const edm::Event&, const edm::EventSetup& );
-    
-    edm::EDGetTokenT<edm::DetSetVector<TotemRPLocalTrack> > totemRPTracksToken_;
+
+    edm::EDGetTokenT<edm::View<CTPPSLocalTrackLite> > totemRPTracksToken_;
     edm::EDGetTokenT<edm::View<flashgg::DiPhotonCandidate> > diphotonToken_;
     edm::EDGetTokenT<edm::View<flashgg::Met> > metToken_;
     edm::EDGetTokenT<edm::View<reco::Vertex> > vtxToken_;
     edm::EDGetTokenT<reco::BeamSpot> beamSpotToken_;
 //                                 JW
     edm::EDGetTokenT<edm::View<flashgg::Electron> > electronToken_;
-    edm::EDGetTokenT<edm::View<flashgg::Muon> > muonToken_; 
+    edm::EDGetTokenT<edm::View<flashgg::Muon> > muonToken_;
     edm::EDGetTokenT<edm::View<vector<flashgg::Jet> > > jetToken_;
 //
     edm::EDGetTokenT<edm::View<reco::GenParticle> > genPartToken_;
@@ -94,7 +94,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     edm::EDGetTokenT<edm::View<PileupSummaryInfo> > pileupToken_;
     edm::EDGetTokenT<edm::TriggerResults> triggerResultsToken_;
 
-    bool isData_;    
+    bool isData_;
     double sqrtS_;
     double singlePhotonMinPt_, singlePhotonMaxEta_, singlePhotonMinR9_;
     double photonPairMinMass_, photonPairMaxMass_;
@@ -119,7 +119,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 };
 
 TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
-  totemRPTracksToken_ ( consumes<edm::DetSetVector<TotemRPLocalTrack> > ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
+  totemRPTracksToken_ ( consumes<edm::View<CTPPSLocalTrackLite> >       ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
   diphotonToken_      ( consumes<edm::View<flashgg::DiPhotonCandidate> >( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
   metToken_           ( consumes<edm::View<flashgg::Met> >              ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
   vtxToken_           ( consumes<edm::View<reco::Vertex> >              ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
@@ -426,39 +426,32 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
   //----- forward RP tracks -----
 
   if ( isData_ ) {
-    edm::Handle<edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
+    edm::Handle<edm::View<CTPPSLocalTrackLite> > rpLocalTracks;
     iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
 
-    typedef std::pair<unsigned int, const TotemRPLocalTrack&> localtrack_t; // RP id -> local track object
-
     ev_.num_proton_track = 0;
-    for ( const auto& dsv : *rpLocalTracks ) {
-      const TotemRPDetId detid( TotemRPDetId::decToRawId( dsv.detId()*10 ) );
-      const unsigned short side = detid.arm(),
-                           pot = detid.romanPot();
+    for ( const auto& trk : *rpLocalTracks ) {
+      const CTPPSDetId detid( trk.getRPId() );
 
-      for ( const auto& trk : dsv ) {
-        if ( !trk.isValid() ) { continue; }
+      ev_.proton_track_x[ev_.num_proton_track] = trk.getX() * 1.e-3; // store in m
+      ev_.proton_track_y[ev_.num_proton_track] = trk.getY() * 1.e-3; // store in m
+      ev_.proton_track_arm[ev_.num_proton_track] = detid.arm(); // 0 = left (45) ; 1 = right (56)
+      ev_.proton_track_station[ev_.num_proton_track] = detid.station();
+      ev_.proton_track_pot[ev_.num_proton_track] = detid.rp(); // 2 = 210n ; 3 = 210f
 
-        ev_.proton_track_x[ev_.num_proton_track] = trk.getX0() * 1.e-3; // store in m
-        ev_.proton_track_y[ev_.num_proton_track] = trk.getY0() * 1.e-3; // store in m
-        ev_.proton_track_side[ev_.num_proton_track] = side; // 0 = left (45) ; 1 = right (56)
-        ev_.proton_track_pot[ev_.num_proton_track] = pot; // 2 = 210n ; 3 = 210f
+      //ev_.proton_track_chi2[ev_.num_proton_track] = trk.getChiSquared();
+      //ev_.proton_track_normchi2[ev_.num_proton_track] = trk.getChiSquaredOverNDF();
 
-        ev_.proton_track_chi2[ev_.num_proton_track] = trk.getChiSquared();
-        ev_.proton_track_normchi2[ev_.num_proton_track] = trk.getChiSquaredOverNDF();
-
-        ev_.num_proton_track++;
-      }
+      ev_.num_proton_track++;
     }
-  } 
+  }
   //                               JW
- 
+
   //----- electrons collection -----
- 
+
   edm::Handle<edm::View<flashgg::Electron> > electrons;
   iEvent.getByToken( electronToken_, electrons );
- 
+
   ev_.num_electron = 0;
   for ( unsigned int i=0; i<electrons->size() && ev_.num_electron<ev_.MAX_ELECTRON; i++ ) {
     const edm::Ptr<flashgg::Electron> electron = electrons->ptrAt( i );
@@ -474,7 +467,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     ev_.electron_vtx_z[ev_.num_electron] = electron->vertex().z();
     ev_.num_electron++;
   }
- 
+
   //----- muons collection -----
 
   edm::Handle<edm::View<flashgg::Muon> > muons;
@@ -489,7 +482,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     ev_.muon_eta[ev_.num_muon] = muon->eta();
     ev_.muon_phi[ev_.num_muon] = muon->phi();
     ev_.muon_energy[ev_.num_muon] = muon->energy();
- 
+
     ev_.muon_vtx_x[ev_.num_muon] = muon->vertex().x();
     ev_.muon_vtx_y[ev_.num_muon] = muon->vertex().y();
     ev_.muon_vtx_z[ev_.num_muon] = muon->vertex().z();
@@ -594,15 +587,15 @@ TreeProducer::analyzeTriggers( const edm::Event& iEvent, const edm::EventSetup& 
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void 
+void
 TreeProducer::beginJob()
 {
   ev_.create( tree_, isData_ );
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void 
-TreeProducer::endJob() 
+void
+TreeProducer::endJob()
 {}
 
 void
