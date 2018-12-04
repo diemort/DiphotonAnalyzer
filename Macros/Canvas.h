@@ -10,6 +10,7 @@
 #include "TObjArray.h"
 #include "TObjString.h"
 
+#include <memory>
 #include <string.h>
 
 #define EXPERIMENT "CMS"
@@ -35,16 +36,11 @@ class Canvas : public TCanvas
   inline Canvas( const char* name, const char* title = "", const char* type = "Preliminary", bool ratio = false ) :
     //TCanvas(name, "", 450, 450),
     TCanvas( name, "", 600, 600 ),
-    fTitle( title ), /*fBanner( nullptr ),*/ fTopLabel( nullptr ), fPlotType( type ),
-    fLeg( nullptr ), fLegXpos( 0.5 ), fLegYpos( 0.75 ), fLegXsize( 0.35 ), fLegYsize( 0.15 ),
+    fTitle( title ), fPlotType( type ),
+    fLegXpos( 0.5 ), fLegYpos( 0.775 ), fLegXsize( 0.35 ), fLegYsize( 0.15 ),
     fRatio( ratio ), divided_( false )
   {
     Build();
-  }
-  inline ~Canvas() {
-    if ( fLeg ) delete fLeg;
-    //if ( fBanner ) delete fBanner;
-    if ( fTopLabel ) delete fTopLabel;
   }
 
   inline void Prettify( TH1* obj ) {
@@ -194,7 +190,7 @@ class Canvas : public TCanvas
     //fTopLabel->Draw();
   }
 
-  inline TLegend* GetLegend() { return fLeg; }
+  inline TLegend* GetLegend() { return fLeg.get(); }
   inline void SetLegendX1( double x ) { fLegXpos = x; }
   inline void SetLegendY1( double y ) { fLegYpos = y; }
   inline void SetLegendSizeX( double x ) { fLegXsize = x; }
@@ -211,11 +207,11 @@ class Canvas : public TCanvas
 
   inline void Save( const char* ext, const char* out_dir = "." ) {
     TCanvas::cd();
-    if ( fLeg && TCanvas::FindObject( fLeg ) == 0 )
+    if ( fLeg && TCanvas::FindObject( fLeg.get() ) == 0 )
       fLeg->Draw();
-    /*if ( fBanner && TCanvas::FindObject( fBanner ) == 0 )
-      fBanner->Draw();*/
-    if ( fTopLabel && TCanvas::FindObject( fTopLabel ) == 0 )
+    if ( fBanner && TCanvas::FindObject( fBanner.get() ) == 0 )
+      fBanner->Draw();
+    if ( fTopLabel && TCanvas::FindObject( fTopLabel.get() ) == 0 )
       fTopLabel->Draw();
 
     const TString ext_str( ext );
@@ -237,12 +233,13 @@ class Canvas : public TCanvas
     TCanvas::SetRightMargin( 0.1 );
     TCanvas::SetBottomMargin( 0.12 );
     TCanvas::SetTicks( 1, 1 );
+    TCanvas::SetFillStyle( 0 );
 
-    /*fBanner = new PaveText( 0.16, 0.86, 0.18, 0.94 );
+    fBanner.reset( new PaveText( 0.165, 0.855, 0.18, 0.932 ) );
     fBanner->AddText( Form( "#font[62]{%s}", EXPERIMENT ) );
-    fBanner->AddText( Form( "#scale[0.66]{#font[52]{%s}}", fPlotType.Data() ) );
+    fBanner->AddText( Form( "#scale[0.75]{#font[52]{%s}}", fPlotType.Data() ) );
     fBanner->SetTextAlign( kHAlignLeft+kVAlignTop );
-    fBanner->SetTextSize( 0.045 );*/
+    fBanner->SetTextSize( 0.04 );
 
     SetTopLabel();
     if ( fRatio ) DivideCanvas();
@@ -270,13 +267,13 @@ class Canvas : public TCanvas
 
   inline void BuildTopLabel() {
     TCanvas::cd();
-    fTopLabel = new PaveText( 0.5, 0.95, 0.925, 0.96 );
+    fTopLabel.reset( new PaveText( 0.5, 0.95, 0.925, 0.96 ) );
   }
 
   inline void CreateLegend() {
     if ( fLeg ) return;
     if ( fRatio ) TCanvas::cd( 1 );
-    fLeg = new TLegend( fLegXpos, fLegYpos, fLegXpos+fLegXsize, fLegYpos+fLegYsize );
+    fLeg.reset( new TLegend( fLegXpos, fLegYpos, fLegXpos+fLegXsize, fLegYpos+fLegYsize ) );
     fLeg->SetFillStyle( 0 );
     //fLeg->SetLineColor( kWhite );
     //fLeg->SetLineColor( kGray );
@@ -290,8 +287,8 @@ class Canvas : public TCanvas
   }
 
   TString fTitle, fPlotType;
-  PaveText* /*fBanner, **/fTopLabel;
-  TLegend* fLeg;
+  std::unique_ptr<PaveText> fBanner, fTopLabel;
+  std::unique_ptr<TLegend> fLeg;
   double fLegXpos, fLegYpos, fLegXsize, fLegYsize;
   bool fRatio;
   bool divided_;

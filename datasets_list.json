@@ -21,9 +21,11 @@
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_r9gt0.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root",
-      "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root",
+      //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root",
+      "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_GammaGammaToGammaGamma_fpmc_justin_sm.root",
       //"cross_section": 1.0342e-4, // +- 1.6516e-6
-      "cross_section": 2.0684e-4, // +- 1.6516e-6
+      //"cross_section": 2.0684e-4, // +- 1.6516e-6
+      "cross_section": 1.3988e-05, // +- 1.8687e-07
       "num_events": 100000
     },
     /*{
@@ -50,7 +52,7 @@
       "cross_section": 5.4919e-6,
       "num_events": 10000
     },*/
-    /*{
+/*    {
       "type": "signal",
       "name": "Excl. #gamma#gamma#rightarrow#gamma#gamma",
       "colour": 3, // kGreen
@@ -63,7 +65,8 @@
       "colour": 433, // kCyan+1
       "name": "Incl. Z#gamma",
       "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_ZGTo2LG_13TeV_amcatnlo_pythia8_v2.root",
-      "cross_section": 117.864,
+      //"cross_section": 117.864,
+      "cross_section": 123.8, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8
       "num_events": 14372682
     },
     {
@@ -71,7 +74,8 @@
       "name": "Incl. W#gamma",
       "colour": 601, // kBlue+1
       "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_WGToLNuG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_v2.root",
-      "cross_section": 405.271,
+      //"cross_section": 405.271,
+      "cross_section": 510.6, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DWGToLNuG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8
       "num_events": 6102260
     },
     {
@@ -79,7 +83,8 @@
       "name": "Incl. #gamma + j",
       "colour": 800, // kOrange
       "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v2.root",
-      "cross_section": 863.1088, //16792*0.0514,
+      //"cross_section": 863.1088, //16792*0.0514,
+      "cross_section": 862.4, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DGJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8
       //"num_events": 72342882
       "num_events": 72429673
     },
@@ -88,7 +93,8 @@
       "name": "Inclusive #gamma#gamma + j (NLO)",
       "colour": 633, // kRed+1
       "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_DiPhotonJets_MGG-80toInf_amcatnlo_v4.root",
-      "cross_section": 135.1,
+      //"cross_section": 135.1,
+      "cross_section": 134.3, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
       "num_events": 35617475
     },
     {
@@ -97,7 +103,10 @@
       "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v4.root",
       "colour": 617, // kMagenta+1
       //"cross_section": 113400.0,
-      "cross_section": 108240.0, // https://twiki.cern.ch/twiki/bin/viewauth/CMS/SummaryTable1G25ns
+      //"cross_section": 108240.0 * 1.286, // https://twiki.cern.ch/twiki/bin/viewauth/CMS/SummaryTable1G25ns
+      //"cross_section": 108240.0, // https://twiki.cern.ch/twiki/bin/viewauth/CMS/SummaryTable1G25ns
+      //"cross_section": 140130.9, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DQCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8 * 1.239
+      "cross_section": 113100.0, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DQCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8
       "num_events": 20632076
     },
     /*{

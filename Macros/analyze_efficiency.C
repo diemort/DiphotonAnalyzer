@@ -10,6 +10,7 @@
 #include "TStyle.h"
 #include "TMath.h"
 #include "TFitResult.h"
+#include "TColor.h"
 
 #include <map>
 #include <iostream>
@@ -32,9 +33,24 @@ void analyze_efficiency()
   xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
 
   map<unsigned short,const char*> pot_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
-  map<unsigned short,pair<double,double> > pot_fit_limits = { { 2, { 9., 14. } }, { 3, { 12., 14. } }, { 102, { 7., 12. }  }, { 103, { 6., 12. } } };
-  map<unsigned short,double> pot_x_mineff = { { 2, 7.6 }, { 3, 7.0 }, { 102, 5.5 }, { 103, 4.8 } }; // x such as eff(x) > 95%
-  map<unsigned short,double> erf_fit_min_xi = { { 2, 0.045 }, { 3, 0.042 }, { 102, 0.045 }, { 103, 0.038 } };
+  map<unsigned short,pair<double,double> > pot_fit_limits = {
+    { 2, { 9., 14. } },
+    //{ 3, { 12., 14. } },
+    { 3, { 8., 13. } },
+    { 102, { 7., 12. }  },
+    { 103, { 6., 12. } } };
+  map<unsigned short,double> pot_x_mineff = {
+    { 2, 7.6 },
+    { 3, 7.0 },
+    { 102, 5.5 },
+    { 103, 4.8 }
+  }; // x such as eff(x) > 95%
+  map<unsigned short,double> erf_fit_min_xi = {
+    { 2, 0.045 },
+    { 3, 0.05 },
+    { 102, 0.045 },
+    { 103, 0.038 }
+  };
   map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_y_win, h_denom_y_win, h_num_xi, h_denom_xi, h_num_xi_optbins, h_denom_xi_optbins;
   map<unsigned short,TH2D*> h2_num_xy, h2_denom_xy;
   double y_bins[] = {
@@ -117,13 +133,13 @@ void analyze_efficiency()
   tree->SetBranchStatus( "proton_track_side", 1 ); tree->SetBranchAddress( "proton_track_side", proton_track_side );
   tree->SetBranchStatus( "proton_track_pot", 1 ); tree->SetBranchAddress( "proton_track_pot", proton_track_pot );
 
-  const unsigned long long num_entries = tree->GetEntriesFast();
+  const unsigned long long num_entries = tree->GetEntriesFast()/10;
   for ( unsigned long long i = 0; i < num_entries; ++i ) {
     tree->GetEntry( i );
     if ( i % 1000000 == 0 ) cout << "-- event " << i << "/" << num_entries << endl;
     //const bool is_ref_fill = ( fill_number == ref_fill );
     //if ( fill_number < ref_fill ) continue; // FIXME
-    if ( fill_number < 4964 ) continue; //FIXME skipping fills with margin
+    //if ( fill_number < 4964 ) continue; //FIXME skipping fills with margin
 
     auto align = pot_align::get_alignments( fill_number );
 
@@ -170,7 +186,7 @@ void analyze_efficiency()
     const double weight_denom = h_denom_x[p.first]->Integral( h_denom_x[p.first]->GetXaxis()->FindBin( limits.first ), h_denom_x[p.first]->GetXaxis()->FindBin( limits.second ) );
     //const double weight_denom2 = h_denom_x[p.first]->Integral( h_denom_x[p.first]->GetXaxis()->FindBin( ( p.first / 100 == 0 ) ? 9. : 7.5 ), h_denom_x[p.first]->GetXaxis()->FindBin( 13. ) );
     const double norm = weight_denom/weight_num;
-    cout << p.second << "::" << weight_num << "|" << weight_denom << "|ratio=" << norm << endl;
+    //cout << p.second << "::" << weight_num << "|" << weight_denom << "|ratio=" << norm << endl;
     h_num_x[p.first]->Scale( norm );
     h_num_y[p.first]->Scale( norm/h_num_y[p.first]->Integral() );
     h_denom_y[p.first]->Scale( 1./h_denom_y[p.first]->Integral() );
@@ -206,8 +222,17 @@ void analyze_efficiency()
 
   auto effErf = [](double* x, double* p) { return ( TMath::Erf( ( x[0] - p[0] )/p[1] )+1. )*0.5*p[2]; };
 
-  map<string,pair<map<unsigned short,TH1D*>,map<unsigned short,TH1D*> > > hists = { { "x", { h_num_x, h_denom_x } }, { "y", { h_num_y, h_denom_y } }, { "xi", { h_num_xi, h_denom_xi } }, { "xi_optbins", { h_num_xi_optbins, h_denom_xi_optbins } }, { "y_win", { h_num_y_win, h_denom_y_win } } };
-  map<string,pair<map<unsigned short,map<unsigned short,TH1D*> >,pair<map<unsigned short,TH1D*>,map<unsigned short,TH1D*> > > > hists_perfill = { { "x", { m_h_num_x, { h_num_x, h_denom_x } } }, { "xi", { m_h_num_xi, { h_num_xi, h_denom_xi } } } };
+  map<string,pair<map<unsigned short,TH1D*>,map<unsigned short,TH1D*> > > hists = {
+    { "x", { h_num_x, h_denom_x } },
+    { "y", { h_num_y, h_denom_y } },
+    { "y_win", { h_num_y_win, h_denom_y_win } },
+    { "xi", { h_num_xi, h_denom_xi } },
+    { "xi_optbins", { h_num_xi_optbins, h_denom_xi_optbins } }
+  };
+  map<string,pair<map<unsigned short,map<unsigned short,TH1D*> >,pair<map<unsigned short,TH1D*>,map<unsigned short,TH1D*> > > > hists_perfill = {
+    { "x", { m_h_num_x, { h_num_x, h_denom_x } } },
+    { "xi", { m_h_num_xi, { h_num_xi, h_denom_xi } } }
+  };
   unsigned short i = 0;
   for ( auto& h_map : hists ) {
     string distrib = h_map.first;
@@ -322,13 +347,15 @@ void analyze_efficiency()
     }
     i++;
   }
+  //gStyle->SetPalette( kBeach );
+  //gStyle->SetPalette( kDarkBodyRadiator );
+  //TColor::InvertPalette();
   for ( const auto& p : pot_names ) {
     {
       Canvas c( Form( "ratio2d_xy_%s", p.second ), top_title.c_str() );
       auto ratio = dynamic_cast<TH2D*>( h2_num_xy[p.first]->Clone() );
       ratio->Divide( h2_denom_xy[p.first] );
       ratio->Draw( "colz" );
-      //gStyle->SetPalette( kRainBow );
       c.Pad()->SetRightMargin( 0.175 );
       c.Prettify( ratio );
       //ratio->Scale( 1./ratio->Integral() );

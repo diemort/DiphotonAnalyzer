@@ -56,15 +56,15 @@ void tree_reader( TString file=default_ntp_file )
   //----- cuts -----
 
   const float max_dist_vtx_inclobjects = 2.0, // in cm
-              min_pt_photon = 50.,
-              //min_r9_photon = 0.94,
-              min_r9_photon = 0.85, //FIXME
+              min_pt_photon = 75.,
+              min_r9_photon = 0.94,
+              //min_r9_photon = 0.85, //FIXME
               max_eta_photon = 2.5,
               min_etaveto_photon = 1.4442,
               max_etaveto_photon = 1.566,
-              min_mass_diphoton = 300.;
+              min_mass_diphoton = 350.;
   const float max_pt_diphoton = 50.,
-              max_acopl = 0.01;
+              max_acopl = 0.005;
   const float oth_obj_minpt = 150.;
   const float n_sigma_1d = 2.0, // xi matching sigma number
               n_sigma_2d = 2.0;
@@ -606,7 +606,7 @@ void tree_reader( TString file=default_ntp_file )
         h_diphoton_leadeta_1tag->Fill( diphoton_eta1[j] );
         h_diphoton_subleadeta_1tag->Fill( diphoton_eta2[j] );
         h_diphoton_vtxz_1tag->Fill( diphoton_vertex_z[j] );
-	
+
         h_electron_pt_1tag->Fill( electrons.Pt() );
         h_muon_pt_1tag->Fill( muons.Pt() );
         h_jet_pt_1tag->Fill( jets.Pt() );
@@ -659,8 +659,8 @@ void tree_reader( TString file=default_ntp_file )
       //if ( has_ele || has_muon || has_jet ) continue; //FIXME FIXME FIXME FIXME FIXME
       //if ( diphoton_pt[j]>max_pt_diphoton ) continue;
       if ( acopl>max_acopl ) continue;
-      if ( diphoton_pt1[j]/diphoton_pt2[j]<0.95 ) continue; // matches Fichet, Royon et al
-      if ( has_ele || has_muon || has_jet ) continue; //FIXME FIXME FIXME FIXME FIXME
+      //if ( diphoton_pt1[j]/diphoton_pt2[j]<0.95 ) continue; // matches Fichet, Royon et al
+      //if ( has_ele || has_muon || has_jet ) continue; //FIXME FIXME FIXME FIXME FIXME
       //if ( diphoton_pt[j]>max_pt_diphoton ) continue;
 
       //----- FROM THAT POINT ON, EXCLUSIVE DIPHOTON CANDIDATE -----
@@ -836,7 +836,7 @@ void tree_reader( TString file=default_ntp_file )
 
   gStyle->SetOptStat( 0 );
 
-  /*const string top_label_str = ( lumi<10. ) 
+  /*const string top_label_str = ( lumi<10. )
     ? Form( "CMS+CTPPS Preliminary 2016, #sqrt{s} = 13 TeV, L = %.2f fb^{-1}", lumi )
     : Form( "CMS+CTPPS Preliminary 2016, #sqrt{s} = 13 TeV, L = %.1f fb^{-1}", lumi );*/
   const string top_label_str = Form( "CMS+CTPPS Preliminary 2016, #sqrt{s} = 13 TeV, L = %.1f fb^{-1}", lumi );
@@ -1118,10 +1118,3 @@ float photon_rel_energy_scale( const float& pt, const float& eta, const float& r
   return 1.;
 }
 
-bool is_matched( int n_sigma, float xi_rp, float xi_cs, float err_xi_rp, float err_xi_cs )
-{
-  const double combined_error = sqrt( err_xi_rp*err_xi_rp + err_xi_cs*err_xi_cs );
-  const double delta = fabs( xi_cs-xi_rp );
-
- return ( delta/combined_error<=n_sigma );
-}

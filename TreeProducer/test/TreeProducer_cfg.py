@@ -20,16 +20,19 @@ process.source = cms.Source("PoolSource",
     )
 )
 
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+from Configuration.AlCa.GlobalTag import GlobalTag
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_data')
+
 # Trigger
 #from HLTrigger.HLTfilters.hltHighLevel_cfi import hltHighLevel
 process.load('HLTrigger.HLTfilters.hltHighLevel_cfi')
 process.hltHighLevel.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
-process.hltHighLevel.HLTPaths = ['HLT_DoublePhoton60*', 'HLT_DoublePhoton85*']
+process.hltHighLevel.HLTPaths = ['HLT_DoublePhoton60_*', 'HLT_DoublePhoton85_*']
 process.hltHighLevel.throw = cms.bool(False)
 
-process.load('DiphotonAnalyzer.TreeProducer.TreeProducer_cfi')
-
 # set some parameters to the run
+process.load('DiphotonAnalyzer.TreeProducer.TreeProducer_cfi')
 process.treeProducer.minPtSinglePhoton = cms.double(50.)
 process.treeProducer.minMassDiPhoton = cms.double(350.)
 process.treeProducer.minR9SinglePhoton = cms.double(0.)
