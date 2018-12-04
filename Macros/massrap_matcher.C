@@ -52,7 +52,8 @@ map<unsigned short,const char*> pots_names = { { 2, "45N" }, { 3, "45F" }, { 102
 
 void massrap_matcher( double num_sigma = 2.0 )
 {
-  TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
+//  TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
+  TFile f( "samples/ntuple-Run2016B_94Xrereco_v1.root" );
   TTree* tr = dynamic_cast<TTree*>( f.Get( "ntp" ) );
 
   //xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
@@ -92,18 +93,18 @@ void massrap_matcher( double num_sigma = 2.0 )
     vector<track_t> xi_45n, xi_45f, xi_56n, xi_56f;
 
     for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
-      const unsigned short pot_id = 100*ev.proton_track_side[j]+ev.proton_track_pot[j];
+      const unsigned short pot_id = 100*ev.proton_track_arm[j]+ev.proton_track_pot[j];
       const auto& al = align[pot_id];
 
       //----- reconstruct the kinematics
       double xi, xi_err;
-      xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_side[j], ev.proton_track_pot[j], xi, xi_err );
+      xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_arm[j], ev.proton_track_pot[j], xi, xi_err );
 
       //----- associate each track to a RP
-      if      ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_side[j] == 0 && ev.proton_track_pot[j] == 3 ) xi_45f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_side[j] == 1 && ev.proton_track_pot[j] == 2 ) xi_56n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_side[j] == 1 && ev.proton_track_pot[j] == 3 ) xi_56f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      if      ( ev.proton_track_arm[j] == 0 && ev.proton_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      else if ( ev.proton_track_arm[j] == 0 && ev.proton_track_pot[j] == 3 ) xi_45f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      else if ( ev.proton_track_arm[j] == 1 && ev.proton_track_pot[j] == 2 ) xi_56n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      else if ( ev.proton_track_arm[j] == 1 && ev.proton_track_pot[j] == 3 ) xi_56f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
     }
 
     //----- merge 2 tracks in one if N-F pot content is similar

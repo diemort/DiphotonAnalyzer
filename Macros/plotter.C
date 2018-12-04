@@ -25,9 +25,10 @@ typedef enum {
 const float sqrt_s = 13.e3;
 //const float lumi = ( 5.055026851041 + 1.470474265456 + 7.487318307770 ) * 1.e3;
 //const float lumi = ( 5.060574552184 + 1.485056762163 + 7.500305757473 ) * 1.e3; // computed from processedLumis.json
-const float the_lumi = 9.412003739742 * 1.e3; // pre-TS2 runs with pots inserted
 //const float the_lumi = ( 9.412003739742+5.08 ) * 1.e3; // pre+post-TS2 runs with pots inserted
 //const float the_lumi = 5.081503324822e3; //post-TS2 runs with pots inserted
+const float the_lumi = 4.291753570355 * 1.e3; // B, pre-TS2 runs with pots inserted
+//const float the_lumi = 9.412003739742 * 1.e3; // pre-TS2 runs with pots inserted
 
 map<string,float> pots_accept = { { "45N", 0.033 }, { "45F", 0.024 }, { "56N", 0.050 }, { "56F", 0.037 } };
 map<string,float> pots_accept_tight = { { "45N", 0.067 }, { "45F", 0.066 }, { "56N", 0.070 }, { "56F", 0.061 } };
@@ -50,7 +51,7 @@ plotter()
   const vector<string> kin_regions = { "nosel", "presel", "elastic", "inelastic", "qcd", "incl", "xicomp", "xitight" };
   const vector<string> kin_regions_label = { "After HLT", "Preselection", "Elastic selection", "Anti-elastic sel.", "QCD selection", "Inclusive selection", "#xi^{#pm}_{#gamma#gamma} in acceptance", "#xi^{#pm}_{#gamma#gamma} in acc., #epsilon(#xi^{#pm}_{#gamma#gamma}) > 90%" };
 
-  const PhotonScalesParser pho_scales( "egammaEffi.txt_EGM2D.root" );
+  const PhotonScalesParser pho_scales( "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/egammaEffi.txt_EGM2D.root" );
 
   TH1D* h_mass[num_regions][TreeEvent::num_classes-2][num_samples], *h_ptpair[num_regions][TreeEvent::num_classes-2][num_samples], *h_dphi[num_regions][TreeEvent::num_classes-2][num_samples],
        *h_met[num_regions][TreeEvent::num_classes-2][num_samples],
@@ -127,7 +128,7 @@ plotter()
     }
 
     for ( unsigned short k = 0; k < TreeEvent::num_classes-2; ++k ) {
-      {
+      { // same plots features for all regions
         unsigned short j = 0;
         for ( const auto& reg : kin_regions ) {
           const char* region = reg.c_str();
@@ -250,9 +251,7 @@ plotter()
 
       tree->GetEntry( j );
 
-      bool has_diphoton_cand = false,
-           has_elastic_diphoton_cand = false,
-           has_inelastic_diphoton_cand = false;
+      bool has_diphoton_cand = false, has_elastic_diphoton_cand = false, has_inelastic_diphoton_cand = false;
 
       //if ( s.type() == Sample::kData && !ev_selector.isSelected( ev.run_id, ev.lumisection, ev.event_number ) ) continue;
 
@@ -275,7 +274,7 @@ plotter()
         //----- only keep EBEE and EBEB diphoton events
 
         if ( ev_class == TreeEvent::invalid ) continue;
-        //if ( ev_class == TreeEvent::eeee ) continue; //FIXME FIXME
+        if ( ev_class == TreeEvent::eeee ) continue; //FIXME FIXME
         //if ( ev_class == TreeEvent::ebee ) continue; //FIXME FIXME
         //cout << ">> evt class: " << TreeEvent::classes[ev_class] << "  " << ev.diphoton_eta1[k] << "\t" << ev.diphoton_eta2[k] << endl;
 
@@ -296,6 +295,8 @@ plotter()
 
           s_weight = sp_weight * ( eff_pho1*eff_pho2 );
         }
+
+cout << s_weight << endl;
 
         //----- look at surrounding objects
 
@@ -707,6 +708,7 @@ plotter()
     }
     plt.draw_multiplot( Form( "%s_diphoton_mult", kin_regions[i].c_str() ), hm_ndiph[i][0][0], hm_ndiph[i][0][1], hm_ndiph[i][0][2], class_name.c_str(), false, true );
     plt.draw_multiplot( Form( "%s_diphoton_nvtx", kin_regions[i].c_str() ), hm_nvtx[i][0][0], hm_nvtx[i][0][1], hm_nvtx[i][0][2], class_name.c_str(), false, false );
+    plt.draw_multiplot( Form( "%s_diphoton_nvtx_logscale", kin_regions[i].c_str() ), hm_nvtx[i][0][0], hm_nvtx[i][0][1], hm_nvtx[i][0][2], class_name.c_str(), false, true );
   }
 
   for ( unsigned short i = 0; i < num_regions; ++i ) {

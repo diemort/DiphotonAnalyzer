@@ -7,9 +7,10 @@
       //"path": "Samples/output_Run2016BCG_looseCuts_10mar_xifix.root",
       //"path": "Samples/output_Run2016BCG_looseCuts_9may.root",
       //"path": "Samples/output_Run2016BCG_looseCuts_22jun.root",
-      "path": "Samples/output_Run2016BCG_looseCuts_28jun.root",
+      //"path": "Samples/output_Run2016BCG_looseCuts_28jun.root",
       //"path": "Samples/output_Run2016BCGH_looseCuts_19jan.root",
       //"path": "Samples/output_Run2016H_looseCuts_19jan.root",
+      "path": "samples/ntuple-Run2016B_94Xrereco_v1.root",
       "cross_section": 1.0,
       "num_events": 0
     },
@@ -20,7 +21,7 @@
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_r9gt0.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root",
-      "path": "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root",
+      "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root",
       //"cross_section": 1.0342e-4, // +- 1.6516e-6
       "cross_section": 2.0684e-4, // +- 1.6516e-6
       "num_events": 100000
@@ -61,7 +62,7 @@
       "type": "background",
       "colour": 433, // kCyan+1
       "name": "Incl. Z#gamma",
-      "path": "Samples/output_ZGTo2LG_13TeV_amcatnlo_pythia8_v2.root",
+      "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_ZGTo2LG_13TeV_amcatnlo_pythia8_v2.root",
       "cross_section": 117.864,
       "num_events": 14372682
     },
@@ -69,7 +70,7 @@
       "type": "background",
       "name": "Incl. W#gamma",
       "colour": 601, // kBlue+1
-      "path": "Samples/output_WGToLNuG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_v2.root",
+      "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_WGToLNuG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_v2.root",
       "cross_section": 405.271,
       "num_events": 6102260
     },
@@ -77,7 +78,7 @@
       "type": "background",
       "name": "Incl. #gamma + j",
       "colour": 800, // kOrange
-      "path": "Samples/output_GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v2.root",
+      "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v2.root",
       "cross_section": 863.1088, //16792*0.0514,
       //"num_events": 72342882
       "num_events": 72429673
@@ -86,24 +87,24 @@
       "type": "background",
       "name": "Inclusive #gamma#gamma + j (NLO)",
       "colour": 633, // kRed+1
-      "path": "Samples/output_DiPhotonJets_MGG-80toInf_amcatnlo_v4.root",
+      "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_DiPhotonJets_MGG-80toInf_amcatnlo_v4.root",
       "cross_section": 135.1,
       "num_events": 35617475
     },
     {
       "type": "background",
       "name": "QCD (e-#gamma enriched)",
-      "path": "Samples/output_QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v4.root",
+      "path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v4.root",
       "colour": 617, // kMagenta+1
       //"cross_section": 113400.0,
       "cross_section": 108240.0, // https://twiki.cern.ch/twiki/bin/viewauth/CMS/SummaryTable1G25ns
       "num_events": 20632076
     },
-    {
+    /*{
       "type": "background",
       "name": "#gamma#gamma #rightarrow e^{+}e^{-} (elastic)",
-      "path": 
-    },
+      "path":
+    },*/
     /*{
       "type": "background",
       "name": "VBF H(125) #rightarrow #gamma#gamma",

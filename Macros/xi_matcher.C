@@ -2,7 +2,7 @@
 #include "pot_alignment.h"
 #include "xi_reconstruction.h"
 #include "diproton_candidate.h"
-#include "tree_reader.h"
+#include "DiphotonAnalyzer/TreeProducer/interface/TreeEvent.h"
 
 #include "TFile.h"
 #include "TTree.h"
@@ -20,13 +20,6 @@
 
 const float max_xi = 0.3;
 
-bool is_matched( int n_sigma, float xi_rp, float xi_cs, float err_xi_rp, float err_xi_cs )
-{
-  const double combined_error = sqrt( err_xi_rp*err_xi_rp + err_xi_cs*err_xi_cs );
-  const double delta = fabs( xi_cs-xi_rp );
-
- return ( delta/combined_error<=n_sigma );
-}
 void fill_matching( float num_sigma, const std::vector< std::pair<float, float> >& tracks, float limit, float xi_gg, float err_xi_gg, TGraphErrors& gr_match, TGraphErrors& gr_unmatch, TGraphErrors& gr_ooa, std::vector< std::pair<float, float> >& candidates );
 void plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_match, TGraphErrors& gr_ooa, double limits );
 void plot_xispectrum( const char* name, TH1D* spec, double limit, double old_limit = -1. );
@@ -37,10 +30,11 @@ void plot_xyaccept( const char* name, TH2D* plot, TH2D* plot_ooa );
 void xi_matcher()
 {
   //TFile f( "Samples/output_Run2016BCG_looseCuts_22jun.root" );
-  TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
-  //TFile f( "output_Run2016H_looseCuts_19jan.root" );
-  treeinfo ev;
-  ev.read( dynamic_cast<TTree*>( f.Get( "ntp" ) ) );
+  //TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
+  TFile f( "samples/ntuple-Run2016B_94Xrereco_v1.root" );
+  TreeEvent ev;
+  TTree* tree = dynamic_cast<TTree*>( f.Get( "ntp" ) );
+  ev.attach( tree, true );
 
   //xi_reco::load_file( "TreeProducer/data/ctpps_optics_9mar2017.root" );
   xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
@@ -105,9 +99,9 @@ void xi_matcher()
 
   unsigned short num_ooa_45n = 0, num_ooa_45f = 0, num_ooa_56n = 0, num_ooa_56f = 0;
 
-  const unsigned long long num_events = ev.tree->GetEntriesFast();
+  const unsigned long long num_events = tree->GetEntriesFast();
   for ( unsigned long long i=0; i<num_events; i++ ) {
-    ev.tree->GetEntry( i );
+    tree->GetEntry( i );
     //cout << "event " << i << ": " << ev.num_proton_track << " proton tracks, " << ev.num_diphoton << " diphoton candidates" << endl;
 
     // first loop to identify the tracks and their respective pot
@@ -119,12 +113,12 @@ void xi_matcher()
     vector< pair<float, float> > xy_45n_ooa, xy_45f_ooa, xy_56n_ooa, xy_56f_ooa;
 
     for ( unsigned short j=0; j<ev.num_proton_track; j++ ) {
-      const unsigned short pot_id = 100*ev.proton_track_side[j]+ev.proton_track_pot[j];
+      const unsigned short pot_id = 100*ev.proton_track_arm[j]+ev.proton_track_pot[j];
       auto al = align[pot_id];
 
       double xi, xi_err;
-      xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_side[j], ev.proton_track_pot[j], xi, xi_err );
-      if ( ev.proton_track_side[j]==0 && ev.proton_track_pot[j]==2 ) {
+      xi_reco::reconstruct( ev.proton_track_x[j]*10.+al.x, ev.proton_track_arm[j], ev.proton_track_pot[j], xi, xi_err );
+      if ( ev.proton_track_arm[j]==0 && ev.proton_track_pot[j]==2 ) {
         h_fwdtrk_hitmap_45n->Fill( ( ev.proton_track_x[j]+al.x )*1.e2, ( ev.proton_track_y[j]-al.y )*1.e2 );
         h_fwdtrk_x_45n->Fill( ( ev.proton_track_x[j]+al.x )*1.e3 );
         if ( xi >= new_lim_45n ) { // in pot acceptance
@@ -141,7 +135,7 @@ void xi_matcher()
         h_xispectrum_45n->Fill( xi );
 //cout << "xi45n: " << ev.proton_track_xi[j] << " +/- " << ev.proton_track_xi_error[j] << " / " << xi << " +/- " << xi_err << endl;
       }
-      else if ( ev.proton_track_side[j]==0 && ev.proton_track_pot[j]==3 ) {
+      else if ( ev.proton_track_arm[j]==0 && ev.proton_track_pot[j]==3 ) {
         h_fwdtrk_hitmap_45f->Fill( ( ev.proton_track_x[j]+al.x )*1.e2, ( ev.proton_track_y[j]-al.y )*1.e2 );
         h_fwdtrk_x_45f->Fill( ( ev.proton_track_x[j]+al.x )*1.e3 );
         if ( xi >= new_lim_45f ) { // in pot acceptance
@@ -157,7 +151,7 @@ void xi_matcher()
         xy_45f.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
         h_xispectrum_45f->Fill( xi );
       }
-      else if ( ev.proton_track_side[j]==1 && ev.proton_track_pot[j]==2 ) {
+      else if ( ev.proton_track_arm[j]==1 && ev.proton_track_pot[j]==2 ) {
         h_fwdtrk_hitmap_56n->Fill( ( ev.proton_track_x[j]+al.x )*1.e2, ( ev.proton_track_y[j]-al.y )*1.e2 );
         h_fwdtrk_x_56n->Fill( ( ev.proton_track_x[j]+al.x )*1.e3 );
         if ( xi >= new_lim_56n ) { // in pot acceptance
@@ -173,7 +167,7 @@ void xi_matcher()
         xy_56n.emplace_back( ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
         h_xispectrum_56n->Fill( xi );
       }
-      else if ( ev.proton_track_side[j]==1 && ev.proton_track_pot[j]==3 ) {
+      else if ( ev.proton_track_arm[j]==1 && ev.proton_track_pot[j]==3 ) {
         h_fwdtrk_hitmap_56f->Fill( ( ev.proton_track_x[j]+al.x )*1.e2, ( ev.proton_track_y[j]-al.y )*1.e2 );
         h_fwdtrk_x_56f->Fill( ( ev.proton_track_x[j]+al.x )*1.e3 );
         if ( xi >= new_lim_56f ) { // in pot acceptance

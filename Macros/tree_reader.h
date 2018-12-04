@@ -16,7 +16,7 @@ struct treeinfo
   unsigned int num_proton_track;
   float proton_track_x[MAX_PROTONS], proton_track_y[MAX_PROTONS];
   float proton_track_normchi2[MAX_PROTONS];
-  unsigned int proton_track_side[MAX_PROTONS], proton_track_pot[MAX_PROTONS];
+  unsigned int proton_track_arm[MAX_PROTONS], proton_track_pot[MAX_PROTONS];
   unsigned int num_diphoton;
   float diphoton_pt1[MAX_DIPH], diphoton_pt2[MAX_DIPH];
   float diphoton_eta1[MAX_DIPH], diphoton_eta2[MAX_DIPH];
@@ -37,7 +37,7 @@ struct treeinfo
     tree->SetBranchAddress( "num_proton_track", &num_proton_track );
     tree->SetBranchAddress( "proton_track_x", proton_track_x );
     tree->SetBranchAddress( "proton_track_y", proton_track_y );
-    tree->SetBranchAddress( "proton_track_side", proton_track_side );
+    tree->SetBranchAddress( "proton_track_arm", proton_track_arm );
     tree->SetBranchAddress( "proton_track_pot", proton_track_pot );
     tree->SetBranchAddress( "proton_track_normchi2", proton_track_normchi2 );
     tree->SetBranchAddress( "num_diphoton", &num_diphoton );
