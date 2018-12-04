@@ -2,7 +2,7 @@
 //
 // Package:    DiphotonAnalyzer/TreeProducer
 // Class:      TreeProducer
-// 
+//
 /**\class TreeProducer TreeProducer.cc DiphotonAnalyzer/TreeProducer/plugins/TreeProducer.cc
 
  Description: [one line class summary]
@@ -60,25 +60,32 @@
 #include "TTree.h"
 #include "TLorentzVector.h"
 
-class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
+class TreeProducer : public edm::one::EDAnalyzer<edm::one::WatchRuns,edm::one::SharedResources>
 {
   public:
     explicit TreeProducer( const edm::ParameterSet& );
     ~TreeProducer();
 
+    /// fill 'descriptions' with the allowed parameters for the module
     static void fillDescriptions( edm::ConfigurationDescriptions& );
 
-
   private:
-    virtual void beginJob() override;
-    virtual void beginRun( const edm::Run&, const edm::EventSetup& );
-    virtual void analyze( const edm::Event&, const edm::EventSetup& ) override;
-    virtual void endJob() override;
+    /// method called once each job just before starting event loop
+    void beginJob() override;
+    void beginRun( const edm::Run&, const edm::EventSetup& ) override;
+    /// method called for each event
+    void analyze( const edm::Event&, const edm::EventSetup& ) override;
+    void endRun( const edm::Run&, const edm::EventSetup& ) override {}
+    /// method called once each job just after ending the event loop
+    void endJob() override {}
 
     // ----------member data ---------------------------
 
+    /// get the trigger information from the event
     void analyzeTriggers( const edm::Event&, const edm::EventSetup& );
-    
+
+    edm::InputTag triggerResults_;
+
     edm::EDGetTokenT<edm::DetSetVector<TotemRPLocalTrack> > totemRPTracksToken_;
     edm::EDGetTokenT<edm::View<flashgg::DiPhotonCandidate> > diphotonToken_;
     edm::EDGetTokenT<edm::View<flashgg::Met> > metToken_;
@@ -86,7 +93,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     edm::EDGetTokenT<reco::BeamSpot> beamSpotToken_;
 //                                 JW
     edm::EDGetTokenT<edm::View<flashgg::Electron> > electronToken_;
-    edm::EDGetTokenT<edm::View<flashgg::Muon> > muonToken_; 
+    edm::EDGetTokenT<edm::View<flashgg::Muon> > muonToken_;
     edm::EDGetTokenT<edm::View<vector<flashgg::Jet> > > jetToken_;
 //
     edm::EDGetTokenT<edm::View<reco::GenParticle> > genPartToken_;
@@ -94,7 +101,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     edm::EDGetTokenT<edm::View<PileupSummaryInfo> > pileupToken_;
     edm::EDGetTokenT<edm::TriggerResults> triggerResultsToken_;
 
-    bool isData_;    
+    bool isData_;
     double sqrtS_;
     double singlePhotonMinPt_, singlePhotonMaxEta_, singlePhotonMinR9_;
     double photonPairMinMass_, photonPairMaxMass_;
@@ -103,7 +110,6 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     edm::FileInPath puMCfile_, puDatafile_;
     std::string puMCpath_, puDatapath_;
 
-    std::string hltMenuLabel_;
     std::vector<std::string> triggersList_;
     HLTConfigProvider hlt_config_;
     HLTPrescaleProvider hlt_prescale_;
@@ -112,13 +118,14 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
     std::unique_ptr<CTPPSAlCa::FillNumberLUTHandler> fillLUTHandler_;
     std::unique_ptr<edm::LumiReWeighting> lumiReweighter_;
 
-    TFile* file_;
+    std::unique_ptr<TFile> file_;
     TTree* tree_;
 
     TreeEvent ev_;
 };
 
 TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
+  triggerResults_( iConfig.getParameter<edm::InputTag>( "triggerResults" ) ),
   totemRPTracksToken_ ( consumes<edm::DetSetVector<TotemRPLocalTrack> > ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
   diphotonToken_      ( consumes<edm::View<flashgg::DiPhotonCandidate> >( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
   metToken_           ( consumes<edm::View<flashgg::Met> >              ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
@@ -132,7 +139,7 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   genPartToken_       ( consumes<edm::View<reco::GenParticle> >         ( iConfig.getParameter<edm::InputTag>( "genPartLabel" ) ) ),
   genPhoToken_        ( consumes<edm::View<pat::PackedGenParticle> >    ( iConfig.getParameter<edm::InputTag>( "genPhoLabel" ) ) ),
   pileupToken_        ( consumes<edm::View<PileupSummaryInfo> >         ( iConfig.getUntrackedParameter<edm::InputTag>( "pileupLabel", edm::InputTag( "slimmedAddPileupInfo" ) ) ) ),
-  triggerResultsToken_( consumes<edm::TriggerResults>                   ( iConfig.getParameter<edm::InputTag>( "triggerResults" ) ) ),
+  triggerResultsToken_( consumes<edm::TriggerResults>                   ( triggerResults_ ) ),
   isData_             ( iConfig.getParameter<bool>       ( "isData" ) ),
   sqrtS_              ( iConfig.getParameter<double>     ( "sqrtS" ) ),
   singlePhotonMinPt_  ( iConfig.getParameter<double>     ( "minPtSinglePhoton" ) ),
@@ -144,12 +151,11 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   maxGenLevelDR_      ( iConfig.getParameter<double>     ( "maxGenLevelDeltaR" ) ),
   puMCpath_           ( iConfig.getUntrackedParameter<std::string>( "pileupMCPath", "pileup" ) ),
   puDatapath_         ( iConfig.getUntrackedParameter<std::string>( "pileupDataPath", "pileup" ) ),
-  hltMenuLabel_       ( iConfig.getParameter<std::string>( "hltMenuLabel" ) ),
   triggersList_       ( iConfig.getParameter<std::vector<std::string> >( "triggersList" ) ),
   hlt_prescale_       ( iConfig, consumesCollector(), *this ),
-  hlt_matcher_        ( iConfig.getParameter<std::vector<std::string> >( "triggersList" ) ),
-  file_( 0 ), tree_( 0 )
-
+  hlt_matcher_( triggersList_ ),
+  file_( TFile::Open( filename_.c_str(), "recreate" ) ),
+  tree_( nullptr )
 {
   if ( !isData_ ) {
     puMCfile_ =iConfig.getParameter<edm::FileInPath>( "pileupMCFile" );
@@ -161,9 +167,7 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
     fillLUTHandler_ = std::make_unique<CTPPSAlCa::FillNumberLUTHandler>( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() );
   }
 
-  file_ = new TFile( filename_.c_str(), "recreate" );
   file_->cd();
-
   tree_ = new TTree( "ntp", "diphoton ntuple" );
 }
 
@@ -173,16 +177,16 @@ TreeProducer::~TreeProducer()
   if ( file_ ) {
     file_->Write();
     file_->Close();
-    delete file_;
   }
   if ( tree_ ) delete tree_;
 }
 
-// ------------ method called for each event  ------------
 void
 TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 {
   #include <iostream> // for debugging purposes
+  if ( isData_ && !iEvent.isRealData() )
+    throw cms::Exception( "TreeProducer" ) << "Looks like you are trying to run on MC with the 'isData' flag set to True... Aborting!";
 
   analyzeTriggers( iEvent, iSetup );
 
@@ -208,7 +212,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
   edm::Handle<edm::View<pat::PackedGenParticle> > genPhotons;
   edm::Handle<edm::View<reco::GenParticle> > genParts;
 
-  if ( !isData_ ) {
+  if ( !iEvent.isRealData() ) {
     iEvent.getByToken( genPhoToken_, genPhotons );
     for ( unsigned int i=0; i<genPhotons->size() && ev_.num_gen_photon<ev_.MAX_GEN_PHOTON; i++ ) {
       const edm::Ptr<pat::PackedGenParticle> genPho = genPhotons->ptrAt( i );
@@ -324,7 +328,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
     //----- retrieve the gen-level information
 
-    if ( !isData_ ) {
+    if ( !iEvent.isRealData() ) {
       reco::Candidate::Point vtx1( orig ), vtx2( orig ),
                              vtx1_smear( orig ), vtx2_smear( orig );
       if ( lead_pho->matchedGenPhoton() ) {
@@ -425,7 +429,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
   //----- forward RP tracks -----
 
-  if ( isData_ ) {
+  if ( iEvent.isRealData() ) {
     edm::Handle<edm::DetSetVector<TotemRPLocalTrack> > rpLocalTracks;
     iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
 
@@ -451,14 +455,14 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
         ev_.num_proton_track++;
       }
     }
-  } 
+  }
   //                               JW
- 
+
   //----- electrons collection -----
- 
+
   edm::Handle<edm::View<flashgg::Electron> > electrons;
   iEvent.getByToken( electronToken_, electrons );
- 
+
   ev_.num_electron = 0;
   for ( unsigned int i=0; i<electrons->size() && ev_.num_electron<ev_.MAX_ELECTRON; i++ ) {
     const edm::Ptr<flashgg::Electron> electron = electrons->ptrAt( i );
@@ -474,7 +478,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     ev_.electron_vtx_z[ev_.num_electron] = electron->vertex().z();
     ev_.num_electron++;
   }
- 
+
   //----- muons collection -----
 
   edm::Handle<edm::View<flashgg::Muon> > muons;
@@ -489,7 +493,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     ev_.muon_eta[ev_.num_muon] = muon->eta();
     ev_.muon_phi[ev_.num_muon] = muon->phi();
     ev_.muon_energy[ev_.num_muon] = muon->energy();
- 
+
     ev_.muon_vtx_x[ev_.num_muon] = muon->vertex().x();
     ev_.muon_vtx_y[ev_.num_muon] = muon->vertex().y();
     ev_.muon_vtx_z[ev_.num_muon] = muon->vertex().z();
@@ -511,7 +515,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
   //std::cout << "passed MET" << std::endl;
   //--- pileup information ---
-  if ( !isData_ ) {
+  if ( !iEvent.isRealData() ) {
     edm::Handle<edm::View<PileupSummaryInfo> > pileupInfo;
     iEvent.getByToken( pileupToken_, pileupInfo );
     int npv0true = 0;
@@ -566,25 +570,26 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 void
 TreeProducer::analyzeTriggers( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 {
-  // Get the trigger information from the event
+  ev_.num_hlt = triggersList_.size();
   edm::Handle<edm::TriggerResults> hltResults;
   iEvent.getByToken( triggerResultsToken_, hltResults );
-
   const edm::TriggerNames& trigNames = iEvent.triggerNames( *hltResults );
 
   std::ostringstream os;
-  os << "Trigger names: " << std::endl;
+  os << "Prescale set: " << hlt_prescale_.prescaleSet(iEvent, iSetup) << "\n"
+     << "Trigger names: " << std::endl;
   for ( unsigned int i=0; i<trigNames.size(); i++ ) {
-
     const int trigNum = hlt_matcher_.TriggerNum( trigNames.triggerNames().at( i ) );
     if ( trigNum<0 ) continue; // Trigger didn't match the interesting ones
     ev_.hlt_accept[trigNum] = hltResults->accept( i );
 
     // extract prescale value for this path
     ev_.hlt_prescale[trigNum] = 1;
-    if ( isData_ ) { //FIXME
+    if ( ev_.hlt_accept[trigNum] == 1 && isData_ ) { //FIXME
       int prescale_set = hlt_prescale_.prescaleSet( iEvent, iSetup );
-      ev_.hlt_prescale[trigNum] = ( prescale_set<0 ) ? 0. : hlt_config_.prescaleValue( prescale_set, trigNames.triggerNames().at( i ) ); //FIXME
+      ev_.hlt_prescale[trigNum] = ( prescale_set < 0 )
+        ? 0.
+        : hlt_config_.prescaleValue( prescale_set, trigNames.triggerNames().at( i ) );
     }
     os << "--> (fired? " << ev_.hlt_accept[trigNum] << ") " << trigNames.triggerNames().at( i ) << "\tprescale: " << ev_.hlt_prescale[trigNum] << std::endl;
   }
@@ -593,40 +598,27 @@ TreeProducer::analyzeTriggers( const edm::Event& iEvent, const edm::EventSetup& 
   //std::cout << os.str() << std::endl;
 }
 
-// ------------ method called once each job just before starting event loop  ------------
-void 
+void
 TreeProducer::beginJob()
 {
   ev_.create( tree_, isData_ );
 }
 
-// ------------ method called once each job just after ending the event loop  ------------
-void 
-TreeProducer::endJob() 
-{}
-
 void
 TreeProducer::beginRun( const edm::Run& iRun, const edm::EventSetup& iSetup )
 {
-  std::string processName = "";
   bool changed = true;
-  if ( !hlt_prescale_.init( iRun, iSetup, hltMenuLabel_, changed ) ) {
-    throw cms::Exception("TreeProducer") << " prescales extraction failure with process name " << hltMenuLabel_;
-  }
+  if ( !hlt_prescale_.init( iRun, iSetup, triggerResults_.process(), changed ) )
+    throw cms::Exception("TreeProducer") << " prescales extraction failure with process name " << triggerResults_.process();
   hlt_config_ = hlt_prescale_.hltConfigProvider();
-  if ( !hlt_config_.init( iRun, iSetup, hltMenuLabel_, changed ) ) {
-    throw cms::Exception("TreeProducer") << " HLT config extraction failure with process name " << processName;
-  }
-  if ( hlt_config_.size()<=0 ) {
+  if ( hlt_config_.size() == 0 )
     edm::LogError("TreeProducer") << "HLT config size error";
-  }
   if ( changed ) {
     // The HLT config has actually changed wrt the previous Run, hence rebook your
     // histograms or do anything else dependent on the revised HLT config
   }
 }
 
-// ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
 TreeProducer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )
 {
