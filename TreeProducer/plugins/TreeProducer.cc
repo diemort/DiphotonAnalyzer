@@ -4,11 +4,6 @@
 // Class:      TreeProducer
 //
 /**\class TreeProducer TreeProducer.cc DiphotonAnalyzer/TreeProducer/plugins/TreeProducer.cc
-
- Description: [one line class summary]
-
- Implementation:
-     [Notes on implementation]
 */
 //
 // Original Author:  Laurent Forthomme
@@ -16,11 +11,8 @@
 //
 //
 
-
-// system include files
 #include <memory>
 
-// user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 
@@ -44,6 +36,7 @@
 
 #include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
 #include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
+#include "DataFormats/ProtonReco/interface/ProtonTrack.h"
 //                               JW
 #include "flashgg/DataFormats/interface/Electron.h"
 #include "flashgg/DataFormats/interface/Muon.h"
@@ -87,6 +80,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::WatchRuns,edm::one::S
     edm::InputTag triggerResults_;
 
     edm::EDGetTokenT<edm::View<CTPPSLocalTrackLite> > totemRPTracksToken_;
+    edm::EDGetTokenT<edm::View<reco::ProtonTrack> > protonTracksToken_;
     edm::EDGetTokenT<edm::View<flashgg::DiPhotonCandidate> > diphotonToken_;
     edm::EDGetTokenT<edm::View<flashgg::Met> > metToken_;
     edm::EDGetTokenT<edm::View<reco::Vertex> > vtxToken_;
@@ -127,6 +121,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::WatchRuns,edm::one::S
 TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   triggerResults_( iConfig.getParameter<edm::InputTag>( "triggerResults" ) ),
   totemRPTracksToken_ ( consumes<edm::View<CTPPSLocalTrackLite> >       ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
+  protonTracksToken_  ( consumes<edm::View<reco::ProtonTrack> >         ( iConfig.getParameter<edm::InputTag>( "protonTracksLabel") ) ),
   diphotonToken_      ( consumes<edm::View<flashgg::DiPhotonCandidate> >( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
   metToken_           ( consumes<edm::View<flashgg::Met> >              ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
   vtxToken_           ( consumes<edm::View<reco::Vertex> >              ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
@@ -163,9 +158,8 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
     std::cout << ">> Pileup reweighting will be used with files:\n\t" << puMCfile_.fullPath() << " for MC ;\n\t" << puDatafile_.fullPath() << " for data" << std::endl;
     lumiReweighter_ = std::make_unique<edm::LumiReWeighting>( puMCfile_.fullPath(), puDatafile_.fullPath(), puMCpath_, puDatapath_ );
   }
-  else {
+  else
     fillLUTHandler_ = std::make_unique<CTPPSAlCa::FillNumberLUTHandler>( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() );
-  }
 
   file_->cd();
   tree_ = new TTree( "ntp", "diphoton ntuple" );
@@ -188,11 +182,11 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
   if ( isData_ && !iEvent.isRealData() )
     throw cms::Exception( "TreeProducer" ) << "Looks like you are trying to run on MC with the 'isData' flag set to True... Aborting!";
 
-  analyzeTriggers( iEvent, iSetup );
+  ev_.clear();
 
+  analyzeTriggers( iEvent, iSetup );
   //std::cout << "---> passing the trigger!" << std::endl;
 
-  ev_.clear();
   const reco::Candidate::Point orig( -999., -999, -999. );
 
   // Run and BX information
@@ -297,6 +291,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     ev_.diphoton_phi1[ev_.num_diphoton] = lead_pho->phi();
     ev_.diphoton_energy1[ev_.num_diphoton] = lead_pho->energy();
     ev_.diphoton_r91[ev_.num_diphoton] = lead_pho->full5x5_r9();
+    ev_.diphoton_ele_veto1[ev_.num_diphoton] = lead_pho->passElectronVeto();
     ev_.diphoton_id1[ev_.num_diphoton] = lead_pho->phoIdMvaDWrtVtx( diphoton->vtx() );
     ev_.diphoton_sigeove1[ev_.num_diphoton] = lead_pho->sigEOverE();
 
@@ -305,6 +300,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     ev_.diphoton_phi2[ev_.num_diphoton] = sublead_pho->phi();
     ev_.diphoton_energy2[ev_.num_diphoton] = sublead_pho->energy();
     ev_.diphoton_r92[ev_.num_diphoton] = sublead_pho->full5x5_r9();
+    ev_.diphoton_ele_veto2[ev_.num_diphoton] = sublead_pho->passElectronVeto();
     ev_.diphoton_id2[ev_.num_diphoton] = sublead_pho->phoIdMvaDWrtVtx( diphoton->vtx() );
     ev_.diphoton_sigeove2[ev_.num_diphoton] = sublead_pho->sigEOverE();
 
@@ -365,8 +361,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
       for ( unsigned int j=0; j<genParts->size(); j++ ) {
         const edm::Ptr<reco::GenParticle> genPart = genParts->ptrAt( j );
-        if ( sqrt( pow( genPart->eta()-   lead_pho->eta(), 2 ) + pow( genPart->phi()-   lead_pho->phi(), 2 ) )<maxGenLevelDR_ ) { vtx1_smear = genPart->vertex(); continue; }
-        if ( sqrt( pow( genPart->eta()-sublead_pho->eta(), 2 ) + pow( genPart->phi()-sublead_pho->phi(), 2 ) )<maxGenLevelDR_ ) { vtx2_smear = genPart->vertex(); continue; }
+        if ( std::hypot( genPart->eta()-lead_pho->eta(), genPart->phi()-lead_pho->phi() ) < maxGenLevelDR_ ) { vtx1_smear = genPart->vertex(); continue; }
+        if ( std::hypot( genPart->eta()-sublead_pho->eta(), genPart->phi()-sublead_pho->phi() ) < maxGenLevelDR_ ) { vtx2_smear = genPart->vertex(); continue; }
       }
       /*if ( vtx2_smear!=vtx1_smear ) {
         std::cerr << "-> 2 different smeared-level vertices: " << std::endl
@@ -389,7 +385,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
     if ( diphoton->jetCollectionIndex()<jetsColls->size() ) {
       for ( unsigned int j=0; j<jetsColls->at( diphoton->jetCollectionIndex() ).size(); j++ ) {
-        if ( ev_.num_jet>=ev_.MAX_JET ) { std::cerr << ">> More jets than expected in this event (" << ev_.num_jet << ">MAX_JET=" << ev_.MAX_JET << "). Increase MAX_JET for safety" << std::endl; }
+        if ( ev_.num_jet>=ev_.MAX_JET )
+          throw cms::Exception("TreeProducer") << ">> More jets than expected in this event (" << ev_.num_jet << ">MAX_JET=" << ev_.MAX_JET << "). Increase MAX_JET for safety!";
 
         const flashgg::Jet jet = jetsColls->at( diphoton->jetCollectionIndex() ).at( j );
         ev_.jet_pt[ev_.num_jet]   = jet.pt();
@@ -433,18 +430,41 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     edm::Handle<edm::View<CTPPSLocalTrackLite> > rpLocalTracks;
     iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
 
-    ev_.num_proton_track = 0;
+    ev_.num_fwd_track = 0;
     for ( const auto& trk : *rpLocalTracks ) {
       const CTPPSDetId detid( trk.getRPId() );
 
-      ev_.proton_track_x[ev_.num_proton_track] = trk.getX() * 1.e-3; // store in m
-      ev_.proton_track_y[ev_.num_proton_track] = trk.getY() * 1.e-3; // store in m
-      ev_.proton_track_arm[ev_.num_proton_track] = detid.arm(); // 0 = left (45) ; 1 = right (56)
-      ev_.proton_track_station[ev_.num_proton_track] = detid.station();
-      ev_.proton_track_pot[ev_.num_proton_track] = detid.rp(); // 2 = 210n ; 3 = 210f
+      ev_.fwd_track_x[ev_.num_fwd_track] = trk.getX() * 1.e-3; // store in m
+      ev_.fwd_track_y[ev_.num_fwd_track] = trk.getY() * 1.e-3; // store in m
+      ev_.fwd_track_arm[ev_.num_fwd_track] = detid.arm(); // 0 = left (45) ; 1 = right (56)
+      ev_.fwd_track_station[ev_.num_fwd_track] = detid.station();
+      ev_.fwd_track_pot[ev_.num_fwd_track] = detid.rp(); // 2 = 210n ; 3 = 210f
 
-      //ev_.proton_track_chi2[ev_.num_proton_track] = trk.getChiSquared();
-      //ev_.proton_track_normchi2[ev_.num_proton_track] = trk.getChiSquaredOverNDF();
+      //ev_.fwd_track_chi2[ev_.num_fwd_track] = trk.getChiSquared();
+      //ev_.fwd_track_normchi2[ev_.num_fwd_track] = trk.getChiSquaredOverNDF();
+
+      ev_.num_fwd_track++;
+    }
+
+    edm::Handle<edm::View<reco::ProtonTrack> > protonTracks;
+    iEvent.getByToken( protonTracksToken_, protonTracks );
+    ev_.num_proton_track = 0;
+    for ( const auto& trk : *protonTracks ) {
+      ev_.proton_track_vx[ev_.num_proton_track] = trk.vertex().x();
+      ev_.proton_track_vy[ev_.num_proton_track] = trk.vertex().y();
+      ev_.proton_track_xi[ev_.num_proton_track] = trk.xi();
+
+      ev_.proton_track_method[ev_.num_proton_track] = (int)trk.method; // 0 = single-pot, 1 = multi-pot
+      ev_.proton_track_arm[ev_.num_proton_track] = (int)trk.lhcSector; // 0 = left (45) ; 1 = right (56)
+      if ( trk.method == reco::ProtonTrack::rmSingleRP ) {
+        const CTPPSDetId detid( *trk.contributingRPIds.begin() );
+        ev_.proton_track_pot[ev_.num_proton_track] = detid.rp();
+      }
+
+      ev_.proton_track_chi2[ev_.num_proton_track] = trk.fitChiSq;
+      ev_.proton_track_normchi2[ev_.num_proton_track] = ( trk.fitNDF > 0 )
+        ? (float)trk.fitChiSq/trk.fitNDF
+        : 0.;
 
       ev_.num_proton_track++;
     }
@@ -556,39 +576,37 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     ev_.num_vertex++;
   }
 
-  std::cout << ">> Filling the tree" << std::endl;
   tree_->Fill();
 }
 
 void
 TreeProducer::analyzeTriggers( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 {
-  ev_.num_hlt = triggersList_.size();
   edm::Handle<edm::TriggerResults> hltResults;
   iEvent.getByToken( triggerResultsToken_, hltResults );
   const edm::TriggerNames& trigNames = iEvent.triggerNames( *hltResults );
 
-  std::ostringstream os;
-  os << "Prescale set: " << hlt_prescale_.prescaleSet(iEvent, iSetup) << "\n"
-     << "Trigger names: " << std::endl;
-  for ( unsigned int i=0; i<trigNames.size(); i++ ) {
-    const int trigNum = hlt_matcher_.TriggerNum( trigNames.triggerNames().at( i ) );
-    if ( trigNum<0 ) continue; // Trigger didn't match the interesting ones
-    ev_.hlt_accept[trigNum] = hltResults->accept( i );
+  if ( !hlt_prescale_.hltConfigProvider().inited() )
+    throw cms::Exception("analyzeTriggers") << "HLT configuration provider uninitialised!";
 
+  std::ostringstream os;
+  //os << "Prescale set: " << hlt_prescale_.prescaleSet(iEvent, iSetup) << "\n"
+  //   << "Trigger names: " << std::endl;
+  ev_.num_hlt = hlt_matcher_.triggersNum();
+  for ( unsigned short i = 0; i < trigNames.size(); i++ ) {
+    const int trigNum = hlt_matcher_.TriggerNum( trigNames.triggerNames().at( i ) );
+    if ( trigNum < 0 ) continue; // Trigger didn't match the interesting ones
+    ev_.hlt_accept[trigNum] = hltResults->accept( i );
     // extract prescale value for this path
-    ev_.hlt_prescale[trigNum] = 1;
-    if ( ev_.hlt_accept[trigNum] == 1 && isData_ ) { //FIXME
-      int prescale_set = hlt_prescale_.prescaleSet( iEvent, iSetup );
+    /*ev_.hlt_prescale[trigNum] = 1;
+    if ( ev_.hlt_accept[trigNum] == 1 && iEvent.isRealData() ) {
       ev_.hlt_prescale[trigNum] = ( prescale_set < 0 )
         ? 0.
         : hlt_config_.prescaleValue( prescale_set, trigNames.triggerNames().at( i ) );
-    }
+    }*/
     os << "--> (fired? " << ev_.hlt_accept[trigNum] << ") " << trigNames.triggerNames().at( i ) << "\tprescale: " << ev_.hlt_prescale[trigNum] << std::endl;
   }
   LogDebug( "TreeProducer" ) << os.str();
-  //#include <iostream>
-  //std::cout << os.str() << std::endl;
 }
 
 void
@@ -615,11 +633,38 @@ TreeProducer::beginRun( const edm::Run& iRun, const edm::EventSetup& iSetup )
 void
 TreeProducer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )
 {
-  //The following says we do not know what parameters are allowed so do no validation
-  // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
-  desc.setUnknown();
-  descriptions.addDefault( desc );
+
+  //--- general parameters
+  desc.add<bool>( "isData", true );
+  desc.add<double>( "sqrtS", 13.e3 );
+  desc.add<std::string>( "outputFilename", "output.root" );
+  desc.add<std::vector<std::string> >( "triggersList", {} );
+  desc.add<edm::InputTag>( "triggerResults", edm::InputTag( "TriggerResults", "", "HLT" ) );
+  //--- input collections
+  desc.add<edm::InputTag>( "metLabel", edm::InputTag( "flashggMetsCorr" ) );
+  desc.add<edm::InputTag>( "diphotonLabel", edm::InputTag( "flashggDiPhotons" ) );
+  desc.add<edm::InputTag>( "vertexLabel", edm::InputTag( "offlineSlimmedPrimaryVertices" ) );
+  desc.add<edm::InputTag>( "electronLabel", edm::InputTag( "flashggSelectedElectrons" ) );
+  desc.add<edm::InputTag>( "muonLabel", edm::InputTag( "flashggSelectedMuons" ) );
+  desc.add<edm::InputTag>( "jetLabel", edm::InputTag( "flashggFinalJets" ) );
+  desc.add<edm::InputTag>( "beamSpotLabel", edm::InputTag( "offlineBeamSpot" ) );
+  //--- "tight" single/double photon selection
+  desc.add<double>( "minPtSinglePhoton", 50. );
+  desc.add<double>( "minR9SinglePhoton", 0.94 );
+  desc.add<double>( "maxEtaSinglePhoton", 2.5 );
+  desc.add<double>( "minMassDiPhoton", 500. );
+  //--- totem RP information extraction
+  desc.add<edm::InputTag>( "totemRPTracksLabel", edm::InputTag( "ctppsLocalTrackLiteProducer" ) );
+  desc.add<edm::InputTag>( "protonTracksLabel", edm::InputTag( "ctppsProtonReconstruction" ) );
+  desc.add<edm::FileInPath>( "fillNumLUTFile", edm::FileInPath( "DiphotonAnalyzer/TreeProducer/data/fill_run_lut_v2.dat" ) );
+  desc.add<edm::FileInPath>( "alignmentLUTFile", edm::FileInPath( "DiphotonAnalyzer/TreeProducer/data/alignment_collection_v2.out" ) );
+  //--- generator-level input collections
+  desc.add<edm::InputTag>( "genPartLabel", edm::InputTag( "flashggPrunedGenParticles" ) );
+  desc.add<edm::InputTag>( "genPhoLabel", edm::InputTag( "flashggGenPhotons" ) );
+  desc.add<double>( "maxGenLevelDeltaR", 5. );
+
+  descriptions.add( "treeProducer", desc );
 }
 
 //define this as a plug-in

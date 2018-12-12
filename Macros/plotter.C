@@ -303,6 +303,9 @@ plotter()
         //if ( ev_class == TreeEvent::ebee ) continue; //FIXME FIXME
         //cout << ">> evt class: " << TreeEvent::classes[ev_class] << "  " << ev.diphoton_eta1[k] << "\t" << ev.diphoton_eta2[k] << endl;
 
+        if ( ev.diphoton_ele_veto1[k] != 1 ) continue;
+        if ( ev.diphoton_ele_veto2[k] != 1 ) continue;
+
 //        if ( ev.diphoton_r91[k] < 0.8 || ev.diphoton_r92[k] < 0.8 ) continue; //FIXME for safety (avoids a bug in the TTree producer...)
 
         const float acop = 1.-fabs( ev.diphoton_dphi[k]/M_PI );
@@ -822,13 +825,14 @@ cout << s_weight << endl;
   }
   TF1* f_xim = nullptr, *f_xip = nullptr;
   TH1D* h_mc_xim = nullptr, *h_mc_xip = nullptr;
+  TH1D* h_data_xim = nullptr, *h_data_xip = nullptr;
   for ( auto& hm : map<const char*,Plotter::HistsMap*>{ { "xim_incl", hm_xim[incl][0] }, { "xip_incl", hm_xip[incl][0] } } ) {
     gStyle->SetOptFit( 1 );
-    Canvas c( hm.first, Form( "CMS Simulation 2016, #sqrt{s} = 13 TeV, L = %.1f fb^{-1}", the_lumi/1.e3 ) );
+    Canvas c( hm.first, Form( "%.1f fb^{-1} (13 TeV)", the_lumi/1.e3 ), "Preliminary" );
     auto h_sum_data = (TH1D*)hm.second[the_data].begin()->second->Clone();
     h_sum_data->SetMarkerSize( 1.0 );
-    h_sum_data->Clear();
     auto h_sum_mc = (TH1D*)h_sum_data->Clone();
+    h_sum_mc->Clear();
     for ( const auto& h : hm.second[mc_inclusive] ) {
       if ( h.first.find( "QCD" ) != string::npos )
         continue;
@@ -851,14 +855,17 @@ cout << s_weight << endl;
     c.AddLegendEntry( h_sum_data, "Data", "lp" );*/
     //TFitResultPtr fit = h_sum_mc->Fit( "[0]+exp([1]*x)", "sr", "", 0.025, 0.5 );
     //TFitResultPtr fit_mc = h_sum_mc->Fit( "expo", "sr", "", 0.012, 0.14 );
-    TFitResultPtr fit_mc = h_sum_mc->Fit( &f_expo, "sr", "", 350./13000., 0.2 );
+    //TFitResultPtr fit_mc = h_sum_mc->Fit( &f_expo, "sr", "", 350./13000., 0.2 );
+    TFitResultPtr fit_data = h_sum_data->Fit( &f_expo, "sr", "", 350./13000., 0.2 );
     if ( string( hm.first ) == "xim_incl" ) {
       f_xim = (TF1*)f_expo.Clone( "fit_xim" );
       h_mc_xim = (TH1D*)h_sum_mc->Clone( "sum_mc_xim" );
+      h_data_xim = (TH1D*)h_sum_data->Clone( "sum_data_xim" );
     }
     else {
       f_xip = (TF1*)f_expo.Clone( "fit_xip" );
       h_mc_xip = (TH1D*)h_sum_mc->Clone( "sum_mc_xip" );
+      h_data_xip = (TH1D*)h_sum_mc->Clone( "sum_data_xip" );
     }
     //TFitResultPtr fit_mc = h_sum_mc->Fit( "expo", "s" );
     //TFitResultPtr fit_data = h_sum_data->Fit( "expo", "s+" );
@@ -874,6 +881,8 @@ cout << s_weight << endl;
   f_xip->Write();
   h_mc_xim->Write();
   h_mc_xip->Write();
+  h_data_xim->Write();
+  h_data_xip->Write();
   delete f_fits;
 
   /*FIXME FIXME FIXME FIXME FIXME FIXME FIXME

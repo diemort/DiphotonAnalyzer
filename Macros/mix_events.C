@@ -63,13 +63,10 @@ void mix_events( const char* input_filename = "fits_results.root" )
   const double weight = exp_yield/num_toys; //FIXME
   cout << "weight=" << weight << endl;
 
-  ev.tree->SetBranchStatus( "*", 0 );
-  ev.tree->SetBranchStatus( "fill_number", 1 );
-  ev.tree->SetBranchStatus( "num_proton_track", 1 );
-  ev.tree->SetBranchStatus( "proton_track_side", 1 );
-  ev.tree->SetBranchStatus( "proton_track_pot", 1 );
-  ev.tree->SetBranchStatus( "proton_track_x", 1 );
-  //ev.tree->SetBranchStatus( "", 1 );
+  ev.enableBranches( {
+    "fill_number",
+    "num_proton_track", "proton_track_side", "proton_track_pot", "proton_track_x"
+  } );
 
   for ( unsigned long long i = 0; i < num_toys; ++i ) {
     ev.tree->GetEntry( rand()*1./RAND_MAX*num_events );
