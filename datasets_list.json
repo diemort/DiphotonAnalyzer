@@ -10,7 +10,8 @@
       //"path": "Samples/output_Run2016BCG_looseCuts_28jun.root",
       //"path": "Samples/output_Run2016BCGH_looseCuts_19jan.root",
       //"path": "Samples/output_Run2016H_looseCuts_19jan.root",
-      "path": "samples/ntuple-Run2016B_94Xrereco_v1.root",
+      //"path": "samples/ntuple-Run2016B_94Xrereco_v1.root",
+      "path": "test.root",
       "cross_section": 1.0,
       "num_events": 0
     },

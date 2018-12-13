@@ -56,7 +56,7 @@ class MBTreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 
     // ----------member data ---------------------------
 
-    edm::EDGetTokenT<edm::View<CTPPSLocalTrackLite> > totemRPTracksToken_;
+    edm::EDGetTokenT<edm::View<CTPPSLocalTrackLite> > protonTracksToken_;
     edm::EDGetTokenT<edm::View<reco::Vertex> > vtxToken_;
     edm::EDGetTokenT<reco::BeamSpot> beamSpotToken_;
 
@@ -70,18 +70,17 @@ class MBTreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources>
 };
 
 MBTreeProducer::MBTreeProducer( const edm::ParameterSet& iConfig ) :
-  totemRPTracksToken_ ( consumes<edm::View<CTPPSLocalTrackLite> >  ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
-  vtxToken_           ( consumes<edm::View<reco::Vertex> >         ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
-  beamSpotToken_      ( consumes<reco::BeamSpot>                   ( iConfig.getParameter<edm::InputTag>( "beamSpotLabel" ) ) ),
-  filename_           ( iConfig.getParameter<std::string>( "outputFilename" ) ),
+  protonTracksToken_( consumes<edm::View<CTPPSLocalTrackLite> >( iConfig.getParameter<edm::InputTag>( "protonTracksLabel") ) ),
+  vtxToken_         ( consumes<edm::View<reco::Vertex> >       ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
+  beamSpotToken_    ( consumes<reco::BeamSpot>                 ( iConfig.getParameter<edm::InputTag>( "beamSpotLabel" ) ) ),
+  filename_         ( iConfig.getParameter<std::string>( "outputFilename" ) ),
   fillLUTHandler_ ( new CTPPSAlCa::FillNumberLUTHandler( iConfig.getParameter<edm::FileInPath>( "fillNumLUTFile" ).fullPath().c_str() ) ),
-  file_( 0 ), tree_( 0 )
+  file_( nullptr ), tree_( nullptr )
 {
-
   file_ = new TFile( filename_.c_str(), "recreate" );
   file_->cd();
 
-  tree_ = new TTree( "ntp", "diphoton ntuple" );
+  tree_ = new TTree( "ntp", "mb ntuple" );
   ev_.create( tree_ );
 }
 
@@ -152,29 +151,27 @@ MBTreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup
     ev_.num_vertex++;
   }
 
-//std::cout << ev_.num_vertex << std::endl;
-
   //----- forward RP tracks -----
 
-  edm::Handle<edm::View<CTPPSLocalTrackLite> > rpLocalTracks;
-  iEvent.getByToken( totemRPTracksToken_, rpLocalTracks );
+  edm::Handle<edm::View<CTPPSLocalTrackLite> > protonTracks;
+  iEvent.getByToken( protonTracksToken_, protonTracks );
 
-  ev_.num_strips_track = 0;
-  for ( const auto& trk : *rpLocalTracks) {
+  ev_.num_fwd_track = 0;
+  for ( const auto& trk : *protonTracks) {
     const CTPPSDetId detid( trk.getRPId() );
 
-    ev_.strips_track_x[ev_.num_strips_track] = trk.getX() * 1.e-3; // store in m
-    ev_.strips_track_y[ev_.num_strips_track] = trk.getY() * 1.e-3; // store in m
-    ev_.strips_track_arm[ev_.num_strips_track] = detid.arm(); // 0 = left (45) ; 1 = right (56)
-    ev_.strips_track_station[ev_.num_strips_track] = detid.station();
-    ev_.strips_track_pot[ev_.num_strips_track] = detid.rp(); // 2 = 210m ; 3 = 220m
+    ev_.fwd_track_x[ev_.num_fwd_track] = trk.getX() * 1.e-3; // store in m
+    ev_.fwd_track_y[ev_.num_fwd_track] = trk.getY() * 1.e-3; // store in m
+    ev_.fwd_track_arm[ev_.num_fwd_track] = detid.arm(); // 0 = left (45) ; 1 = right (56)
+    ev_.fwd_track_station[ev_.num_fwd_track] = detid.station();
+    ev_.fwd_track_pot[ev_.num_fwd_track] = detid.rp(); // 2 = 210m ; 3 = 220m
 
-    //ev_.strips_track_chi2[ev_.num_strips_track] = trk.getChiSquared();
-    //ev_.strips_track_normchi2[ev_.num_strips_track] = trk.getChiSquaredOverNDF();
+    //ev_.fwd_track_chi2[ev_.num_fwd_track] = trk.getChiSquared();
+    //ev_.fwd_track_normchi2[ev_.num_fwd_track] = trk.getChiSquaredOverNDF();
 
-    ev_.num_strips_track++;
+    ev_.num_fwd_track++;
   }
-  if ( ev_.num_strips_track == 0 ) return; // do not store in the tree if no valid tracks are found
+  if ( ev_.num_fwd_track == 0 ) return; // do not store in the tree if no valid tracks are found
 
   tree_->Fill();
 }
@@ -182,12 +179,20 @@ MBTreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup
 void
 MBTreeProducer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )
 {
-  //The following says we do not know what parameters are allowed so do no validation
-  // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
-  desc.setUnknown();
-  descriptions.addDefault( desc );
+
+  //--- general parameters
+  desc.add<std::string>( "outputFilename", "output.root" );
+  //--- input collections
+  desc.add<edm::InputTag>( "vertexLabel", edm::InputTag( "offlinePrimaryVertices" ) );
+  desc.add<edm::InputTag>( "beamSpotLabel", edm::InputTag( "offlineBeamSpot" ) );
+  //--- totem RP information extraction
+  desc.add<edm::InputTag>( "protonTracksLabel", edm::InputTag( "ctppsLocalTrackLiteProducer" ) );
+  desc.add<edm::FileInPath>( "fillNumLUTFile", edm::FileInPath( "DiphotonAnalyzer/TreeProducer/data/fill_run_lut_v2.dat" ) );
+
+  descriptions.add( "mbTreeProducer", desc );
 }
 
 //define this as a plug-in
 DEFINE_FWK_MODULE( MBTreeProducer );
+

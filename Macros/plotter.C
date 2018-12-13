@@ -232,7 +232,7 @@ plotter()
       h_dphi[qcd][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[qcd].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi|@@Events@@?.3f", 20, 0., 1. );
       h_dphi[presel][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[presel].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi|@@Events@@?.3f", 40, 0., 1. );
       h_dphi[incl][k][i] = (TH1D*)h_dphi[presel][k][i]->Clone();
-      h_dphi[elastic][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[elastic].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi (#times 10^{-3})|@@Events@@?.4f", 10, 0., 5. );
+      h_dphi[elastic][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[elastic].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi| (#times 10^{-3})@@Events@@?.4f", 10, 0., 5. );
       h_dphi[xicomp][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[xicomp].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi| (#times 10^{-3})@@Events@@?.3f", 5, 0., 5. );
       h_dphi[xitight][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[xitight].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi| (#times 10^{-3})@@Events@@?.3f", 5, 0., 5. );
       h_dphi[inelastic][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[inelastic].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi|@@Events@@?.3f", 40, 0., 1. );

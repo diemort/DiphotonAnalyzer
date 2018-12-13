@@ -11,5 +11,5 @@ Simple EDAnalyzer for flashgg output
 ### (Simplified set of) instructions
 - Clone this directory inside your $CMSSW_BASE/src directory containing the flashgg installation (with cmsenv already run)
 - `scram b`
-- Edit [your input configuration file](TreeProducer/test/TreeProducer_cfg.py) accordingly (cuts, input files, any future feature...)
+- Edit [your input configuration file](TreeProducer/test/treeProducer_data_cfg.py) accordingly (cuts, input files, any future feature...)
 - `cmsRun your_input_configuration_file_cfg.py`

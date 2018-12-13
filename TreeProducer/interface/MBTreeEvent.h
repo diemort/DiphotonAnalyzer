@@ -17,16 +17,16 @@ struct MBTreeEvent
     tree->Branch( "bunch_crossing", &bunch_crossing, "bunch_crossing/i" );
     tree->Branch( "event_number", &event_number, "event_number/l" );
 
-    tree->Branch( "num_strips_track", &num_strips_track, "num_strips_track/i" );
-    tree->Branch( "strips_track_x", strips_track_x, "strips_track_x[num_strips_track]/F" );
-    tree->Branch( "strips_track_y", strips_track_y, "strips_track_y[num_strips_track]/F" );
-    tree->Branch( "strips_track_tx", strips_track_tx, "strips_track_tx[num_strips_track]/F" );
-    tree->Branch( "strips_track_ty", strips_track_ty, "strips_track_ty[num_strips_track]/F" );
-    tree->Branch( "strips_track_arm", strips_track_arm, "strips_track_arm[num_strips_track]/i" );
-    tree->Branch( "strips_track_station", strips_track_station, "strips_track_station[num_strips_track]/i" );
-    tree->Branch( "strips_track_pot", strips_track_pot, "strips_track_pot[num_strips_track]/i" );
-    tree->Branch( "strips_track_chi2", strips_track_chi2, "strips_track_chi2[num_strips_track]/F" );
-    tree->Branch( "strips_track_normchi2", strips_track_normchi2, "strips_track_normchi2[num_strips_track]/F" );
+    tree->Branch( "num_fwd_track", &num_fwd_track, "num_fwd_track/i" );
+    tree->Branch( "fwd_track_x", fwd_track_x, "fwd_track_x[num_fwd_track]/F" );
+    tree->Branch( "fwd_track_y", fwd_track_y, "fwd_track_y[num_fwd_track]/F" );
+    //tree->Branch( "fwd_track_tx", fwd_track_tx, "fwd_track_tx[num_fwd_track]/F" );
+    //tree->Branch( "fwd_track_ty", fwd_track_ty, "fwd_track_ty[num_fwd_track]/F" );
+    tree->Branch( "fwd_track_arm", fwd_track_arm, "fwd_track_arm[num_fwd_track]/i" );
+    tree->Branch( "fwd_track_station", fwd_track_station, "fwd_track_station[num_fwd_track]/i" );
+    tree->Branch( "fwd_track_pot", fwd_track_pot, "fwd_track_pot[num_fwd_track]/i" );
+    //tree->Branch( "fwd_track_chi2", fwd_track_chi2, "fwd_track_chi2[num_fwd_track]/F" );
+    //tree->Branch( "fwd_track_normchi2", fwd_track_normchi2, "fwd_track_normchi2[num_fwd_track]/F" );
 
     tree->Branch( "num_vertex", &num_vertex, "num_vertex/i" );
     tree->Branch( "vertex_x", vertex_x, "vertex_x[num_vertex]/F" );
@@ -55,16 +55,16 @@ struct MBTreeEvent
     tree->SetBranchAddress( "bunch_crossing", &bunch_crossing );
     tree->SetBranchAddress( "event_number", &event_number);
 
-    tree->SetBranchAddress( "num_strips_track", &num_strips_track );
-    tree->SetBranchAddress( "strips_track_x", strips_track_x );
-    tree->SetBranchAddress( "strips_track_y", strips_track_y );
-    tree->SetBranchAddress( "strips_track_tx", strips_track_tx );
-    tree->SetBranchAddress( "strips_track_ty", strips_track_ty );
-    tree->SetBranchAddress( "strips_track_arm", strips_track_arm );
-    tree->SetBranchAddress( "strips_track_station", strips_track_station );
-    tree->SetBranchAddress( "strips_track_pot", strips_track_pot );
-    tree->SetBranchAddress( "strips_track_chi2", strips_track_chi2 );
-    tree->SetBranchAddress( "strips_track_normchi2", strips_track_normchi2 );
+    tree->SetBranchAddress( "num_fwd_track", &num_fwd_track );
+    tree->SetBranchAddress( "fwd_track_x", fwd_track_x );
+    tree->SetBranchAddress( "fwd_track_y", fwd_track_y );
+    //tree->SetBranchAddress( "fwd_track_tx", fwd_track_tx );
+    //tree->SetBranchAddress( "fwd_track_ty", fwd_track_ty );
+    tree->SetBranchAddress( "fwd_track_arm", fwd_track_arm );
+    tree->SetBranchAddress( "fwd_track_station", fwd_track_station );
+    tree->SetBranchAddress( "fwd_track_pot", fwd_track_pot );
+    //tree->SetBranchAddress( "fwd_track_chi2", fwd_track_chi2 );
+    //tree->SetBranchAddress( "fwd_track_normchi2", fwd_track_normchi2 );
 
     tree->SetBranchAddress( "num_vertex", &num_vertex );
     tree->SetBranchAddress( "vertex_x", vertex_x );
@@ -86,13 +86,13 @@ struct MBTreeEvent
 
   void clear() {
     bunch_crossing = run_id = fill_number = lumisection = event_number = 0;
-    num_strips_track = 0;
+    num_fwd_track = 0;
     for ( unsigned int i = 0; i < MAX_PROTON_TRK; ++i ) {
-      strips_track_x[i] = strips_track_y[i] = -1.;
-      strips_track_tx[i] = strips_track_ty[i] = -1.;
-      strips_track_chi2[i] = strips_track_normchi2[i] = -1.;
-      strips_track_arm[i] = 2; //invalid
-      strips_track_station[i] = strips_track_pot[i] = 0; //invalid
+      fwd_track_x[i] = fwd_track_y[i] = -1.;
+      //fwd_track_tx[i] = fwd_track_ty[i] = -1.;
+      //fwd_track_chi2[i] = fwd_track_normchi2[i] = -1.;
+      fwd_track_arm[i] = 2; //invalid
+      fwd_track_station[i] = fwd_track_pot[i] = 0; //invalid
     }
 
     num_vertex = 0;
@@ -108,11 +108,11 @@ struct MBTreeEvent
   unsigned int bunch_crossing, fill_number, run_id, lumisection;
   unsigned long long event_number;
 
-  unsigned int num_strips_track;
-  float strips_track_x[MAX_PROTON_TRK], strips_track_y[MAX_PROTON_TRK];
-  float strips_track_tx[MAX_PROTON_TRK], strips_track_ty[MAX_PROTON_TRK];
-  float strips_track_chi2[MAX_PROTON_TRK], strips_track_normchi2[MAX_PROTON_TRK];
-  unsigned int strips_track_arm[MAX_PROTON_TRK], strips_track_station[MAX_PROTON_TRK], strips_track_pot[MAX_PROTON_TRK];
+  unsigned int num_fwd_track;
+  float fwd_track_x[MAX_PROTON_TRK], fwd_track_y[MAX_PROTON_TRK];
+  //float fwd_track_tx[MAX_PROTON_TRK], fwd_track_ty[MAX_PROTON_TRK];
+  //float fwd_track_chi2[MAX_PROTON_TRK], fwd_track_normchi2[MAX_PROTON_TRK];
+  unsigned int fwd_track_arm[MAX_PROTON_TRK], fwd_track_station[MAX_PROTON_TRK], fwd_track_pot[MAX_PROTON_TRK];
 
   unsigned int num_vertex;
   float vertex_x[MAX_VERTEX], vertex_y[MAX_VERTEX], vertex_z[MAX_VERTEX];
