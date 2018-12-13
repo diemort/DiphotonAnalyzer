@@ -324,8 +324,6 @@ plotter()
           s_weight = sp_weight * ( eff_pho1*eff_pho2 );
         }
 
-cout << s_weight << endl;
-
         //----- look at surrounding objects
 
         const float min_lep_vtx_dist = 2.0; // in cm
@@ -894,7 +892,7 @@ cout << s_weight << endl;
 
   for ( unsigned short i = 0; i < TreeEvent::num_classes-2; ++i ) {
   //for ( unsigned short i = 0; i < 1; ++i ) { //FIXME
-    Canvas c( Form( "presel_diphoton_pt_sigovbckg_cl%d", i ), Form( "CMS Preliminary 2016, #sqrt{s} = 13 TeV, L = %.1f fb^{-1}", the_lumi/1.e3 ) );
+    Canvas c( Form( "presel_diphoton_pt_sigovbckg_cl%d", i ), Form( "%.1f fb^{-1} (13 TeV)", the_lumi/1.e3 ), "Preliminary" );
     TH1D* hist_bck = (TH1D*)hm_ptpair[presel][i][1][0].second->Clone( "bck" ),
          *hist_sig = (TH1D*)hm_ptpair[presel][i][2][0].second->Clone( "sig" );
     hist_bck->Scale( 0. ); hist_sig->Scale( 0. );
@@ -933,7 +931,7 @@ void logarithmicBins( TAxis* axis )
 
 void plot_2ddiscrim( const char* name, TH2D* h2[], bool logx )
 {
-  Canvas c( name, "CMS Simulation Preliminary, #sqrt{s} = 13 TeV" );
+  Canvas c( name, "13 TeV", "Simulation" );
   THStack st;
   for ( unsigned short i = 1; i < num_types; ++i ) {
     st.Add( h2[i] );

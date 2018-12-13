@@ -41,7 +41,7 @@ struct track_t {
   float xi, err_xi, x, y;
 };
 
-void plot_matching( double num_sigma, const char* name, TGraphErrors&, TGraphErrors&, TGraphErrors&, TGraphErrors&, double min, double max, double xleg=0.5 );
+void plot_matching( double num_sigma, const char* name, TGraphErrors&, TGraphErrors&, TGraphErrors&, TGraphErrors&, double min, double max, bool right_leg = true );
 vector<pair<float,float> > merge_nearfar( const vector<track_t>& near_tracks, const vector<track_t>& far_tracks, float xdiff_cut=0.01 );
 
 map<unsigned short,float> pots_accept = { { 2, 0.033 }, { 3, 0.024 }, { 102, 0.050 }, { 103, 0.037 } };
@@ -240,10 +240,10 @@ void massrap_matcher( const char* sample = "samples/ntuple-Run2016B_94Xrereco_v1
           cout << "event:" << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;
           cout << "masses: central system: " << cms.M() << ", diphoton: " << ev.diphoton_mass[j] << " +/- " << diphoton_mass_error << ", diproton: " << cand.mass() << " +/- " << cand.mass_error() << endl;
           cout << "rapidities: central system: " << cms.Rapidity() << ", diphoton: " << ev.diphoton_rapidity[j] << " +/- " << diphoton_rapidity_error << ", diproton: " << cand.rapidity() << " +/- " << cand.rapidity_error() << endl;
-/*          cout << "xi-per-pot: " << "45-near: " << ( xi_45n.size() > 0 ? xi_45n[0].first : "n/a" )
-               << ", 45-far: " << ( xi_45f.size() > 0 ? xi_45n[0].first : "n/a" )
-               << ", 56-near: " << ( xi_56n.size() > 0 ? xi_56n[0].first : "n/a" )
-               << ", 56-far: " << ( xi_56f.size() > 0 ? xi_56f[0].first : "n/a" ) << endl;*/
+/*          cout << "xi-per-pot: " << "45-near: " << ( xi_45n.size() > 0 ? xi_45n[0].xi : -1. )
+               << ", 45-far: " << ( xi_45f.size() > 0 ? xi_45f[0].xi : -1. )
+               << ", 56-near: " << ( xi_56n.size() > 0 ? xi_56n[0].xi : -1. )
+               << ", 56-far: " << ( xi_56f.size() > 0 ? xi_56f[0].xi : -1. ) << endl;*/
           gr_mass_massrapmatch.SetPoint( num_massrapmatch, cand.mass(), cms.M() );
           gr_mass_massrapmatch.SetPointError( num_massrapmatch, cand.mass_error(), diphoton_mass_error );
           gr_rap_massrapmatch.SetPoint( num_massrapmatch, cand.rapidity(), cms.Rapidity() );
@@ -317,11 +317,11 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
 
   plot_matching( num_sigma, "2d_massmatch", gr_mass_nomatch, gr_mass_rapmatch, gr_mass_massmatch, gr_mass_massrapmatch, 300., 1800. );
   //plot_matching( num_sigma, "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -3., 3., 0.15 );
-  plot_matching( num_sigma, "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -2., 2., 0.15 );
+  plot_matching( num_sigma, "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -2., 2., false );
 
-  const string up_label = "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}";
+  const string up_label = "9.4 fb^{-1} (13 TeV)";
   for ( auto& nh : map<const char*,TH1D*>{ { "1d_massmatch", h_mass_all }, { "1d_rapmatch", h_rap_all } } ) {
-    Canvas c( nh.first, up_label.c_str() );
+    Canvas c( nh.first, up_label.c_str(), "Preliminary" );
     nh.second->Sumw2();
     nh.second->Draw();
     c.Prettify( nh.second );
@@ -329,7 +329,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
   }
   {
     gStyle->SetOptStat( 0 );
-    Canvas c( "elastic_numsect", up_label.c_str() );
+    Canvas c( "elastic_numsect", up_label.c_str(), "Preliminary" );
     h_num_sect->Sumw2();
     h_num_sect->Draw( "p" );
     h_num_sect->SetLineColor( kBlack );
@@ -346,7 +346,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   {
-    Canvas c( "elastic_numtrks", up_label.c_str() );
+    Canvas c( "elastic_numtrks", up_label.c_str(), "Preliminary" );
     THStack hs;
     h_num_45->SetLineColor( kBlue+1 );
     h_num_45->SetLineWidth( 2 );
@@ -369,7 +369,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
   }
   for ( auto& nh : map<const char*,TH1D*>{ { "mass_ratio", h_massratio }, { "rapidity_difference", h_rapdiff } } ) {
     gStyle->SetOptStat( 0 );
-    Canvas c( nh.first, up_label.c_str() );
+    Canvas c( nh.first, up_label.c_str(), "Preliminary" );
     nh.second->Sumw2();
     nh.second->Draw();
     nh.second->SetMarkerStyle( 24 );
@@ -396,7 +396,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   for ( const auto& p : pots_names ) {
-    Canvas c( Form( "elastic_xi_%u", p.first ), up_label.c_str() );
+    Canvas c( Form( "elastic_xi_%u", p.first ), up_label.c_str(), "Preliminary" );
     TGraphAsymmErrors* p_xi = asym_error_bars( m_h_xi[p.first] );
     p_xi->Draw( "ap" );
     p_xi->SetMarkerStyle( 24 );
@@ -434,16 +434,16 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
   }
 }
 
-void plot_matching( double num_sigma, const char* name, TGraphErrors& gr_nomatch, TGraphErrors& gr_rapmatch, TGraphErrors& gr_massmatch, TGraphErrors& gr_massrapmatch, double min, double max, double xleg )
+void plot_matching( double num_sigma, const char* name, TGraphErrors& gr_nomatch, TGraphErrors& gr_rapmatch, TGraphErrors& gr_massmatch, TGraphErrors& gr_massrapmatch, double min, double max, bool right_leg )
 {
-  Canvas c( name, "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
+  Canvas c( name, "9.4 fb^{-1} (13 TeV)", "Preliminary" );
   /*auto tmp = new TH2D( Form( "tmp_%s", name ), gr_massrapmatch.GetTitle(), 2, min, max, 2, min, max );
   tmp->Draw();*/
   auto diag = new TF1( "diag", "x", min, max );
   diag->SetLineColor( kGray );
 
-  c.SetLegendX1( xleg );
-  c.SetLegendY1( 0.7 );
+  c.SetLegendX1( right_leg ? 0.5 : 0.15 );
+  c.SetLegendY1( right_leg ? 0.7 : 0.65 );
   TMultiGraph mg;
   gr_nomatch.SetMarkerStyle( 24 );
   gr_rapmatch.SetMarkerStyle( 22 );
@@ -477,12 +477,15 @@ void plot_matching( double num_sigma, const char* name, TGraphErrors& gr_nomatch
   mg.Draw( "p" );
 
   //PaveText pt( 0.15, 0.8, 0.4, 0.95 );
-  PaveText pt( xleg, 0.8, xleg+0.25, 0.95 );
+  //PaveText pt( right_leg ? 0.5 : 0.15, 0.8, ( right_leg ? 0.5 : 0.15 )+0.25, right_leg ? 0.95 :  );
+  PaveText pt( right_leg ? 0.5 : 0.15, right_leg ? 0.8 : 0.735 );
   pt.SetTextAlign( kHAlignLeft+kVAlignBottom );
   pt.AddText( "1-|#Delta#phi_{#gamma#gamma}/#pi| < 0.005" );
   pt.Draw();
 
-  PaveText pt_sig( ( xleg >= 0.5 ) ? 0.17 : 0.65, 0.8 );
+  PaveText pt_sig( 0.135, 0.95, 0.2, 0.96 );
+  //PaveText pt_sig( right_leg ? 0.155 : 0.675, right_leg ? 0.73 : 0.85 );
+  pt_sig.SetTextFont( 52 );
   pt_sig.SetTextSize( 0.04 );
   pt_sig.SetTextAlign( kHAlignLeft+kVAlignBottom );
   pt_sig.AddText( Form( "%g#sigma matching", num_sigma ) );
@@ -500,7 +503,7 @@ void plot_matching( double num_sigma, const char* name, TGraphErrors& gr_nomatch
 /*void
 plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_match, TGraphErrors& gr_ooa, double limits )
 {
-  Canvas c( name, "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
+  Canvas c( name, "9.4 fb^{-1} (13 TeV)", "Preliminary" );
 
   TF1 lim( "lim", "x", 0., max_xi );
   lim.SetTitle( "#xi(RP)@@#xi(#gamma#gamma)" );
@@ -561,7 +564,7 @@ plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_matc
 void
 plot_xispectrum( const char* name, TH1D* spec, double limit )
 {
-  Canvas c( name, "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
+  Canvas c( name, "9.4 fb^{-1} (13 TeV)", "Preliminary" );
   gStyle->SetStatX( 0.88 );
   gStyle->SetStatY( 0.92 );
   gStyle->SetOptStat( "erm" );
@@ -586,7 +589,7 @@ plot_xispectrum( const char* name, TH1D* spec, double limit )
 void
 plot_generic( const char* name, TH1* plot, const char* plot_style, bool logy )
 {
-  Canvas c( name, "CMS+TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}" );
+  Canvas c( name, "9.4 fb^{-1} (13 TeV)", "Preliminary" );
   plot->Sumw2();
   plot->Draw( plot_style );
   plot->SetMarkerStyle( 20 );
