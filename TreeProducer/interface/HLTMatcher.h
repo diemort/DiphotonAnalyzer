@@ -17,6 +17,7 @@ class HLTMatcher {
     explicit HLTMatcher() {;}
     explicit HLTMatcher(const std::vector<std::string>&);
     ~HLTMatcher();
+    size_t triggersNum() const { return HLTnames.size(); }
     int TriggerNum(const std::string&);
   private:
     std::vector<std::string> HLTnames;

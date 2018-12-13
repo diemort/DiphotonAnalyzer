@@ -31,8 +31,11 @@ process.hltHighLevel.TriggerResultsTag = cms.InputTag("TriggerResults","","HLT")
 process.hltHighLevel.HLTPaths = ['HLT_DoublePhoton60_*', 'HLT_DoublePhoton85_*']
 process.hltHighLevel.throw = cms.bool(False)
 
+# Proton reconstruction
+process.load('RecoCTPPS.ProtonReconstruction.year_2016.ctppsProtonReconstruction_cfi')
+
 # set some parameters to the run
-process.load('DiphotonAnalyzer.TreeProducer.TreeProducer_cfi')
+process.load('DiphotonAnalyzer.TreeProducer.treeProducer_cfi')
 process.treeProducer.minPtSinglePhoton = cms.double(50.)
 process.treeProducer.minMassDiPhoton = cms.double(350.)
 process.treeProducer.minR9SinglePhoton = cms.double(0.)
@@ -40,5 +43,6 @@ process.treeProducer.triggersList = process.hltHighLevel.HLTPaths
 
 process.p = cms.Path(
     process.hltHighLevel*
+    process.ctppsProtonReconstruction*
     process.treeProducer
 )

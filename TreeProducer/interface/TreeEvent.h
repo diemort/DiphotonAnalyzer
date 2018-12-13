@@ -39,12 +39,21 @@ struct TreeEvent
     *HLT_Name = triggersList_;*/
 
     if ( data ) {
+      tree->Branch( "num_fwd_track", &num_fwd_track, "num_fwd_track/i" );
+      tree->Branch( "fwd_track_x", fwd_track_x, "fwd_track_x[num_fwd_track]/F" );
+      tree->Branch( "fwd_track_y", fwd_track_y, "fwd_track_y[num_fwd_track]/F" );
+      tree->Branch( "fwd_track_arm", fwd_track_arm, "fwd_track_arm[num_fwd_track]/i" );
+      tree->Branch( "fwd_track_station", fwd_track_station, "fwd_track_station[num_fwd_track]/i" );
+      tree->Branch( "fwd_track_pot", fwd_track_pot, "fwd_track_pot[num_fwd_track]/i" );
+      //tree->Branch( "fwd_track_chi2", fwd_track_chi2, "fwd_track_chi2[num_fwd_track]/F" );
+      //tree->Branch( "fwd_track_normchi2", fwd_track_normchi2, "fwd_track_normchi2[num_fwd_track]/F" );
       tree->Branch( "num_proton_track", &num_proton_track, "num_proton_track/i" );
-      tree->Branch( "proton_track_x", proton_track_x, "proton_track_x[num_proton_track]/F" );
-      tree->Branch( "proton_track_y", proton_track_y, "proton_track_y[num_proton_track]/F" );
+      tree->Branch( "proton_track_vx", proton_track_vx, "proton_track_vx[num_proton_track]/F" );
+      tree->Branch( "proton_track_vy", proton_track_vy, "proton_track_vy[num_proton_track]/F" );
+      tree->Branch( "proton_track_xi", proton_track_xi, "proton_track_xi[num_proton_track]/F" );
       tree->Branch( "proton_track_arm", proton_track_arm, "proton_track_arm[num_proton_track]/i" );
-      tree->Branch( "proton_track_station", proton_track_station, "proton_track_station[num_proton_track]/i" );
       tree->Branch( "proton_track_pot", proton_track_pot, "proton_track_pot[num_proton_track]/i" );
+      tree->Branch( "proton_track_method", proton_track_method, "proton_track_method[num_proton_track]/i" );
       tree->Branch( "proton_track_chi2", proton_track_chi2, "proton_track_chi2[num_proton_track]/F" );
       tree->Branch( "proton_track_normchi2", proton_track_normchi2, "proton_track_normchi2[num_proton_track]/F" );
     }
@@ -81,6 +90,8 @@ struct TreeEvent
     tree->Branch( "diphoton_energy2", diphoton_energy2, "diphoton_energy2[num_diphoton]/F" );
     tree->Branch( "diphoton_r91", diphoton_r91, "diphoton_r91[num_diphoton]/F" );
     tree->Branch( "diphoton_r92", diphoton_r92, "diphoton_r92[num_diphoton]/F" );
+    tree->Branch( "diphoton_eleveto1", diphoton_ele_veto1, "diphoton_eleveto1[num_diphoton]/i" );
+    tree->Branch( "diphoton_eleveto2", diphoton_ele_veto2, "diphoton_eleveto2[num_diphoton]/i" );
     tree->Branch( "diphoton_mass", diphoton_mass, "diphoton_mass[num_diphoton]/F" );
     tree->Branch( "diphoton_rapidity", diphoton_rapidity, "diphoton_rapidity[num_diphoton]/F" );
     tree->Branch( "diphoton_pt", diphoton_pt, "diphoton_pt[num_diphoton]/F" );
@@ -181,6 +192,14 @@ struct TreeEvent
     tree->Branch( "pileup_weight", &pileup_weight, "pileup_weight/F" );
   }
 
+  void enableBranches( const std::vector<std::string>& list ) {
+    if ( list.empty() )
+      return;
+    tree->SetBranchStatus( "*", 0 );
+    for ( const auto& br : list )
+      tree->SetBranchStatus( br, 1 );
+  }
+
   void attach( TTree* tree, bool data = false ) {
     if ( !tree ) return;
 
@@ -199,12 +218,21 @@ struct TreeEvent
     *HLT_Name = triggersList_;*/
 
     if ( data ) {
+      tree->SetBranchAddress( "num_fwd_track", &num_fwd_track );
+      tree->SetBranchAddress( "fwd_track_x", fwd_track_x );
+      tree->SetBranchAddress( "fwd_track_y", fwd_track_y );
+      tree->SetBranchAddress( "fwd_track_arm", fwd_track_arm );
+      tree->SetBranchAddress( "fwd_track_station", fwd_track_station );
+      tree->SetBranchAddress( "fwd_track_pot", fwd_track_pot );
+      //tree->SetBranchAddress( "fwd_track_chi2", fwd_track_chi2 );
+      //tree->SetBranchAddress( "fwd_track_normchi2", fwd_track_normchi2 );
       tree->SetBranchAddress( "num_proton_track", &num_proton_track );
-      tree->SetBranchAddress( "proton_track_x", proton_track_x );
-      tree->SetBranchAddress( "proton_track_y", proton_track_y );
+      tree->SetBranchAddress( "proton_track_vx", proton_track_vx );
+      tree->SetBranchAddress( "proton_track_vy", proton_track_vy );
+      tree->SetBranchAddress( "proton_track_xi", proton_track_xi );
       tree->SetBranchAddress( "proton_track_arm", proton_track_arm );
-      tree->SetBranchAddress( "proton_track_station", proton_track_station );
       tree->SetBranchAddress( "proton_track_pot", proton_track_pot );
+      tree->SetBranchAddress( "proton_track_method", proton_track_method );
       tree->SetBranchAddress( "proton_track_chi2", proton_track_chi2 );
       tree->SetBranchAddress( "proton_track_normchi2", proton_track_normchi2 );
     }
@@ -241,6 +269,8 @@ struct TreeEvent
     tree->SetBranchAddress( "diphoton_energy2", diphoton_energy2 );
     tree->SetBranchAddress( "diphoton_r91", diphoton_r91 );
     tree->SetBranchAddress( "diphoton_r92", diphoton_r92 );
+    tree->SetBranchAddress( "diphoton_eleveto1", diphoton_ele_veto1 );
+    tree->SetBranchAddress( "diphoton_eleveto2", diphoton_ele_veto2 );
     tree->SetBranchAddress( "diphoton_mass", diphoton_mass );
     tree->SetBranchAddress( "diphoton_rapidity", diphoton_rapidity );
     tree->SetBranchAddress( "diphoton_pt", diphoton_pt );
@@ -342,12 +372,16 @@ struct TreeEvent
     for ( unsigned int i=0; i<MAX_HLT; i++ ) {
       hlt_accept[i] = hlt_prescale[i] = -1;
     }
-    num_proton_track = 0;
+    num_fwd_track = num_proton_track = 0;
     for ( unsigned int i=0; i<MAX_PROTON_TRK; i++ ) {
-      proton_track_x[i] = proton_track_y[i] = -1.;
+      fwd_track_x[i] = fwd_track_y[i] = -1.;
+      fwd_track_chi2[i] = fwd_track_normchi2[i] = -1.;
+      fwd_track_arm[i] = 2; //invalid
+      fwd_track_station[i] = fwd_track_pot[i] = 0;
+      proton_track_vx[i] = proton_track_vy[i] = proton_track_xi[i] = -1.;
+      proton_track_arm[i] = proton_track_method[i] = 2; //invalid
+      proton_track_pot[i] = 0; //invalid
       proton_track_chi2[i] = proton_track_normchi2[i] = -1.;
-      proton_track_arm[i] = 2; //invalid
-      proton_track_station[i] = proton_track_pot[i] = 0;
     }
 
     num_diphoton = 0;
@@ -357,6 +391,7 @@ struct TreeEvent
       diphoton_phi1[i] = diphoton_phi2[i] = -1.;
       diphoton_energy1[i] = diphoton_energy2[i] = -1.;
       diphoton_r91[i] = diphoton_r92[i] = -1.;
+      diphoton_ele_veto1[i] = diphoton_ele_veto2[i] = 2; //invalid
       diphoton_id1[i] = diphoton_id2[i] = -1.;
       diphoton_sigeove1[i] = diphoton_sigeove2[i] = -1.;
       diphoton_mass[i] = diphoton_rapidity[i] = diphoton_pt[i] = diphoton_dphi[i] = -1.;
@@ -428,10 +463,15 @@ struct TreeEvent
   int num_hlt;
   int hlt_accept[MAX_HLT], hlt_prescale[MAX_HLT];
 
+  unsigned int num_fwd_track;
+  float fwd_track_x[MAX_PROTON_TRK], fwd_track_y[MAX_PROTON_TRK];
+  float fwd_track_chi2[MAX_PROTON_TRK], fwd_track_normchi2[MAX_PROTON_TRK];
+  unsigned int fwd_track_arm[MAX_PROTON_TRK], fwd_track_station[MAX_PROTON_TRK], fwd_track_pot[MAX_PROTON_TRK];
   unsigned int num_proton_track;
-  float proton_track_x[MAX_PROTON_TRK], proton_track_y[MAX_PROTON_TRK];
+  float proton_track_vx[MAX_PROTON_TRK], proton_track_vy[MAX_PROTON_TRK];
+  float proton_track_xi[MAX_PROTON_TRK];
+  unsigned int proton_track_arm[MAX_PROTON_TRK], proton_track_pot[MAX_PROTON_TRK], proton_track_method[MAX_PROTON_TRK];
   float proton_track_chi2[MAX_PROTON_TRK], proton_track_normchi2[MAX_PROTON_TRK];
-  unsigned int proton_track_arm[MAX_PROTON_TRK], proton_track_station[MAX_PROTON_TRK], proton_track_pot[MAX_PROTON_TRK];
 
   unsigned int num_electron;
   float electron_pt[MAX_ELECTRON], electron_eta[MAX_ELECTRON], electron_phi[MAX_ELECTRON], electron_energy[MAX_ELECTRON];
@@ -461,6 +501,7 @@ struct TreeEvent
   float diphoton_phi1[MAX_DIPHOTON], diphoton_phi2[MAX_DIPHOTON];
   float diphoton_energy1[MAX_DIPHOTON], diphoton_energy2[MAX_DIPHOTON];
   float diphoton_r91[MAX_DIPHOTON], diphoton_r92[MAX_DIPHOTON];
+  unsigned int diphoton_ele_veto1[MAX_DIPHOTON], diphoton_ele_veto2[MAX_DIPHOTON];
   float diphoton_id1[MAX_DIPHOTON], diphoton_id2[MAX_DIPHOTON];
   float diphoton_sigeove1[MAX_DIPHOTON], diphoton_sigeove2[MAX_DIPHOTON];
   float diphoton_mass[MAX_DIPHOTON], diphoton_rapidity[MAX_DIPHOTON];
