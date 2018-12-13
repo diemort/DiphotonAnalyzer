@@ -1,6 +1,5 @@
 #include "Canvas.h"
 #include "pot_alignment.h"
-#include "xi_reconstruction.h"
 #include "diproton_candidate.h"
 
 #include "DiphotonAnalyzer/TreeProducer/interface/TreeEvent.h"
@@ -53,15 +52,10 @@ map<unsigned short,const char*> pots_names = { { 2, "45N" }, { 3, "45F" }, { 102
 
 //pots_accept = pots_accept_90pc;
 
-void massrap_matcher( double num_sigma = 2.0 )
+void massrap_matcher( const char* sample = "samples/ntuple-Run2016B_94Xrereco_v1.root", double num_sigma = 2.0 )
 {
-//  TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
-  TFile f( "samples/ntuple-Run2016B_94Xrereco_v1.root" );
+  TFile f( sample );
   TTree* tr = dynamic_cast<TTree*>( f.Get( "ntp" ) );
-
-  //xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
-  xi_reco::load_optics_file( "TreeProducer/data/optics_17may22.root" );
-  pot_align::load_file( "TreeProducer/data/alignment_collection_v2.out" );
 
   //const float rel_err_xi_gg = 0.039;
   const double rel_err_mass = 0.02, rel_err_rap = 0.074;
@@ -90,41 +84,40 @@ void massrap_matcher( double num_sigma = 2.0 )
   const unsigned long long num_events = tr->GetEntriesFast();
   for ( unsigned long long i = 0; i < num_events; ++i ) {
     tr->GetEntry( i );
-    //cout << "event " << i << ": " << ev.num_proton_track << " proton tracks, " << ev.num_diphoton << " diphoton candidates" << endl;
+
+    cout << "event " << i << ": " << ev.num_proton_track << " proton tracks, " << ev.num_diphoton << " diphoton candidates" << endl;
 
     // first loop to identify the tracks and their respective pot
 
-    auto align = pot_align::get_alignments( ev.fill_number );
-
     vector<track_t> xi_45n, xi_45f, xi_56n, xi_56f;
+    vector<pair<float,float> > xi_45, xi_56;
 
     for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
+      if ( ev.proton_track_method[j] != 1 )
+        continue; // only use multi-pot reconstruction
       const unsigned short pot_id = 100*ev.proton_track_arm[j]+ev.proton_track_pot[j];
-      const auto& al = align[pot_id];
 
       //----- reconstruct the kinematics
-      double xi, xi_err;
-      xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_arm[j], ev.proton_track_pot[j], xi, xi_err );
-
-      if ( xi < pots_accept[pot_id] )
+      if ( ev.proton_track_xi[j] < pots_accept[pot_id] )
         continue;
 
       //----- associate each track to a RP
-      if      ( ev.proton_track_arm[j] == 0 && ev.proton_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      /*if      ( ev.proton_track_arm[j] == 0 && ev.proton_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
       else if ( ev.proton_track_arm[j] == 0 && ev.proton_track_pot[j] == 3 ) xi_45f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
       else if ( ev.proton_track_arm[j] == 1 && ev.proton_track_pot[j] == 2 ) xi_56n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_arm[j] == 1 && ev.proton_track_pot[j] == 3 ) xi_56f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
+      else if ( ev.proton_track_arm[j] == 1 && ev.proton_track_pot[j] == 3 ) xi_56f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );*/
+      if ( ev.proton_track_arm[j] == 0 ) xi_45.emplace_back( ev.proton_track_xi[j], ev.proton_track_xi[j]*0.1 ); //FIXME FIXME FIXME
+      else if ( ev.proton_track_arm[j] == 1 ) xi_56.emplace_back( ev.proton_track_xi[j], ev.proton_track_xi[j]*0.1 ); //FIXME FIXME FIXME
     }
 
     //----- merge 2 tracks in one if N-F pot content is similar
-    vector<pair<float,float> > xi_45, xi_56;
 
-    const float xdiff_cut = 0.01;
+    //const float xdiff_cut = 0.01;
 
     //--- sector 45
 
-    xi_45 = merge_nearfar( xi_45n, xi_45f, xdiff_cut );
-    xi_56 = merge_nearfar( xi_56n, xi_56f, xdiff_cut );
+    //xi_45 = merge_nearfar( xi_45n, xi_45f, xdiff_cut );
+    //xi_56 = merge_nearfar( xi_56n, xi_56f, xdiff_cut );
 
     /*//FIXME FIXME
     for ( const auto& trk : xi_45n ) xi_45.emplace_back( trk.xi, trk.err_xi );
@@ -247,10 +240,10 @@ void massrap_matcher( double num_sigma = 2.0 )
           cout << "event:" << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;
           cout << "masses: central system: " << cms.M() << ", diphoton: " << ev.diphoton_mass[j] << " +/- " << diphoton_mass_error << ", diproton: " << cand.mass() << " +/- " << cand.mass_error() << endl;
           cout << "rapidities: central system: " << cms.Rapidity() << ", diphoton: " << ev.diphoton_rapidity[j] << " +/- " << diphoton_rapidity_error << ", diproton: " << cand.rapidity() << " +/- " << cand.rapidity_error() << endl;
-          cout << "xi-per-pot: " << "45-near: " << ( xi_45n.size() > 0 ? xi_45n[0].first : "n/a" )
+/*          cout << "xi-per-pot: " << "45-near: " << ( xi_45n.size() > 0 ? xi_45n[0].first : "n/a" )
                << ", 45-far: " << ( xi_45f.size() > 0 ? xi_45n[0].first : "n/a" )
                << ", 56-near: " << ( xi_56n.size() > 0 ? xi_56n[0].first : "n/a" )
-               << ", 56-far: " << ( xi_56f.size() > 0 ? xi_56f[0].first : "n/a" ) << endl;
+               << ", 56-far: " << ( xi_56f.size() > 0 ? xi_56f[0].first : "n/a" ) << endl;*/
           gr_mass_massrapmatch.SetPoint( num_massrapmatch, cand.mass(), cms.M() );
           gr_mass_massrapmatch.SetPointError( num_massrapmatch, cand.mass_error(), diphoton_mass_error );
           gr_rap_massrapmatch.SetPoint( num_massrapmatch, cand.rapidity(), cms.Rapidity() );
@@ -283,22 +276,26 @@ void massrap_matcher( double num_sigma = 2.0 )
     } // loop on diphotons
     if ( has_diph_cand ) {
       unsigned short num_45 = 0, num_56 = 0;
-      for ( const auto& m : xi_45n ) {
-        m_h_xi[2]->Fill( m.xi );
-        num_45++;
-      }
-      for ( const auto& m : xi_45f ) {
-        m_h_xi[3]->Fill( m.xi );
-        num_45++;
-      }
-      for ( const auto& m : xi_56n ) {
-        m_h_xi[102]->Fill( m.xi );
-        num_56++;
-      }
-      for ( const auto& m : xi_56f ) {
-        m_h_xi[103]->Fill( m.xi );
-        num_56++;
-      }
+      if ( !xi_45n.empty() )
+        for ( const auto& m : xi_45n ) {
+          m_h_xi[2]->Fill( m.xi );
+          num_45++;
+        }
+      if ( !xi_45f.empty() )
+        for ( const auto& m : xi_45f ) {
+          m_h_xi[3]->Fill( m.xi );
+          num_45++;
+        }
+      if ( !xi_56n.empty() )
+        for ( const auto& m : xi_56n ) {
+          m_h_xi[102]->Fill( m.xi );
+          num_56++;
+        }
+      if ( !xi_56f.empty() )
+        for ( const auto& m : xi_56f ) {
+          m_h_xi[103]->Fill( m.xi );
+          num_56++;
+        }
       h_num_45->Fill( num_45 );
       h_num_56->Fill( num_56 );
       if ( num_45 > 0 && num_56 > 0 )

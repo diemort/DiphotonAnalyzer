@@ -453,6 +453,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
       ev_.proton_track_vx[ev_.num_proton_track] = trk.vertex().x();
       ev_.proton_track_vy[ev_.num_proton_track] = trk.vertex().y();
       ev_.proton_track_xi[ev_.num_proton_track] = trk.xi();
+      //ev_.proton_track_xi_err[ev_.num_proton_track] = trk.xiError(); //FIXME not implemented in 9_4_X branch
 
       ev_.proton_track_method[ev_.num_proton_track] = (int)trk.method; // 0 = single-pot, 1 = multi-pot
       ev_.proton_track_arm[ev_.num_proton_track] = (int)trk.lhcSector; // 0 = left (45) ; 1 = right (56)

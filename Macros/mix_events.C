@@ -63,7 +63,7 @@ void mix_events( const char* input_filename = "fits_results.root" )
   const double weight = exp_yield/num_toys; //FIXME
   cout << "weight=" << weight << endl;
 
-  ev.enableBranches( {
+  ev.enableBranches( ev.tree, {
     "fill_number",
     "num_proton_track", "proton_track_side", "proton_track_pot", "proton_track_x"
   } );

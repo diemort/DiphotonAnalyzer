@@ -51,6 +51,7 @@ struct TreeEvent
       tree->Branch( "proton_track_vx", proton_track_vx, "proton_track_vx[num_proton_track]/F" );
       tree->Branch( "proton_track_vy", proton_track_vy, "proton_track_vy[num_proton_track]/F" );
       tree->Branch( "proton_track_xi", proton_track_xi, "proton_track_xi[num_proton_track]/F" );
+      tree->Branch( "proton_track_xi_err", proton_track_xi_err, "proton_track_xi_err[num_proton_track]/F" );
       tree->Branch( "proton_track_arm", proton_track_arm, "proton_track_arm[num_proton_track]/i" );
       tree->Branch( "proton_track_pot", proton_track_pot, "proton_track_pot[num_proton_track]/i" );
       tree->Branch( "proton_track_method", proton_track_method, "proton_track_method[num_proton_track]/i" );
@@ -192,12 +193,12 @@ struct TreeEvent
     tree->Branch( "pileup_weight", &pileup_weight, "pileup_weight/F" );
   }
 
-  void enableBranches( const std::vector<std::string>& list ) {
+  void enableBranches( TTree* tree, const std::vector<std::string>& list ) {
     if ( list.empty() )
       return;
     tree->SetBranchStatus( "*", 0 );
     for ( const auto& br : list )
-      tree->SetBranchStatus( br, 1 );
+      tree->SetBranchStatus( br.c_str(), 1 );
   }
 
   void attach( TTree* tree, bool data = false ) {
@@ -230,6 +231,7 @@ struct TreeEvent
       tree->SetBranchAddress( "proton_track_vx", proton_track_vx );
       tree->SetBranchAddress( "proton_track_vy", proton_track_vy );
       tree->SetBranchAddress( "proton_track_xi", proton_track_xi );
+      tree->SetBranchAddress( "proton_track_xi_err", proton_track_xi_err );
       tree->SetBranchAddress( "proton_track_arm", proton_track_arm );
       tree->SetBranchAddress( "proton_track_pot", proton_track_pot );
       tree->SetBranchAddress( "proton_track_method", proton_track_method );
@@ -378,7 +380,8 @@ struct TreeEvent
       fwd_track_chi2[i] = fwd_track_normchi2[i] = -1.;
       fwd_track_arm[i] = 2; //invalid
       fwd_track_station[i] = fwd_track_pot[i] = 0;
-      proton_track_vx[i] = proton_track_vy[i] = proton_track_xi[i] = -1.;
+      proton_track_vx[i] = proton_track_vy[i] = -1.;
+      proton_track_xi[i] = proton_track_xi_err[i] = -1.;
       proton_track_arm[i] = proton_track_method[i] = 2; //invalid
       proton_track_pot[i] = 0; //invalid
       proton_track_chi2[i] = proton_track_normchi2[i] = -1.;
@@ -469,7 +472,7 @@ struct TreeEvent
   unsigned int fwd_track_arm[MAX_PROTON_TRK], fwd_track_station[MAX_PROTON_TRK], fwd_track_pot[MAX_PROTON_TRK];
   unsigned int num_proton_track;
   float proton_track_vx[MAX_PROTON_TRK], proton_track_vy[MAX_PROTON_TRK];
-  float proton_track_xi[MAX_PROTON_TRK];
+  float proton_track_xi[MAX_PROTON_TRK], proton_track_xi_err[MAX_PROTON_TRK];
   unsigned int proton_track_arm[MAX_PROTON_TRK], proton_track_pot[MAX_PROTON_TRK], proton_track_method[MAX_PROTON_TRK];
   float proton_track_chi2[MAX_PROTON_TRK], proton_track_normchi2[MAX_PROTON_TRK];
 
