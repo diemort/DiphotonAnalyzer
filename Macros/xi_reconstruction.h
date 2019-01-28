@@ -127,8 +127,8 @@ namespace xi_reco
     const double de_x = 150.e-6; // alignment uncertainty
 
     xi = x/disp.first;
-    xi_err = sqrt( pow( de_x/disp.first, 2 )+pow( disp.second*xi, 2 ) );
-    //xi_err = xi * sqrt( ( pow( de_x/x, 2 )+pow( disp.second, 2 ) ) );
+    xi_err = hypot( de_x/disp.first, disp.second*xi );
+    //xi_err = xi * hypot( de_x/x, disp.second );
   }
 }
 

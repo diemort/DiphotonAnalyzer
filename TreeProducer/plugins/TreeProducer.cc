@@ -115,7 +115,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::WatchRuns,edm::one::S
     std::unique_ptr<TFile> file_;
     TTree* tree_;
 
-    TreeEvent ev_;
+    gggg::TreeEvent ev_;
 };
 
 TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
@@ -133,7 +133,7 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
 //
   genPartToken_       ( consumes<edm::View<reco::GenParticle> >         ( iConfig.getParameter<edm::InputTag>( "genPartLabel" ) ) ),
   genPhoToken_        ( consumes<edm::View<pat::PackedGenParticle> >    ( iConfig.getParameter<edm::InputTag>( "genPhoLabel" ) ) ),
-  pileupToken_        ( consumes<edm::View<PileupSummaryInfo> >         ( iConfig.getUntrackedParameter<edm::InputTag>( "pileupLabel", edm::InputTag( "slimmedAddPileupInfo" ) ) ) ),
+  pileupToken_        ( consumes<edm::View<PileupSummaryInfo> >         ( iConfig.getParameter<edm::InputTag>( "pileupLabel" ) ) ),
   triggerResultsToken_( consumes<edm::TriggerResults>                   ( triggerResults_ ) ),
   isData_             ( iConfig.getParameter<bool>       ( "isData" ) ),
   sqrtS_              ( iConfig.getParameter<double>     ( "sqrtS" ) ),
@@ -144,8 +144,8 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   photonPairMaxMass_  ( iConfig.getUntrackedParameter<double>( "maxMassDiPhoton", -1. ) ),
   filename_           ( iConfig.getParameter<std::string>( "outputFilename" ) ),
   maxGenLevelDR_      ( iConfig.getParameter<double>     ( "maxGenLevelDeltaR" ) ),
-  puMCpath_           ( iConfig.getUntrackedParameter<std::string>( "pileupMCPath", "pileup" ) ),
-  puDatapath_         ( iConfig.getUntrackedParameter<std::string>( "pileupDataPath", "pileup" ) ),
+  puMCpath_           ( iConfig.getParameter<std::string>( "pileupMCPath" ) ),
+  puDatapath_         ( iConfig.getParameter<std::string>( "pileupDataPath" ) ),
   triggersList_       ( iConfig.getParameter<std::vector<std::string> >( "triggersList" ) ),
   hlt_prescale_       ( iConfig, consumesCollector(), *this ),
   hlt_matcher_( triggersList_ ),
@@ -536,7 +536,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
     for ( unsigned int i=0; i<pileupInfo->size(); i++ ) {
       const edm::Ptr<PileupSummaryInfo> PVI = pileupInfo->ptrAt( i );
       const int beamXing = PVI->getBunchCrossing(), npvtrue = PVI->getTrueNumInteractions();
-      if ( beamXing==0 ) { npv0true += npvtrue; }
+      if ( beamXing==0 )
+        npv0true += npvtrue;
     }
     ev_.pileup_weight = lumiReweighter_->weight( npv0true );
   }
@@ -587,8 +588,8 @@ TreeProducer::analyzeTriggers( const edm::Event& iEvent, const edm::EventSetup& 
   iEvent.getByToken( triggerResultsToken_, hltResults );
   const edm::TriggerNames& trigNames = iEvent.triggerNames( *hltResults );
 
-  if ( !hlt_prescale_.hltConfigProvider().inited() )
-    throw cms::Exception("analyzeTriggers") << "HLT configuration provider uninitialised!";
+  //if ( !hlt_prescale_.hltConfigProvider().inited() )
+  //  throw cms::Exception("analyzeTriggers") << "HLT configuration provider uninitialised!";
 
   std::ostringstream os;
   //os << "Prescale set: " << hlt_prescale_.prescaleSet(iEvent, iSetup) << "\n"
@@ -619,7 +620,7 @@ TreeProducer::beginJob()
 void
 TreeProducer::beginRun( const edm::Run& iRun, const edm::EventSetup& iSetup )
 {
-  bool changed = true;
+  /*bool changed = true;
   if ( !hlt_prescale_.init( iRun, iSetup, triggerResults_.process(), changed ) )
     throw cms::Exception("TreeProducer") << " prescales extraction failure with process name " << triggerResults_.process();
   hlt_config_ = hlt_prescale_.hltConfigProvider();
@@ -628,7 +629,7 @@ TreeProducer::beginRun( const edm::Run& iRun, const edm::EventSetup& iSetup )
   if ( changed ) {
     // The HLT config has actually changed wrt the previous Run, hence rebook your
     // histograms or do anything else dependent on the revised HLT config
-  }
+  }*/
 }
 
 void
@@ -664,6 +665,11 @@ TreeProducer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )
   desc.add<edm::InputTag>( "genPartLabel", edm::InputTag( "flashggPrunedGenParticles" ) );
   desc.add<edm::InputTag>( "genPhoLabel", edm::InputTag( "flashggGenPhotons" ) );
   desc.add<double>( "maxGenLevelDeltaR", 5. );
+  desc.add<edm::InputTag>( "pileupLabel", edm::InputTag( "slimmedAddPileupInfo" ) );
+  desc.add<edm::FileInPath>( "pileupDataFile", edm::FileInPath() );
+  desc.add<edm::FileInPath>( "pileupMCFile", edm::FileInPath() );
+  desc.add<std::string>( "pileupMCPath", "pileup" );
+  desc.add<std::string>( "pileupDataPath", "pileup" );
 
   descriptions.add( "treeProducer", desc );
 }

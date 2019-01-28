@@ -5,7 +5,7 @@
 *.so
 *.png
 *.pdf
-*.root
+#*.root
 *.log
 *.txt
 *.swp

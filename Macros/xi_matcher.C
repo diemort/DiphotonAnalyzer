@@ -32,7 +32,7 @@ void xi_matcher()
   //TFile f( "Samples/output_Run2016BCG_looseCuts_22jun.root" );
   //TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
   TFile f( "samples/ntuple-Run2016B_94Xrereco_v1.root" );
-  TreeEvent ev;
+  gggg::TreeEvent ev;
   TTree* tree = dynamic_cast<TTree*>( f.Get( "ntp" ) );
   ev.attach( tree, true );
 

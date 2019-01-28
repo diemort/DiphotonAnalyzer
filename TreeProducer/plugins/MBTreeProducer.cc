@@ -144,10 +144,10 @@ MBTreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup
     ev_.vertex_y[ev_.num_vertex] = vtx->y();
     ev_.vertex_z[ev_.num_vertex] = vtx->z();
 
-    ev_.vertex_tracks[ev_.num_vertex] = vtx->nTracks();
+    /*ev_.vertex_tracks[ev_.num_vertex] = vtx->nTracks();
     ev_.vertex_tracks_wgt0p75[ev_.num_vertex] = vtx->nTracks( 0.75 );
     ev_.vertex_tracks_wgt0p90[ev_.num_vertex] = vtx->nTracks( 0.90 );
-    ev_.vertex_tracks_wgt0p95[ev_.num_vertex] = vtx->nTracks( 0.95 );
+    ev_.vertex_tracks_wgt0p95[ev_.num_vertex] = vtx->nTracks( 0.95 );*/
     ev_.num_vertex++;
   }
 
@@ -184,7 +184,7 @@ MBTreeProducer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )
   //--- general parameters
   desc.add<std::string>( "outputFilename", "output.root" );
   //--- input collections
-  desc.add<edm::InputTag>( "vertexLabel", edm::InputTag( "offlinePrimaryVertices" ) );
+  desc.add<edm::InputTag>( "vertexLabel", edm::InputTag( "offlineSlimmedPrimaryVertices" ) );
   desc.add<edm::InputTag>( "beamSpotLabel", edm::InputTag( "offlineBeamSpot" ) );
   //--- totem RP information extraction
   desc.add<edm::InputTag>( "protonTracksLabel", edm::InputTag( "ctppsLocalTrackLiteProducer" ) );

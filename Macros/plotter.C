@@ -14,6 +14,8 @@
 
 #include <string.h>
 
+using namespace gggg;
+
 void logarithmicBins( TAxis* axis );
 void plot_2ddiscrim( const char* name, TH2D* h2[], bool logx );
 

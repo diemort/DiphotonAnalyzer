@@ -6,7 +6,7 @@
 struct MBTreeEvent
 {
   static constexpr unsigned short MAX_PROTON_TRK = 20;
-  static constexpr unsigned short MAX_VERTEX = 100;
+  static constexpr unsigned short MAX_VERTEX = 200;
 
   void create( TTree* tree ) {
     if ( !tree ) return;
@@ -32,10 +32,10 @@ struct MBTreeEvent
     tree->Branch( "vertex_x", vertex_x, "vertex_x[num_vertex]/F" );
     tree->Branch( "vertex_y", vertex_y, "vertex_y[num_vertex]/F" );
     tree->Branch( "vertex_z", vertex_z, "vertex_z[num_vertex]/F" );
-    tree->Branch( "vertex_tracks", vertex_tracks, "vertex_tracks[num_vertex]/i" );
+    /*tree->Branch( "vertex_tracks", vertex_tracks, "vertex_tracks[num_vertex]/i" );
     tree->Branch( "vertex_tracks_wgt0p75", vertex_tracks_wgt0p75, "vertex_tracks_wgt0p75[num_vertex]/i" );
     tree->Branch( "vertex_tracks_wgt0p90", vertex_tracks_wgt0p90, "vertex_tracks_wgt0p90[num_vertex]/i" );
-    tree->Branch( "vertex_tracks_wgt0p95", vertex_tracks_wgt0p95, "vertex_tracks_wgt0p95[num_vertex]/i" );
+    tree->Branch( "vertex_tracks_wgt0p95", vertex_tracks_wgt0p95, "vertex_tracks_wgt0p95[num_vertex]/i" );*/
 
     tree->Branch( "bs_x0", &bs_x0, "bs_x0/F" );
     tree->Branch( "bs_y0", &bs_y0, "bs_y0/F" );
@@ -46,14 +46,14 @@ struct MBTreeEvent
     tree->Branch( "bs_beam_width_y", &bs_beam_width_y, "bs_beam_width_y/F" );
   }
 
-  void attach( TTree* tree ) {
+  void attach( TTree* tree, const std::vector<std::string>& list = {} ) {
     if ( !tree ) return;
 
     tree->SetBranchAddress( "run_id", &run_id );
     tree->SetBranchAddress( "fill_number", &fill_number );
     tree->SetBranchAddress( "lumisection", &lumisection );
     tree->SetBranchAddress( "bunch_crossing", &bunch_crossing );
-    tree->SetBranchAddress( "event_number", &event_number);
+    tree->SetBranchAddress( "event_number", &event_number );
 
     tree->SetBranchAddress( "num_fwd_track", &num_fwd_track );
     tree->SetBranchAddress( "fwd_track_x", fwd_track_x );
@@ -70,10 +70,10 @@ struct MBTreeEvent
     tree->SetBranchAddress( "vertex_x", vertex_x );
     tree->SetBranchAddress( "vertex_y", vertex_y );
     tree->SetBranchAddress( "vertex_z", vertex_z );
-    tree->SetBranchAddress( "vertex_tracks", vertex_tracks );
+    /*tree->SetBranchAddress( "vertex_tracks", vertex_tracks );
     tree->SetBranchAddress( "vertex_tracks_wgt0p75", vertex_tracks_wgt0p75 );
     tree->SetBranchAddress( "vertex_tracks_wgt0p90", vertex_tracks_wgt0p90 );
-    tree->SetBranchAddress( "vertex_tracks_wgt0p95", vertex_tracks_wgt0p95 );
+    tree->SetBranchAddress( "vertex_tracks_wgt0p95", vertex_tracks_wgt0p95 );*/
 
     tree->SetBranchAddress( "bs_x0", &bs_x0 );
     tree->SetBranchAddress( "bs_y0", &bs_y0 );
@@ -82,6 +82,12 @@ struct MBTreeEvent
     tree->SetBranchAddress( "bs_dxdz", &bs_dxdz );
     tree->SetBranchAddress( "bs_beam_width_x", &bs_beam_width_x );
     tree->SetBranchAddress( "bs_beam_width_y", &bs_beam_width_y );
+
+    if ( list.empty() )
+      return;
+    tree->SetBranchStatus( "*", 0 );
+    for ( const auto& br : list )
+      tree->SetBranchStatus( br.c_str(), 1 );
   }
 
   void clear() {
@@ -98,7 +104,7 @@ struct MBTreeEvent
     num_vertex = 0;
     for ( unsigned int i = 0; i < MAX_VERTEX; ++i ) {
       vertex_x[i] = vertex_y[i] = vertex_z[i] = -999.;
-      vertex_tracks[i] = vertex_tracks_wgt0p75[i] = vertex_tracks_wgt0p90[i] = vertex_tracks_wgt0p95[i] = 0;
+      //vertex_tracks[i] = vertex_tracks_wgt0p75[i] = vertex_tracks_wgt0p90[i] = vertex_tracks_wgt0p95[i] = 0;
     }
     bs_x0 = bs_y0 = bs_z0 = bs_sigma_z = bs_dxdz = bs_beam_width_x = bs_beam_width_y = -999.;
   }
@@ -116,8 +122,8 @@ struct MBTreeEvent
 
   unsigned int num_vertex;
   float vertex_x[MAX_VERTEX], vertex_y[MAX_VERTEX], vertex_z[MAX_VERTEX];
-  unsigned int vertex_tracks[MAX_VERTEX];
-  unsigned int vertex_tracks_wgt0p75[MAX_VERTEX], vertex_tracks_wgt0p90[MAX_VERTEX], vertex_tracks_wgt0p95[MAX_VERTEX];
+  //unsigned int vertex_tracks[MAX_VERTEX];
+  //unsigned int vertex_tracks_wgt0p75[MAX_VERTEX], vertex_tracks_wgt0p90[MAX_VERTEX], vertex_tracks_wgt0p95[MAX_VERTEX];
   float bs_x0, bs_y0, bs_z0, bs_sigma_z, bs_dxdz, bs_beam_width_x, bs_beam_width_y;
 };
 

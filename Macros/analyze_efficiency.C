@@ -97,19 +97,23 @@ void analyze_efficiency()
 
   //map<unsigned int,pot_align::align_t> align_el = { { 2, { 1.7773, 0., 0.5484, 0. } }, { 3, { -1.25905, 0., -0.533, 0. } }, { 102, { -0.0385, 0., 0.77165, 0. } }, { 103, { -0.55638, 0., 0.5982, 0. } } };
 
-  MBTreeEvent mb_ev;
-  auto mb_tree = dynamic_cast<TTree*>( TFile::Open( "Samples/output_alignmentrun_mbtree.root" )->Get( "ntp" ) );
-  mb_ev.attach( mb_tree );
+  auto mb_tree = dynamic_cast<TTree*>( TFile::Open( "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_alignmentrun_mbtree.root" )->Get( "ntp" ) );
+  unsigned int num_strips_track;
+  float strips_track_x[50], strips_track_y[50];
+  unsigned int strips_track_arm[50], strips_track_pot[50];
+  mb_tree->SetBranchAddress( "num_strips_track", &num_strips_track );
+  mb_tree->SetBranchAddress( "strips_track_x", strips_track_x );
+  mb_tree->SetBranchAddress( "strips_track_y", strips_track_y );
+  mb_tree->SetBranchAddress( "strips_track_arm", strips_track_arm );
+  mb_tree->SetBranchAddress( "strips_track_pot", strips_track_pot );
   for ( long long i = 0; i < mb_tree->GetEntriesFast(); ++i ) {
     mb_tree->GetEntry( i );
-    for ( unsigned int j = 0; j < mb_ev.num_strips_track; ++j ) {
-      const unsigned short pid = 100 * mb_ev.strips_track_arm[j] + mb_ev.strips_track_pot[j];
-      /*const double trk_x = mb_ev.strips_track_x[j] * 1.e3 - align_el[pid].x;
-      const double trk_y = mb_ev.strips_track_y[j] * 1.e3 + align_el[pid].y;*/
-      const double trk_x = mb_ev.strips_track_x[j] * 1.e3;
-      const double trk_y = mb_ev.strips_track_y[j] * 1.e3;
+    for ( unsigned int j = 0; j < num_strips_track; ++j ) {
+      const unsigned short pid = 100 * strips_track_arm[j] + strips_track_pot[j];
+      const double trk_x = strips_track_x[j] * 1.e3;
+      const double trk_y = strips_track_y[j] * 1.e3;
       double xi = 0., xi_err = 0.;
-      xi_reco::reconstruct( trk_x*1.e-3, mb_ev.strips_track_arm[j], mb_ev.strips_track_pot[j], xi, xi_err );
+      xi_reco::reconstruct( trk_x*1.e-3, strips_track_arm[j], strips_track_pot[j], xi, xi_err );
       h_denom_x[pid]->Fill( trk_x );
       h_denom_y[pid]->Fill( trk_y );
       h_denom_xi[pid]->Fill( xi );
@@ -119,21 +123,12 @@ void analyze_efficiency()
     }
   }
 
-  auto f = TFile::Open( "/eos/cms/store/user/lforthom/ctpps/efficiency_study/merged_eff_outputBCG.root" );
+  //auto f = TFile::Open( "/eos/cms/store/user/lforthom/ctpps/efficiency_study/merged_eff_outputBCG.root" );
+  auto f = TFile::Open( "/eos/cms/store/group/dpg_ctpps/comm_ctpps/RadiationDamage/DoubleEG/mbntuple-Run2016BCG_94Xrereco_v1.root" );
+  MBTreeEvent mb_phys;
   auto tree = dynamic_cast<TTree*>( f->Get( "ntp" ) );
-  tree->SetBranchStatus( "*", 0 );
-  unsigned int fill_number;
-  tree->SetBranchStatus( "fill_number", 1 ); tree->SetBranchAddress( "fill_number", &fill_number );
-  const unsigned short max_tracks = 20;
-  unsigned int num_proton_track, proton_track_side[max_tracks], proton_track_pot[max_tracks];
-  float proton_track_x[max_tracks], proton_track_y[max_tracks];
-  tree->SetBranchStatus( "num_proton_track", 1 ); tree->SetBranchAddress( "num_proton_track", &num_proton_track );
-  tree->SetBranchStatus( "proton_track_x", 1 ); tree->SetBranchAddress( "proton_track_x", proton_track_x );
-  tree->SetBranchStatus( "proton_track_y", 1 ); tree->SetBranchAddress( "proton_track_y", proton_track_y );
-  tree->SetBranchStatus( "proton_track_side", 1 ); tree->SetBranchAddress( "proton_track_side", proton_track_side );
-  tree->SetBranchStatus( "proton_track_pot", 1 ); tree->SetBranchAddress( "proton_track_pot", proton_track_pot );
-
-  const unsigned long long num_entries = tree->GetEntriesFast()/10;
+  mb_phys.attach( tree, { "fill_number", "num_fwd_track", "fwd_track_x", "fwd_track_y", "fwd_track_arm", "fwd_track_pot" } );
+  const unsigned long long num_entries = tree->GetEntriesFast()/1; //FIXME
   for ( unsigned long long i = 0; i < num_entries; ++i ) {
     tree->GetEntry( i );
     if ( i % 1000000 == 0 ) cout << "-- event " << i << "/" << num_entries << endl;
@@ -141,25 +136,25 @@ void analyze_efficiency()
     //if ( fill_number < ref_fill ) continue; // FIXME
     //if ( fill_number < 4964 ) continue; //FIXME skipping fills with margin
 
-    auto align = pot_align::get_alignments( fill_number );
+    auto align = pot_align::get_alignments( mb_phys.fill_number );
 
-    for ( unsigned int j = 0; j < num_proton_track; ++j ) {
-      const unsigned short pid = 100 * proton_track_side[j] + proton_track_pot[j];
-      if ( m_h_num_xi[pid].count( fill_number ) == 0 )
-        m_h_num_xi[pid][fill_number] = dynamic_cast<TH1D*>( h_num_xi[pid]->Clone( Form( "h_num_xi_%d_%d", pid, fill_number ) ) );
-      if ( m_h_num_x[pid].count( fill_number ) == 0 )
-        m_h_num_x[pid][fill_number] = dynamic_cast<TH1D*>( h_num_x[pid]->Clone( Form( "h_num_x_%d_%d", pid, fill_number ) ) );
+    for ( unsigned int j = 0; j < mb_phys.num_fwd_track; ++j ) {
+      const unsigned short pid = 100 * mb_phys.fwd_track_arm[j] + mb_phys.fwd_track_pot[j];
+      if ( m_h_num_xi[pid].count( mb_phys.fill_number ) == 0 )
+        m_h_num_xi[pid][mb_phys.fill_number] = dynamic_cast<TH1D*>( h_num_xi[pid]->Clone( Form( "h_num_xi_%d_%d", pid, mb_phys.fill_number ) ) );
+      if ( m_h_num_x[pid].count( mb_phys.fill_number ) == 0 )
+        m_h_num_x[pid][mb_phys.fill_number] = dynamic_cast<TH1D*>( h_num_x[pid]->Clone( Form( "h_num_x_%d_%d", pid, mb_phys.fill_number ) ) );
 
       double xi = 0., xi_err = 0.;
-      xi_reco::reconstruct( proton_track_x[j]+align[pid].x, proton_track_side[j], proton_track_pot[j], xi, xi_err );
-      const double trk_x = ( proton_track_x[j]+align[pid].x )*1.e3;
-      const double trk_y = ( proton_track_y[j]-align[pid].y )*1.e3;
+      xi_reco::reconstruct( mb_phys.fwd_track_x[j]+align[pid].x, mb_phys.fwd_track_arm[j], mb_phys.fwd_track_pot[j], xi, xi_err );
+      const double trk_x = ( mb_phys.fwd_track_x[j]+align[pid].x )*1.e3;
+      const double trk_y = ( mb_phys.fwd_track_y[j]-align[pid].y )*1.e3;
       h_num_x[pid]->Fill( trk_x );
       h_num_y[pid]->Fill( trk_y );
       h_num_xi[pid]->Fill( xi );
       h_num_xi_optbins[pid]->Fill( xi );
-      m_h_num_x[pid][fill_number]->Fill( trk_x );
-      m_h_num_xi[pid][fill_number]->Fill( xi );
+      m_h_num_x[pid][mb_phys.fill_number]->Fill( trk_x );
+      m_h_num_xi[pid][mb_phys.fill_number]->Fill( xi );
       if ( trk_x > pot_x_mineff[pid] ) h_num_y_win[pid]->Fill( trk_y );
       h2_num_xy[pid]->Fill( trk_x, trk_y, 1./num_entries );
     }
@@ -211,7 +206,7 @@ void analyze_efficiency()
 
   // plotting part
 
-  const string top_title = "CMS-TOTEM Preliminary 2016, #sqrt{s} = 13 TeV, L = 9.4 fb^{-1}";
+  const string top_title = "9.4 fb^{-1} (13 TeV)";
 
   auto text = new TText();
   //text->SetTextColor( kGray+3 );
@@ -244,9 +239,10 @@ void analyze_efficiency()
       range->SetLineColor( kRed+1 );
       range->SetLineWidth( 3 );
       { // plot both the numerator and denominator
-        Canvas c( Form( "dist_%s_%s", distrib.c_str(), p.second ), top_title.c_str() );
+        Canvas c( Form( "dist_%s_%s", distrib.c_str(), p.second ), top_title.c_str(), "Preliminary" );
         if ( distrib == "y" || distrib == "y_win" ) c.SetLegendX1( 0.15 );
         else c.SetLegendX1( 0.475 );
+        c.SetLegendY1( 0.7 );
         THStack hs;
         hs.Add( hist.first[p.first], "hist" );
         c.AddLegendEntry( hist.first[p.first], "All runs in 2016B/C/G", "f" );
@@ -271,7 +267,7 @@ void analyze_efficiency()
         c.Save( "pdf,png", loc_www );
       }
       { // plot the efficiencies
-        Canvas c( Form( "ratio_%s_%s", distrib.c_str(), p.second ), top_title.c_str() );
+        Canvas c( Form( "ratio_%s_%s", distrib.c_str(), p.second ), top_title.c_str(), "Preliminary" );
         gStyle->SetOptStat( 0 );
         auto ratio = dynamic_cast<TH1D*>( hist.first[p.first]->Clone() ), den = dynamic_cast<TH1D*>( hist.second[p.first]->Clone() );
         ratio->SetTitle( TString( ratio->GetTitle() ).ReplaceAll( "Entries", "Efficiency" ) );
@@ -352,7 +348,7 @@ void analyze_efficiency()
   //TColor::InvertPalette();
   for ( const auto& p : pot_names ) {
     {
-      Canvas c( Form( "ratio2d_xy_%s", p.second ), top_title.c_str() );
+      Canvas c( Form( "ratio2d_xy_%s", p.second ), top_title.c_str(), "Preliminary" );
       auto ratio = dynamic_cast<TH2D*>( h2_num_xy[p.first]->Clone() );
       ratio->Divide( h2_denom_xy[p.first] );
       ratio->Draw( "colz" );
@@ -368,7 +364,7 @@ void analyze_efficiency()
       auto fills_map = dist.second.first[p.first];
       auto num = dist.second.second.first[p.first], denom = dist.second.second.second[p.first];
       {
-        Canvas c( Form( "dist_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str() );
+        Canvas c( Form( "dist_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "Preliminary" );
         THStack hs;
         c.SetLegendX1( 0.57 );
         c.AddLegendEntry( denom, "Reference fill", "l" );
@@ -396,7 +392,7 @@ void analyze_efficiency()
         c.Save( "pdf,png", loc_www );
       }
       {
-        Canvas c( Form( "ratio_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str() );
+        Canvas c( Form( "ratio_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "Preliminary" );
         THStack hs;
         for ( auto& h : fills_map ) {
           auto ratio = dynamic_cast<TH1D*>( h.second->Clone() );
@@ -424,7 +420,7 @@ void analyze_efficiency()
         c.Save( "pdf,png", loc_www );
       }
       {
-        Canvas c( Form( "ratio_ratio_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str() );
+        Canvas c( Form( "ratio_ratio_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "Preliminary" );
         THStack hs;
         auto ratio_tot = dynamic_cast<TH1D*>( num->Clone() );
         ratio_tot->Divide( denom );

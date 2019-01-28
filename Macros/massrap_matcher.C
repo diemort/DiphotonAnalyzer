@@ -1,5 +1,6 @@
 #include "Canvas.h"
 #include "pot_alignment.h"
+#include "xi_reconstruction.h"
 #include "diproton_candidate.h"
 
 #include "DiphotonAnalyzer/TreeProducer/interface/TreeEvent.h"
@@ -34,6 +35,9 @@ TGraphAsymmErrors* asym_error_bars( const TH1D* hist ) {
   return g;
 }
 
+//const string up_label = "9.4 fb^{-1} (13 TeV)";
+const string up_label = "2016B - 4.3 fb^{-1} (13 TeV)";
+
 const float max_xi = 0.25;
 struct track_t {
   track_t() : xi( 0. ), err_xi( 0. ), x( 0. ), y( 0. ) {}
@@ -52,15 +56,18 @@ map<unsigned short,const char*> pots_names = { { 2, "45N" }, { 3, "45F" }, { 102
 
 //pots_accept = pots_accept_90pc;
 
-void massrap_matcher( const char* sample = "samples/ntuple-Run2016B_94Xrereco_v1.root", double num_sigma = 2.0 )
+void massrap_matcher( const char* sample = "samples/ntuple-Run2016B_94Xrereco_v2.root", double num_sigma = 2.0 )
 {
   TFile f( sample );
   TTree* tr = dynamic_cast<TTree*>( f.Get( "ntp" ) );
 
+  xi_reco::load_optics_file( "TreeProducer/data/optics_17may22.root" );
+  pot_align::load_file( "TreeProducer/data/alignment_collection_v2.out" );
+
   //const float rel_err_xi_gg = 0.039;
   const double rel_err_mass = 0.02, rel_err_rap = 0.074;
 
-  TreeEvent ev;
+  gggg::TreeEvent ev;
   ev.attach( tr, true );
 
   TGraphErrors gr_mass_massrapmatch, gr_mass_massmatch, gr_mass_rapmatch, gr_mass_nomatch;
@@ -85,39 +92,45 @@ void massrap_matcher( const char* sample = "samples/ntuple-Run2016B_94Xrereco_v1
   for ( unsigned long long i = 0; i < num_events; ++i ) {
     tr->GetEntry( i );
 
-    cout << "event " << i << ": " << ev.num_proton_track << " proton tracks, " << ev.num_diphoton << " diphoton candidates" << endl;
+    cout << "event " << i << ": " << ev.num_fwd_track << " proton tracks, " << ev.num_diphoton << " diphoton candidates" << endl;
 
     // first loop to identify the tracks and their respective pot
+
+    auto align = pot_align::get_alignments( ev.fill_number );
 
     vector<track_t> xi_45n, xi_45f, xi_56n, xi_56f;
     vector<pair<float,float> > xi_45, xi_56;
 
-    for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
-      if ( ev.proton_track_method[j] != 1 )
-        continue; // only use multi-pot reconstruction
-      const unsigned short pot_id = 100*ev.proton_track_arm[j]+ev.proton_track_pot[j];
+    for ( unsigned short j = 0; j < ev.num_fwd_track; ++j ) {
+      //if ( ev.proton_track_method[j] != 1 ) continue; // only use multi-pot reconstruction
+      const unsigned short pot_id = 100*ev.fwd_track_arm[j]+ev.fwd_track_pot[j];
+      const auto& al = align[pot_id];
+
+      double xi, xi_err;
+      xi_reco::reconstruct( ev.fwd_track_x[j]+al.x, ev.fwd_track_arm[j], ev.fwd_track_pot[j], xi, xi_err );
 
       //----- reconstruct the kinematics
-      if ( ev.proton_track_xi[j] < pots_accept[pot_id] )
+      //if ( ev.proton_track_xi[j] < pots_accept[pot_id] )
+      if ( xi < pots_accept[pot_id] )
         continue;
 
       //----- associate each track to a RP
-      /*if      ( ev.proton_track_arm[j] == 0 && ev.proton_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_arm[j] == 0 && ev.proton_track_pot[j] == 3 ) xi_45f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_arm[j] == 1 && ev.proton_track_pot[j] == 2 ) xi_56n.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );
-      else if ( ev.proton_track_arm[j] == 1 && ev.proton_track_pot[j] == 3 ) xi_56f.emplace_back( xi, xi_err, ev.proton_track_x[j]+al.x, ev.proton_track_y[j]-al.y );*/
-      if ( ev.proton_track_arm[j] == 0 ) xi_45.emplace_back( ev.proton_track_xi[j], ev.proton_track_xi[j]*0.1 ); //FIXME FIXME FIXME
-      else if ( ev.proton_track_arm[j] == 1 ) xi_56.emplace_back( ev.proton_track_xi[j], ev.proton_track_xi[j]*0.1 ); //FIXME FIXME FIXME
+      if      ( ev.fwd_track_arm[j] == 0 && ev.fwd_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.fwd_track_x[j]+al.x, ev.fwd_track_y[j]-al.y );
+      else if ( ev.fwd_track_arm[j] == 0 && ev.fwd_track_pot[j] == 3 ) xi_45f.emplace_back( xi, xi_err, ev.fwd_track_x[j]+al.x, ev.fwd_track_y[j]-al.y );
+      else if ( ev.fwd_track_arm[j] == 1 && ev.fwd_track_pot[j] == 2 ) xi_56n.emplace_back( xi, xi_err, ev.fwd_track_x[j]+al.x, ev.fwd_track_y[j]-al.y );
+      else if ( ev.fwd_track_arm[j] == 1 && ev.fwd_track_pot[j] == 3 ) xi_56f.emplace_back( xi, xi_err, ev.fwd_track_x[j]+al.x, ev.fwd_track_y[j]-al.y );
+//NEW      if ( ev.proton_track_arm[j] == 0 ) xi_45.emplace_back( ev.proton_track_xi[j], ev.proton_track_xi[j]*0.1 ); //FIXME FIXME FIXME
+//NEW      else if ( ev.proton_track_arm[j] == 1 ) xi_56.emplace_back( ev.proton_track_xi[j], ev.proton_track_xi[j]*0.1 ); //FIXME FIXME FIXME
     }
 
     //----- merge 2 tracks in one if N-F pot content is similar
 
-    //const float xdiff_cut = 0.01;
+    const float xdiff_cut = 0.01;
 
     //--- sector 45
 
-    //xi_45 = merge_nearfar( xi_45n, xi_45f, xdiff_cut );
-    //xi_56 = merge_nearfar( xi_56n, xi_56f, xdiff_cut );
+    xi_45 = merge_nearfar( xi_45n, xi_45f, xdiff_cut );
+    xi_56 = merge_nearfar( xi_56n, xi_56f, xdiff_cut );
 
     /*//FIXME FIXME
     for ( const auto& trk : xi_45n ) xi_45.emplace_back( trk.xi, trk.err_xi );
@@ -146,20 +159,20 @@ void massrap_matcher( const char* sample = "samples/ntuple-Run2016B_94Xrereco_v1
 
       // EB: 0 < |eta| < 1.4442
       // EE: |eta| > 1.566
-      unsigned short ev_class = TreeEvent::invalid;
-      /*if ( ev.diphoton_eta1[j] < min_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = TreeEvent::ebee;
-      if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] < min_etaveto ) ev_class = TreeEvent::ebee;
-      else if ( ev.diphoton_eta1[j] < min_etaveto && ev.diphoton_eta2[j] < min_etaveto ) ev_class = TreeEvent::ebeb;
-      else if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = TreeEvent::eeee;*/
+      unsigned short ev_class = gggg::TreeEvent::invalid;
+      /*if ( ev.diphoton_eta1[j] < min_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = gggg::TreeEvent::ebee;
+      if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] < min_etaveto ) ev_class = gggg::TreeEvent::ebee;
+      else if ( ev.diphoton_eta1[j] < min_etaveto && ev.diphoton_eta2[j] < min_etaveto ) ev_class = gggg::TreeEvent::ebeb;
+      else if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = gggg::TreeEvent::eeee;*/
       if ( fabs( ev.diphoton_eta1[j] ) <= eta_cut && fabs( ev.diphoton_eta2[j] ) <= eta_cut ) {
-        if ( fabs( ev.diphoton_eta1[j] ) < min_etaveto && fabs( ev.diphoton_eta2[j] ) > max_etaveto ) ev_class = TreeEvent::ebee;
-        else if ( fabs( ev.diphoton_eta2[j] ) < min_etaveto && fabs( ev.diphoton_eta1[j] ) > max_etaveto ) ev_class = TreeEvent::ebee;
-        else if ( fabs( ev.diphoton_eta1[j] ) < min_etaveto && fabs( ev.diphoton_eta2[j] ) < min_etaveto ) ev_class = TreeEvent::ebeb;
-        else if ( fabs( ev.diphoton_eta1[j] ) > max_etaveto && fabs( ev.diphoton_eta2[j] ) > max_etaveto ) ev_class = TreeEvent::eeee;
+        if ( fabs( ev.diphoton_eta1[j] ) < min_etaveto && fabs( ev.diphoton_eta2[j] ) > max_etaveto ) ev_class = gggg::TreeEvent::ebee;
+        else if ( fabs( ev.diphoton_eta2[j] ) < min_etaveto && fabs( ev.diphoton_eta1[j] ) > max_etaveto ) ev_class = gggg::TreeEvent::ebee;
+        else if ( fabs( ev.diphoton_eta1[j] ) < min_etaveto && fabs( ev.diphoton_eta2[j] ) < min_etaveto ) ev_class = gggg::TreeEvent::ebeb;
+        else if ( fabs( ev.diphoton_eta1[j] ) > max_etaveto && fabs( ev.diphoton_eta2[j] ) > max_etaveto ) ev_class = gggg::TreeEvent::eeee;
       }
       //----- only keep EBEE and EBEB diphoton events
-      if ( ev_class == TreeEvent::invalid ) continue;
-      if ( ev_class == TreeEvent::eeee ) continue; //FIXME FIXME
+      if ( ev_class == gggg::TreeEvent::invalid ) continue;
+      if ( ev_class == gggg::TreeEvent::eeee ) continue; //FIXME FIXME
 
       if ( ev.diphoton_pt1[j] < 75. ) continue;
       if ( ev.diphoton_pt2[j] < 75. ) continue;
@@ -319,7 +332,6 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
   //plot_matching( num_sigma, "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -3., 3., 0.15 );
   plot_matching( num_sigma, "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -2., 2., false );
 
-  const string up_label = "9.4 fb^{-1} (13 TeV)";
   for ( auto& nh : map<const char*,TH1D*>{ { "1d_massmatch", h_mass_all }, { "1d_rapmatch", h_rap_all } } ) {
     Canvas c( nh.first, up_label.c_str(), "Preliminary" );
     nh.second->Sumw2();
@@ -436,7 +448,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
 
 void plot_matching( double num_sigma, const char* name, TGraphErrors& gr_nomatch, TGraphErrors& gr_rapmatch, TGraphErrors& gr_massmatch, TGraphErrors& gr_massrapmatch, double min, double max, bool right_leg )
 {
-  Canvas c( name, "9.4 fb^{-1} (13 TeV)", "Preliminary" );
+  Canvas c( name, up_label.c_str(), "Preliminary" );
   /*auto tmp = new TH2D( Form( "tmp_%s", name ), gr_massrapmatch.GetTitle(), 2, min, max, 2, min, max );
   tmp->Draw();*/
   auto diag = new TF1( "diag", "x", min, max );
@@ -503,7 +515,7 @@ void plot_matching( double num_sigma, const char* name, TGraphErrors& gr_nomatch
 /*void
 plot_matching( const char* name, TGraphErrors& gr_unmatch, TGraphErrors& gr_match, TGraphErrors& gr_ooa, double limits )
 {
-  Canvas c( name, "9.4 fb^{-1} (13 TeV)", "Preliminary" );
+  Canvas c( name, up_label.c_str(), "Preliminary" );
 
   TF1 lim( "lim", "x", 0., max_xi );
   lim.SetTitle( "#xi(RP)@@#xi(#gamma#gamma)" );

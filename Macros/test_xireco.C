@@ -16,7 +16,7 @@ void test_xireco()
   xi_reco::load_optics_file( "TreeProducer/data/optics_17may22.root" );
 
   // feed the tree reader
-  TreeEvent ev;
+  gggg::TreeEvent ev;
   ev.attach( tr, true );
 
   const unsigned long long num_events = tr->GetEntriesFast();
