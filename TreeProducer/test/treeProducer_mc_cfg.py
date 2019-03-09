@@ -18,7 +18,8 @@ process.source = cms.Source("PoolSource",
 #'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_singleinelastic.root'
 #'/store/group/phys_pps/diphoton/GammaGammaToEE_13TeV_lpair/myMicroAODOutputFile_GammaGammaEE_lpair_doubleinelastic.root'
 #'/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIIFall17-3_1_0/3_1_0/QCD_Pt-30to40_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/RunIIFall17-3_1_0-3_1_0-v0-RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1/180606_162427/0000/myMicroAODOutputFile_99.root',
-'/store/group/phys_higgs/cmshgg/lforthom/flashgg/RunIIPPS16_94X_reminiAOD/2_7_6/DiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8/RunIIPPS16_94X_reminiAOD-2_7_6-v0-RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1/181217_204547/0000/myMicroAODOutputFile_1.root',
+#'/store/group/phys_higgs/cmshgg/lforthom/flashgg/RunIIPPS16_94X_reminiAOD/2_7_6/DiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8/RunIIPPS16_94X_reminiAOD-2_7_6-v0-RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v1/181217_204547/0000/myMicroAODOutputFile_1.root',
+'/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIIFall17-3_1_1/3_1_1/DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa/RunIIFall17-3_1_1-3_1_1-v0-RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v2/180828_081414/0000/myMicroAODOutputFile_610.root',
     )
 )
 
@@ -37,9 +38,11 @@ process.treeProducer.minPtSinglePhoton = cms.double(50.)
 process.treeProducer.minMassDiPhoton = cms.double(350.)
 process.treeProducer.minR9SinglePhoton = cms.double(0.)
 process.treeProducer.triggersList = process.hltHighLevel.HLTPaths
-#process.treeProducer.pileupMCFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_mc_2017_25ns_WinterMC.root')
-process.treeProducer.pileupMCFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_mc.root')
-process.treeProducer.pileupDataFile = cms.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_data16BCG_PPSruns_v2.root')
+process.treeProducer.metLabel = cms.InputTag('flashggMets')
+process.treeProducer.pileupMCFile = cms.untracked.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_mc_2017_25ns_WinterMC.root')
+#process.treeProducer.pileupMCFile = cms.untracked.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_mc.root')
+#process.treeProducer.pileupDataFile = cms.untracked.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_data16BCG_PPSruns_v2.root')
+process.treeProducer.pileupDataFile = cms.untracked.FileInPath('DiphotonAnalyzer/TreeProducer/data/pileup_data16BCG_PPSruns_99bins.root')
 
 process.p = cms.Path(
     process.hltHighLevel*

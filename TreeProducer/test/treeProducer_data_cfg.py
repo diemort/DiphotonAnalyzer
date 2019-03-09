@@ -36,7 +36,7 @@ process.treeProducer.minR9SinglePhoton = cms.double(0.)
 process.treeProducer.triggersList = process.hltHighLevel.HLTPaths
 
 process.p = cms.Path(
-    process.hltHighLevel*
-    process.ctppsProtonReconstruction*
-    process.treeProducer
+    process.hltHighLevel
+    * process.ctppsProtonReconstruction
+    * process.treeProducer
 )

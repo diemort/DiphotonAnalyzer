@@ -1,12 +1,15 @@
 #!/usr/bin/python
 
 from ROOT import TH1D
+from sys import argv
 #from SimGeneral.MixingModule.mix_CSA14_50ns_PoissonOOTPU_cfi import mix
 # QCD
 #from SimGeneral.MixingModule.mix_2016_25ns_Moriond17MC_PoissonOOTPU_cfi import mix
 from SimGeneral.MixingModule.mix_2017_25ns_WinterMC_PUScenarioV1_PoissonOOTPU_cfi import mix
 
 nbins = mix.input.nbPileupEvents.probFunctionVariable[-1]+1
+if len(argv) > 1:
+    nbins = int(argv[1])
 
 prob = TH1D('pileup', '', nbins, 0., nbins*1.)
 

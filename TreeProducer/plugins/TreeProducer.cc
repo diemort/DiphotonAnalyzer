@@ -153,8 +153,8 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   tree_( nullptr )
 {
   if ( !isData_ ) {
-    puMCfile_ =iConfig.getParameter<edm::FileInPath>( "pileupMCFile" );
-    puDatafile_ = iConfig.getParameter<edm::FileInPath>( "pileupDataFile" );
+    puMCfile_ = iConfig.getUntrackedParameter<edm::FileInPath>( "pileupMCFile" );
+    puDatafile_ = iConfig.getUntrackedParameter<edm::FileInPath>( "pileupDataFile" );
     std::cout << ">> Pileup reweighting will be used with files:\n\t" << puMCfile_.fullPath() << " for MC ;\n\t" << puDatafile_.fullPath() << " for data" << std::endl;
     lumiReweighter_ = std::make_unique<edm::LumiReWeighting>( puMCfile_.fullPath(), puDatafile_.fullPath(), puMCpath_, puDatapath_ );
   }
@@ -439,7 +439,6 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
       ev_.fwd_track_arm[ev_.num_fwd_track] = detid.arm(); // 0 = left (45) ; 1 = right (56)
       ev_.fwd_track_station[ev_.num_fwd_track] = detid.station();
       ev_.fwd_track_pot[ev_.num_fwd_track] = detid.rp(); // 2 = 210n ; 3 = 210f
-
       //ev_.fwd_track_chi2[ev_.num_fwd_track] = trk.getChiSquared();
       //ev_.fwd_track_normchi2[ev_.num_fwd_track] = trk.getChiSquaredOverNDF();
 
@@ -453,7 +452,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
       ev_.proton_track_vx[ev_.num_proton_track] = trk.vertex().x();
       ev_.proton_track_vy[ev_.num_proton_track] = trk.vertex().y();
       ev_.proton_track_xi[ev_.num_proton_track] = trk.xi();
-      //ev_.proton_track_xi_err[ev_.num_proton_track] = trk.xiError(); //FIXME not implemented in 9_4_X branch
+      ev_.proton_track_xi_err[ev_.num_proton_track] = trk.xiError(); //FIXME not implemented in 9_4_X branch?
 
       ev_.proton_track_method[ev_.num_proton_track] = (int)trk.method; // 0 = single-pot, 1 = multi-pot
       ev_.proton_track_arm[ev_.num_proton_track] = (int)trk.lhcSector; // 0 = left (45) ; 1 = right (56)
@@ -666,8 +665,8 @@ TreeProducer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )
   desc.add<edm::InputTag>( "genPhoLabel", edm::InputTag( "flashggGenPhotons" ) );
   desc.add<double>( "maxGenLevelDeltaR", 5. );
   desc.add<edm::InputTag>( "pileupLabel", edm::InputTag( "slimmedAddPileupInfo" ) );
-  desc.add<edm::FileInPath>( "pileupDataFile", edm::FileInPath() );
-  desc.add<edm::FileInPath>( "pileupMCFile", edm::FileInPath() );
+  desc.addUntracked<edm::FileInPath>( "pileupDataFile", edm::FileInPath( "DiphotonAnalyzer/TreeProducer/data/pileup_data16BCG_PPSruns_v3.root" ) );
+  desc.addUntracked<edm::FileInPath>( "pileupMCFile", edm::FileInPath( "DiphotonAnalyzer/TreeProducer/data/pileup_mc_2017_25ns_WinterMC.root" ) );
   desc.add<std::string>( "pileupMCPath", "pileup" );
   desc.add<std::string>( "pileupDataPath", "pileup" );
 
