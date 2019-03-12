@@ -36,7 +36,7 @@
 
 #include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
 #include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
-#include "DataFormats/ProtonReco/interface/ProtonTrack.h"
+//#include "DataFormats/ProtonReco/interface/ProtonTrack.h"
 //                               JW
 #include "flashgg/DataFormats/interface/Electron.h"
 #include "flashgg/DataFormats/interface/Muon.h"
@@ -80,7 +80,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::WatchRuns,edm::one::S
     edm::InputTag triggerResults_;
 
     edm::EDGetTokenT<edm::View<CTPPSLocalTrackLite> > totemRPTracksToken_;
-    edm::EDGetTokenT<edm::View<reco::ProtonTrack> > protonTracksToken_;
+    //edm::EDGetTokenT<edm::View<reco::ProtonTrack> > protonTracksToken_;
     edm::EDGetTokenT<edm::View<flashgg::DiPhotonCandidate> > diphotonToken_;
     edm::EDGetTokenT<edm::View<flashgg::Met> > metToken_;
     edm::EDGetTokenT<edm::View<reco::Vertex> > vtxToken_;
@@ -121,7 +121,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::WatchRuns,edm::one::S
 TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   triggerResults_( iConfig.getParameter<edm::InputTag>( "triggerResults" ) ),
   totemRPTracksToken_ ( consumes<edm::View<CTPPSLocalTrackLite> >       ( iConfig.getParameter<edm::InputTag>( "totemRPTracksLabel") ) ),
-  protonTracksToken_  ( consumes<edm::View<reco::ProtonTrack> >         ( iConfig.getParameter<edm::InputTag>( "protonTracksLabel") ) ),
+  //protonTracksToken_  ( consumes<edm::View<reco::ProtonTrack> >         ( iConfig.getParameter<edm::InputTag>( "protonTracksLabel") ) ),
   diphotonToken_      ( consumes<edm::View<flashgg::DiPhotonCandidate> >( iConfig.getParameter<edm::InputTag>( "diphotonLabel" ) ) ),
   metToken_           ( consumes<edm::View<flashgg::Met> >              ( iConfig.getParameter<edm::InputTag>( "metLabel") ) ),
   vtxToken_           ( consumes<edm::View<reco::Vertex> >              ( iConfig.getParameter<edm::InputTag>( "vertexLabel" ) ) ),
@@ -445,7 +445,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
       ev_.num_fwd_track++;
     }
 
-    edm::Handle<edm::View<reco::ProtonTrack> > protonTracks;
+    /*edm::Handle<edm::View<reco::ProtonTrack> > protonTracks;
     iEvent.getByToken( protonTracksToken_, protonTracks );
     ev_.num_proton_track = 0;
     for ( const auto& trk : *protonTracks ) {
@@ -467,7 +467,7 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
         : 0.;
 
       ev_.num_proton_track++;
-    }
+    }*/
   }
   //                               JW
 

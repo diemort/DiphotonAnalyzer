@@ -35,8 +35,8 @@ TGraphAsymmErrors* asym_error_bars( const TH1D* hist ) {
   return g;
 }
 
-//const string up_label = "9.4 fb^{-1} (13 TeV)";
-const string up_label = "2016B - 4.3 fb^{-1} (13 TeV)";
+const string up_label = "9.4 fb^{-1} (13 TeV)";
+//const string up_label = "2016B - 4.3 fb^{-1} (13 TeV)";
 
 const float max_xi = 0.25;
 struct track_t {
@@ -56,7 +56,7 @@ map<unsigned short,const char*> pots_names = { { 2, "45N" }, { 3, "45F" }, { 102
 
 //pots_accept = pots_accept_90pc;
 
-void massrap_matcher( const char* sample = "samples/ntuple-Run2016B_94Xrereco_v2.root", double num_sigma = 2.0 )
+void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/store/group/phys_pps/diphoton/DoubleEG/ntuple-Run2016BCG_94Xrereco_v1.root" )
 {
   TFile f( sample );
   TTree* tr = dynamic_cast<TTree*>( f.Get( "ntp" ) );
@@ -164,6 +164,8 @@ void massrap_matcher( const char* sample = "samples/ntuple-Run2016B_94Xrereco_v2
       if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] < min_etaveto ) ev_class = gggg::TreeEvent::ebee;
       else if ( ev.diphoton_eta1[j] < min_etaveto && ev.diphoton_eta2[j] < min_etaveto ) ev_class = gggg::TreeEvent::ebeb;
       else if ( ev.diphoton_eta1[j] > max_etaveto && ev.diphoton_eta2[j] > max_etaveto ) ev_class = gggg::TreeEvent::eeee;*/
+      if ( ev.diphoton_ele_veto1[j] != 1 ) continue;
+      if ( ev.diphoton_ele_veto2[j] != 1 ) continue;
       if ( fabs( ev.diphoton_eta1[j] ) <= eta_cut && fabs( ev.diphoton_eta2[j] ) <= eta_cut ) {
         if ( fabs( ev.diphoton_eta1[j] ) < min_etaveto && fabs( ev.diphoton_eta2[j] ) > max_etaveto ) ev_class = gggg::TreeEvent::ebee;
         else if ( fabs( ev.diphoton_eta2[j] ) < min_etaveto && fabs( ev.diphoton_eta1[j] ) > max_etaveto ) ev_class = gggg::TreeEvent::ebee;

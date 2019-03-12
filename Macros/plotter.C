@@ -31,8 +31,9 @@ const float sqrt_s = 13.e3;
 //const float lumi = ( 5.060574552184 + 1.485056762163 + 7.500305757473 ) * 1.e3; // computed from processedLumis.json
 //const float the_lumi = ( 9.412003739742+5.08 ) * 1.e3; // pre+post-TS2 runs with pots inserted
 //const float the_lumi = 5.081503324822e3; //post-TS2 runs with pots inserted
-const float the_lumi = 4.291753570355 * 1.e3; // B, pre-TS2 runs with pots inserted
+//const float the_lumi = 4.291753570355 * 1.e3; // B, pre-TS2 runs with pots inserted
 //const float the_lumi = 9.412003739742 * 1.e3; // pre-TS2 runs with pots inserted
+const float the_lumi = ( 4.291753570355+1.438424638452+3.625791461729 ) * 1.e3;
 
 map<string,float> pots_accept = { { "45N", 0.033 }, { "45F", 0.024 }, { "56N", 0.050 }, { "56F", 0.037 } };
 map<string,float> pots_accept_tight = { { "45N", 0.067 }, { "45F", 0.066 }, { "56N", 0.070 }, { "56F", 0.061 } };
@@ -758,7 +759,7 @@ plotter()
   gStyle->SetOptStat( 0 );
   //Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp", Form( "CMS Preliminary 2016, #sqrt{s} = 13 TeV, L = %.1f fb^{-1}", the_lumi/1.e3 ) );
   //Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp", Form( "#sqrt{s} = 13 TeV, L = %g fb^{-1}", the_lumi/1.e3 ) );
-  Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp", Form( "%.2f fb^{-1} (13 TeV)", the_lumi/1.e3 ) );
+  Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp", Form( "%.1f fb^{-1} (13 TeV)", the_lumi/1.e3 ) );
   for ( unsigned short j = 0; j < 1; ++j ) { // classes
     plt.draw_multiplot( Form( "cutflow_%s", TreeEvent::classes[j] ), hm_cutflow[j][0], hm_cutflow[j][1], hm_cutflow[j][2], "", false, true, false );
   }
