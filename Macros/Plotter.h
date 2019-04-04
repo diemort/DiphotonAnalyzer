@@ -196,7 +196,7 @@ class Plotter
       c.Save( "pdf,png", out_path_ );
     }
 
-    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, TString label = "", bool colours = true, bool logy = false, bool draw_legend = true ) const {
+    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, TString label = "", bool colours = true, bool logy = false, bool draw_legend = true, double angle = -1. ) const {
       std::string ratio_plot_filename = Form( "%s_ratio", filename );
       Canvas c( filename, top_label_, "Preliminary", true );
       TH1D* h_data = 0;
@@ -312,7 +312,11 @@ class Plotter
         h_data->SetLineWidth( 2 );
         hm.emplace_back( "data", h_data );
         hs_mc.SetTitle( "" );
-        c.RatioPlot( hm, -0.4, 2.4, "Data/MC", 1.0 );
+        auto ratio = c.RatioPlot( hm, -0.4, 2.4, "Data/MC", 1.0 );
+        if ( angle != -1. )
+          for ( unsigned short j = 1; j < ratio->GetNbinsX(); ++j ) {
+            cout << j << "---> " << ratio->GetNbinsX() << endl;
+            ratio->GetXaxis()->ChangeLabel( j, -45. );}
         //c.RatioPlot( hm, 0.05, 1.95, "Data/MC", 1.0 );
         c.cd( 1 );
       }

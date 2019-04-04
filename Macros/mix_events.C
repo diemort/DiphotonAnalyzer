@@ -2,7 +2,7 @@
 #include "pot_alignment.h"
 #include "xi_reconstruction.h"
 #include "diproton_candidate.h"
-#include "tree_reader.h"
+#include "DiphotonAnalyzer/TreeProducer/interface/ProtonInfoEvent.h"
 
 #include "TH2.h"
 #include "TF1.h"
@@ -18,18 +18,21 @@ void mix_events( const char* input_filename = "fits_results.root" )
   const double rel_err_mass = 0.02, rel_err_rap = 0.074;
 //  const double exp_yield = 566.994;
 //  const double exp_yield = 112.653; // xicomp
-  const double exp_yield = 3.26289; // xitight
+  const double exp_yield = 3.26289; // xitight (MC)
 
   auto in_file = TFile::Open( input_filename );
   auto mix_45 = (TF1*)in_file->Get( "fit_xip" )->Clone(), mix_56 = (TF1*)in_file->Get( "fit_xim" )->Clone();
   delete in_file;
 
-  TFile f( "Samples/output_Run2016BCG_looseCuts_28jun.root" );
-  //TFile f( "Samples/output_alignmentrun_mbtree.root" );
-  treeinfo ev;
-  ev.read( dynamic_cast<TTree*>( f.Get( "ntp" ) ) );
-  const unsigned long long num_toys = 1000000;
-  const unsigned long long num_events = ev.tree->GetEntriesFast();
+  TFile f( "/eos/cms/store/user/lforthom/ProtonTree/DoubleEG/proton_ntuple-Run2016BCG_94Xrereco_v1.root" );
+  auto tree = dynamic_cast<TTree*>( f.Get( "protonTreeProducer/ntp" ) );
+  ProtonInfoEvent ev;
+  ev.attach( tree, {
+    "fill_number",
+    "num_fwd_track", "fwd_track_arm", "fwd_track_pot", "fwd_track_x"
+  } );
+  const unsigned long long num_toys = 100000;
+  const unsigned long long num_events = tree->GetEntriesFast();
   //xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
   xi_reco::load_optics_file( "TreeProducer/data/optics_17may22.root" );
   pot_align::load_file( "TreeProducer/data/alignment_collection_v2.out" );
@@ -63,15 +66,10 @@ void mix_events( const char* input_filename = "fits_results.root" )
   const double weight = exp_yield/num_toys; //FIXME
   cout << "weight=" << weight << endl;
 
-  ev.enableBranches( ev.tree, {
-    "fill_number",
-    "num_proton_track", "proton_track_side", "proton_track_pot", "proton_track_x"
-  } );
-
   for ( unsigned long long i = 0; i < num_toys; ++i ) {
-    ev.tree->GetEntry( rand()*1./RAND_MAX*num_events );
+    tree->GetEntry( rand()*1./RAND_MAX*num_events );
     //ev.tree->GetEntry( i );
-    if ( fmod( i*1., num_toys*0.1 ) == 0 )
+    //if ( fmod( i*1., num_toys*0.1 ) == 0 )
       cout << "event " << i << endl;
 
     const double xi_45_rnd = mix_45->GetRandom( min( m_pot_limits[  2], m_pot_limits[  3] ), max_xigg );
@@ -83,19 +81,20 @@ void mix_events( const char* input_filename = "fits_results.root" )
     auto align = pot_align::get_alignments( ev.fill_number );
 
     map<unsigned short,pair<double,double> > xi_meas45, xi_meas56;
-    for ( unsigned short j = 0; j < ev.num_proton_track; ++j ) {
-      const unsigned short pot_id = 100*ev.proton_track_side[j]+ev.proton_track_pot[j];
+      //cout << ev.num_fwd_track << endl;
+    for ( unsigned short j = 0; j < ev.num_fwd_track; ++j ) {
+      const unsigned short pot_id = 100*ev.fwd_track_arm[j]+ev.fwd_track_pot[j];
       auto al = align[pot_id];
 //      pot_align::align_t al;
       double xi, xi_err;
-      xi_reco::reconstruct( ev.proton_track_x[j]+al.x, ev.proton_track_side[j], ev.proton_track_pot[j], xi, xi_err );
+      xi_reco::reconstruct( ev.fwd_track_x[j]+al.x, ev.fwd_track_arm[j], ev.fwd_track_pot[j], xi, xi_err );
       if ( xi < m_pot_limits[pot_id] || xi > 0.15 ) continue; //FIXME
       m_h_xireco[pot_id]->Fill( xi );
-      if ( ev.proton_track_side[j] == 0 ) {
+      if ( ev.fwd_track_arm[j] == 0 ) {
         m_h2_xicorr[pot_id]->Fill( xi, xi_45_rnd );
         xi_meas45[pot_id] = { xi, xi_err };
       }
-      if ( ev.proton_track_side[j] == 1 ) {
+      if ( ev.fwd_track_arm[j] == 1 ) {
         m_h2_xicorr[pot_id]->Fill( xi, xi_56_rnd );
         xi_meas56[pot_id] = { xi, xi_err };
       }
@@ -145,7 +144,7 @@ void mix_events( const char* input_filename = "fits_results.root" )
 
   gStyle->SetOptStat( 0 );
 
-  const string title = "CMS-TOTEM Pseudo-experiments";
+  const string title = "2016 conditions (13 TeV)";
   for ( const auto& p : m_pot_names ) {
     {
       Canvas c( Form( "toy_xi_corr_%s", p.second ), title.c_str() );
@@ -154,7 +153,7 @@ void mix_events( const char* input_filename = "fits_results.root" )
       c.Save( "pdf,png", OUTPUT_DIR );
     }
     {
-      Canvas c( Form( "xi_reco_%s", p.second ), "CMS-TOTEM Preliminary 2016, #sqrt{s} = 13 TeV" );
+      Canvas c( Form( "xi_reco_%s", p.second ), "9.4 fb^{-1} (13 TeV)", "Preliminary" );
       m_h_xireco[p.first]->Draw( "p" );
       m_h_xireco[p.first]->SetMarkerStyle( 24 );
       c.Prettify( m_h_xireco[p.first] );
@@ -164,9 +163,13 @@ void mix_events( const char* input_filename = "fits_results.root" )
   auto diag = new TF1( "diag", "x" );
   unsigned short i = 0;
   for ( auto& h_mcorr : { h2_mcorr, h2_mcorr_2sigma, h2_mcorr_3sigma } ) {
-    Canvas c( ( i == 0 ) ? "toy_m_corr" : Form( "toy_m_corr_%dsigma", i+1 ), title.c_str() );
+    Canvas c( ( i == 0 ) ? "toy_m_corr" : Form( "toy_m_corr_%dsigma", i+1 ), title.c_str(), "Pseudo-experiments", false, Canvas::Align::right );
+    c.Divide( 2, 2 );
+    c.cd( 3 );
     h_mcorr->Draw( "col" );
     c.Prettify( h_mcorr );
+    h_mcorr->GetXaxis()->SetLabelSize( 16 );
+    h_mcorr->GetYaxis()->SetLabelSize( 16 );
     //diag->SetLineColor( kGray );
     const double min_x = h_mcorr->GetXaxis()->GetXmin(), max_x = h_mcorr->GetXaxis()->GetXmax();
     diag->DrawF1( min_x, max_x, "same" );
@@ -177,8 +180,21 @@ void mix_events( const char* input_filename = "fits_results.root" )
     auto diag_p2 = new TF1( "diag", "x*(1+2*[0])" ); diag_p2->SetParameter( 0, err ); diag_p2->DrawF1( min_x, max_x, "same" ); diag_p2->SetLineColor( kBlack ); diag_p2->SetLineStyle( 2 );
     auto diag_m3 = new TF1( "diag", "x*(1-3*[0])" ); diag_m3->SetParameter( 0, err ); diag_m3->DrawF1( min_x, max_x, "same" ); diag_m3->SetLineColor( kBlack ); diag_m3->SetLineStyle( 3 );
     auto diag_p3 = new TF1( "diag", "x*(1+3*[0])" ); diag_p3->SetParameter( 0, err ); diag_p3->DrawF1( min_x, max_x, "same" ); diag_p3->SetLineColor( kBlack ); diag_p3->SetLineStyle( 3 );
-    c.SetLegendX1( 0.17 );
-    c.SetLegendY1( 0.78 );
+    c.cd( 4 );
+    auto py = h_mcorr->ProjectionY();
+    py->Draw( "hist,hbar" );
+    py->SetFillColorAlpha( kBlack, 0.3 );
+    py->GetYaxis()->SetLabelFont( h_mcorr->GetXaxis()->GetLabelFont() );
+    py->GetYaxis()->SetLabelSize( h_mcorr->GetXaxis()->GetLabelSize() );
+    c.cd( 1 );
+    auto px = h_mcorr->ProjectionX();
+    px->Draw( "hist,bar" );
+    px->SetFillColorAlpha( kBlack, 0.3 );
+    px->GetYaxis()->SetLabelFont( h_mcorr->GetYaxis()->GetLabelFont() );
+    px->GetYaxis()->SetLabelSize( h_mcorr->GetYaxis()->GetLabelSize() );
+    c.cd();
+    c.SetLegendX1( 0.67 );
+    c.SetLegendY1( 0.63 );
     c.AddLegendEntry( diag_m1->GetHistogram(), "#pm 1 #sigma", "l" );
     c.AddLegendEntry( diag_m2->GetHistogram(), "#pm 2 #sigma", "l" );
     c.AddLegendEntry( diag_m3->GetHistogram(), "#pm 3 #sigma", "l" );
@@ -191,9 +207,13 @@ void mix_events( const char* input_filename = "fits_results.root" )
   }
   i = 0;
   for ( auto& h_ycorr : { h2_ycorr, h2_ycorr_2sigma, h2_ycorr_3sigma } ) {
-    Canvas c( ( i == 0 ) ? "toy_y_corr" : Form( "toy_y_corr_%dsigma", i+1 ), title.c_str() );
+    Canvas c( ( i == 0 ) ? "toy_y_corr" : Form( "toy_y_corr_%dsigma", i+1 ), title.c_str(), "Pseudo-experiments", false, Canvas::Align::right );
+    c.Divide( 2, 2 );
+    c.cd( 3 );
     h_ycorr->Draw( "col" );
     c.Prettify( h_ycorr );
+    h_ycorr->GetXaxis()->SetLabelSize( 16 );
+    h_ycorr->GetYaxis()->SetLabelSize( 16 );
     diag->SetLineColor( kRed );
     double err = hypot( 0.055, rel_err_rap );
     const double min_x = h_ycorr->GetXaxis()->GetXmin(), max_x = h_ycorr->GetXaxis()->GetXmax();
@@ -204,8 +224,27 @@ void mix_events( const char* input_filename = "fits_results.root" )
     auto diag_p2 = new TF1( "diag", "x-2*[0]" ); diag_p2->SetParameter( 0, err ); diag_p2->DrawF1( min_x, max_x, "same" ); diag_p2->SetLineColor( kBlack ); diag_p2->SetLineStyle( 2 );
     auto diag_m3 = new TF1( "diag", "x+3*[0]" ); diag_m3->SetParameter( 0, err ); diag_m3->DrawF1( min_x, max_x, "same" ); diag_m3->SetLineColor( kBlack ); diag_m3->SetLineStyle( 3 );
     auto diag_p3 = new TF1( "diag", "x-3*[0]" ); diag_p3->SetParameter( 0, err ); diag_p3->DrawF1( min_x, max_x, "same" ); diag_p3->SetLineColor( kBlack ); diag_p3->SetLineStyle( 3 );
-    c.SetLegendX1( 0.17 );
-    c.SetLegendY1( 0.78 );
+    c.cd( 4 );
+    auto py = h_ycorr->ProjectionY( "_py", 0, -1, "e" );
+    py->Draw( "hist,hbar" );
+    py->SetFillColorAlpha( kBlack, 0.3 );
+    py->GetYaxis()->SetLabelFont( h_ycorr->GetXaxis()->GetLabelFont() );
+    py->GetYaxis()->SetLabelSize( h_ycorr->GetXaxis()->GetLabelSize() );
+    /*py->GetYaxis()->SetTitle( "Pseudo-events" );
+    py->GetYaxis()->SetTitleFont( h_ycorr->GetXaxis()->GetTitleFont() );
+    py->GetYaxis()->SetTitleSize( h_ycorr->GetXaxis()->GetTitleSize() );*/
+    c.cd( 1 );
+    auto px = h_ycorr->ProjectionX( "_px", 0, -1, "e" );
+    px->Draw( "hist,bar" );
+    px->SetFillColorAlpha( kBlack, 0.3 );
+    px->GetYaxis()->SetLabelFont( h_ycorr->GetYaxis()->GetLabelFont() );
+    px->GetYaxis()->SetLabelSize( h_ycorr->GetYaxis()->GetLabelSize() );
+    //px->GetYaxis()->SetTitle( "Pseudo-events" );
+    c.cd();
+    /*c.SetLegendX1( 0.17 );
+    c.SetLegendY1( 0.78 );*/
+    c.SetLegendX1( 0.67 );
+    c.SetLegendY1( 0.63 );
     c.AddLegendEntry( diag_m1->GetHistogram(), "#pm 1 #sigma", "l" );
     c.AddLegendEntry( diag_m2->GetHistogram(), "#pm 2 #sigma", "l" );
     c.AddLegendEntry( diag_m3->GetHistogram(), "#pm 3 #sigma", "l" );

@@ -33,12 +33,13 @@ class PaveText : public TPaveText
 class Canvas : public TCanvas
 {
  public:
-  inline Canvas( const char* name, const char* title = "", const char* type = "Preliminary", bool ratio = false ) :
+  enum struct Align { left = 0, right = 1 };
+  inline Canvas( const char* name, const char* title = "", const char* type = "Preliminary", bool ratio = false, Align label_align = Align::left ) :
     //TCanvas(name, "", 450, 450),
     TCanvas( name, "", 600, 600 ),
     fTitle( title ), fPlotType( type ),
     fLegXpos( 0.5 ), fLegYpos( 0.775 ), fLegXsize( 0.35 ), fLegYsize( 0.15 ),
-    fRatio( ratio ), divided_( false )
+    fRatio( ratio ), divided_( false ), align_( label_align )
   {
     Build();
   }
@@ -129,6 +130,8 @@ class Canvas : public TCanvas
       for ( unsigned short c = 0; c < num_cols; ++c ) { // fetch one line by one line
         TPad* p = dynamic_cast<TPad*>( TCanvas::GetPad( 1+l*num_cols+c ) );
         p->SetPad( 0.+pad_x*c, 1.-top_margin-pad_y*( l+1 ), 0.+pad_x*( c+1 ), 1.-top_margin-pad_y*l );
+        //p->SetFillStyle( 4000 );
+        p->SetFillStyle( 0 );
         p->SetLeftMargin( 0.15 );
         if ( c == num_cols-1 ) p->SetRightMargin( TCanvas::GetRightMargin() );
         p->SetTopMargin( 0. );
@@ -140,8 +143,9 @@ class Canvas : public TCanvas
   }
 
   typedef std::vector< std::pair<std::string,TH1*> > HistsMap;
-  inline void RatioPlot( HistsMap hm, float ymin = -999., float ymax = -999., const char* yaxis = "", float xline = -999. ) {
-    if ( !fRatio ) return;
+  inline TH1* RatioPlot( HistsMap hm, float ymin = -999., float ymax = -999., const char* yaxis = "", float xline = -999. ) {
+    if ( !fRatio )
+      return nullptr;
     TH1* denom = hm.begin()->second,
         *numer = 0;
     denom->GetXaxis()->SetTitle( "" );
@@ -179,6 +183,7 @@ class Canvas : public TCanvas
     }
     Prettify( denom );
     TCanvas::cd();
+    return denom;
   }
 
   inline void SetTopLabel( const char* lab = "" ) {
@@ -214,6 +219,7 @@ class Canvas : public TCanvas
     if ( fTopLabel && TCanvas::FindObject( fTopLabel.get() ) == 0 )
       fTopLabel->Draw();
 
+    TCanvas::SetFillStyle( 0 );
     const TString ext_str( ext );
     TObjArray* tok = TString( ext ).Tokenize( "," );
     for ( unsigned short i = 0; i < tok->GetEntries(); ++i ) {
@@ -233,12 +239,19 @@ class Canvas : public TCanvas
     TCanvas::SetRightMargin( 0.1 );
     TCanvas::SetBottomMargin( 0.12 );
     TCanvas::SetTicks( 1, 1 );
+    //TCanvas::SetFillStyle( 4000 );
     TCanvas::SetFillStyle( 0 );
 
-    fBanner.reset( new PaveText( 0.165, 0.855, 0.18, 0.932 ) );
+    if ( align_ == Align::left ) {
+      fBanner.reset( new PaveText( 0.17, 0.855, 0.185, 0.932 ) );
+      fBanner->SetTextAlign( kHAlignLeft+kVAlignTop );
+    }
+    else if ( align_ == Align::right ) {
+      fBanner.reset( new PaveText( 0.82, 0.855, 0.835, 0.932 ) );
+      fBanner->SetTextAlign( kHAlignRight+kVAlignTop );
+    }
     fBanner->AddText( Form( "#font[62]{%s}", EXPERIMENT ) );
     fBanner->AddText( Form( "#scale[0.75]{#font[52]{%s}}", fPlotType.Data() ) );
-    fBanner->SetTextAlign( kHAlignLeft+kVAlignTop );
     fBanner->SetTextSize( 0.04 );
 
     SetTopLabel();
@@ -292,6 +305,7 @@ class Canvas : public TCanvas
   double fLegXpos, fLegYpos, fLegXsize, fLegYsize;
   bool fRatio;
   bool divided_;
+  Align align_;
 };
 
 TH1*

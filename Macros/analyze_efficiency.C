@@ -146,7 +146,7 @@ void analyze_efficiency()
         m_h_num_x[pid][mb_phys.fill_number] = dynamic_cast<TH1D*>( h_num_x[pid]->Clone( Form( "h_num_x_%d_%d", pid, mb_phys.fill_number ) ) );
 
       double xi = 0., xi_err = 0.;
-      xi_reco::reconstruct( mb_phys.fwd_track_x[j]+align[pid].x, mb_phys.fwd_track_arm[j], mb_phys.fwd_track_pot[j], xi, xi_err );
+      xi_reco::reconstruct( ( mb_phys.fwd_track_x[j]+align[pid].x )*1.e3, mb_phys.fwd_track_arm[j], mb_phys.fwd_track_pot[j], xi, xi_err );
       const double trk_x = ( mb_phys.fwd_track_x[j]+align[pid].x )*1.e3;
       const double trk_y = ( mb_phys.fwd_track_y[j]-align[pid].y )*1.e3;
       h_num_x[pid]->Fill( trk_x );

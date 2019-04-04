@@ -14,7 +14,7 @@ namespace gggg
     //                               JW
     static constexpr unsigned short MAX_ELECTRON = 20;
     static constexpr unsigned short MAX_MUON = 20;
-    static constexpr unsigned short MAX_JET = 50;
+    static constexpr unsigned short MAX_JET = 75;
     //
     static constexpr unsigned short MAX_VERTEX = 100;
     static constexpr unsigned short MAX_GEN_PHOTON = 10;
