@@ -65,23 +65,23 @@
     {
       "type": "background",
       "name": "t#bar{t} + j (NLO)",
-      //"path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8/ntuple-TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8_miniAOD17_94x_v1.root",
-      "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/TTJets_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/ntuple-TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8_miniAOD17_94x_v2_v0_prelim.root",
+      "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/TTJets_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/ntuple-TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8_miniAOD17_94x_v2_v1.root",
       "colour": 861, // kAzure+1
       "cross_section": 722.8, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DTTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8
-      //"num_events": 152816522
-      "num_events": 2752267 //FIXME
+      "num_events": 7426480
     },
     {
       "type": "background",
       "colour": 433, // kCyan+1
       "name": "Incl. Z#gamma",
       //"path": "/eos/cms/store/user/lforthom/twophoton/samples_80x/output_ZGTo2LG_13TeV_amcatnlo_pythia8_v2.root",
-      "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/ZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/ntuple-ZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_v2_v0_prelim.root",
+      //"path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/ZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/ntuple-ZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_v2_v0_prelim.root",
+      "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/ZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/ntuple-ZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_v4_prelim.root",
       //"cross_section": 117.864,
       "cross_section": 123.8, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DZGTo2LG_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8
       //"num_events": 14372682
-      "num_events": 8253114 //FIXME
+      //"num_events": 8253114 //FIXME
+      "num_events": 13318653
     },
     {
       "type": "background",
@@ -133,7 +133,8 @@
       "type": "background",
       "name": "QCD (e-#gamma enriched)",
       //"path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/ntuple-QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8_miniAOD17_94x_v1.root",
-      "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/ntuple-QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8_miniAOD17_94x_v2_partial.root", //FIXME
+      //"path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/ntuple-QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8_miniAOD17_94x_v2_partial.root", //FIXME
+      "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/ntuple-QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8_miniAOD17_94x_v3_v0_prelim.root",
       "colour": 617, // kMagenta+1
       //"cross_section": 113400.0,
       //"cross_section": 108240.0 * 1.286, // https://twiki.cern.ch/twiki/bin/viewauth/CMS/SummaryTable1G25ns
@@ -143,7 +144,8 @@
       "cross_section": 117400.0, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DQCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8
       //"num_events": 20632076
       //"num_events": 20433732
-      "num_events": 14922459 //FIXME temporary
+      //"num_events": 14922459 //FIXME temporary
+      "num_events": 19663270 //FIXME temporary
     },
     /*{
       "type": "background",

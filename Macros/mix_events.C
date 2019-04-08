@@ -24,7 +24,8 @@ void mix_events( const char* input_filename = "fits_results.root" )
   auto mix_45 = (TF1*)in_file->Get( "fit_xip" )->Clone(), mix_56 = (TF1*)in_file->Get( "fit_xim" )->Clone();
   delete in_file;
 
-  TFile f( "/eos/cms/store/user/lforthom/ProtonTree/DoubleEG/proton_ntuple-Run2016BCG_94Xrereco_v1.root" );
+  //TFile f( "/eos/cms/store/user/lforthom/ProtonTree/DoubleEG/proton_ntuple-Run2016BCG_94Xrereco_v1.root" );
+  TFile f( "proton_ntuple-Run2016BCG_94Xrereco_v1.root" );
   auto tree = dynamic_cast<TTree*>( f.Get( "protonTreeProducer/ntp" ) );
   ProtonInfoEvent ev;
   ev.attach( tree, {
