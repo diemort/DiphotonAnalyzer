@@ -11,17 +11,23 @@
 //#define OUTPUT_DIR "/afs/cern.ch/user/l/lforthom/www/private/twophoton/test"
 #define OUTPUT_DIR "/afs/cern.ch/user/l/lforthom/www/private/twophoton/test_15may"
 
-void mix_events( const char* input_filename = "fits_results.root" )
+void mix_events( const char* input_filename = "fits_results.root", int scalup_1 = 0, int scalup_2 = 0, int scalup_3 = 0, int scalup_4 = 0 )
 {
 //  const double exp_yield = 586.877;
 //  const double exp_yield = 525;
   const double rel_err_mass = 0.02, rel_err_rap = 0.074;
 //  const double exp_yield = 566.994;
 //  const double exp_yield = 112.653; // xicomp
-  const double exp_yield = 3.26289; // xitight (MC)
+//  const double exp_yield = 3.26289; // xitight (MC)
+  double exp_yield = 2.62498; // xitight (MC)
+  exp_yield /= (1.-0.5277); // fraction of events with at least 1 proton track
 
   auto in_file = TFile::Open( input_filename );
   auto mix_45 = (TF1*)in_file->Get( "fit_xip" )->Clone(), mix_56 = (TF1*)in_file->Get( "fit_xim" )->Clone();
+  mix_45->SetParameter( 0, mix_45->GetParameter( 0 )+scalup_1*mix_45->GetParError( 0 ) );
+  mix_45->SetParameter( 1, mix_45->GetParameter( 1 )+scalup_2*mix_45->GetParError( 1 ) );
+  mix_56->SetParameter( 0, mix_56->GetParameter( 0 )+scalup_3*mix_56->GetParError( 0 ) );
+  mix_56->SetParameter( 1, mix_56->GetParameter( 1 )+scalup_4*mix_56->GetParError( 1 ) );
   delete in_file;
 
   //TFile f( "/eos/cms/store/user/lforthom/ProtonTree/DoubleEG/proton_ntuple-Run2016BCG_94Xrereco_v1.root" );
@@ -32,7 +38,7 @@ void mix_events( const char* input_filename = "fits_results.root" )
     "fill_number",
     "num_fwd_track", "fwd_track_arm", "fwd_track_pot", "fwd_track_x"
   } );
-  const unsigned long long num_toys = 100000;
+  const unsigned long long num_toys = 5000000;
   const unsigned long long num_events = tree->GetEntriesFast();
   //xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
   xi_reco::load_optics_file( "TreeProducer/data/optics_17may22.root" );
@@ -43,7 +49,7 @@ void mix_events( const char* input_filename = "fits_results.root" )
   map<unsigned short,const char*> m_pot_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
   map<unsigned short,double> m_pot_limits = { { 2, 0.067 }, { 3, 0.066 }, { 102, 0.070 }, { 103, 0.061 } }; // < 10% radiation damage
   //map<unsigned short,double> m_pot_limits = { { 2, 0.034 }, { 3, 0.023 }, { 102, 0.042 }, { 103, 0.032 } };
-  const double min_xigg = 0.02, max_xigg = 0.15;
+  const double max_xigg = 0.15;
   for ( const auto& p : m_pot_names ) {
     m_h2_xicorr[p.first] = new TH2D( Form( "xi_corr_%d", p.first ), Form( ";#xi_{%s};#xi_{#gamma#gamma}", p.second ), 50, 0., 0.2, 50, 0., 0.2 );
     m_h_xireco[p.first] = new TH1D( Form( "xi_reco_%d", p.first ), Form( ";#xi_{%s};Events", p.second ), 50, 0., 0.2 );
@@ -67,10 +73,12 @@ void mix_events( const char* input_filename = "fits_results.root" )
   const double weight = exp_yield/num_toys; //FIXME
   cout << "weight=" << weight << endl;
 
+  unsigned long long idx = TMath::Max( 0ll, (long long)( rand()*1./RAND_MAX*num_events-num_toys ) );
+
   for ( unsigned long long i = 0; i < num_toys; ++i ) {
-    tree->GetEntry( rand()*1./RAND_MAX*num_events );
-    //ev.tree->GetEntry( i );
-    //if ( fmod( i*1., num_toys*0.1 ) == 0 )
+    //tree->GetEntry( rand()*1./RAND_MAX*num_events );
+    tree->GetEntry( idx++ );
+    if ( fmod( i*1., num_toys*0.1 ) == 0 )
       cout << "event " << i << endl;
 
     const double xi_45_rnd = mix_45->GetRandom( min( m_pot_limits[  2], m_pot_limits[  3] ), max_xigg );

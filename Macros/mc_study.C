@@ -7,11 +7,12 @@ const char* output_dir = "/afs/cern.ch/user/l/lforthom/www/private/twophoton/mc_
 //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root";
 //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_5jul_pufix.root";
 //const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_zeta1em14.root";
-const char* file = "Samples/output_GammaGammaToGammaGamma_fpmc_justin_sm.root";
 //const char* file = "Samples/output_DiPhotonJetsBox_MGG-80toInf_Sherpa_v3.root";
-const string typ_lab = "FPMC, SM pred.";
-//const char* file = "Samples/output_GammaGammaToGammaGamma_13TeV_superchic2_27jun.root";
-//const string typ_lab = "SuperChic 2, SM pred.";
+/*const char* file = "/eos/cms/store/user/lforthom/twophoton/samples_80x/output_GammaGammaToGammaGamma_fpmc_justin_sm.root";
+const string typ_lab = "FPMC, SM pred.";*/
+const char* file = "/eos/cms/store/user/lforthom/twophoton/samples_80x/output_GammaGammaToGammaGamma_13TeV_superchic2_27jun.root";
+const string typ_lab = "SuperChic 2, SM pred.";
+unique_ptr<PaveText> lab;
 
 void mc_study()
 {
@@ -256,10 +257,16 @@ void mc_study()
     }
   }
   gStyle->SetOptStat( 0 );
-  const char* //*top_title = "CMS Simulation - Excl. #gamma#gamma #rightarrow #gamma#gamma, #sqrt{s} = 13 TeV, 2016 PU cond.";
-             top_title = "CMS Simulation, #sqrt{s} = 13 TeV, 2016 PU cond.";
+  //lab.reset( new PaveText( 0.8, 0.6, 0.87, 0.7 ) );
+  lab.reset( new PaveText( 0.8, 0.8, 0.87, 0.9 ) );
+  //PaveText lab( 0.8, 0.6, 0.85, 0.7 );
+  lab->SetTextSize( 0.035 );
+  lab->SetFillStyle( 0 );
+  lab->SetLineWidth( 0 );
+  lab->AddText( "Elastic #gamma#gamma#rightarrow#gamma#gamma" );
+  lab->AddText( typ_lab.c_str() );
   {
-    Canvas c( "mc_study_mresol_vs_vtxpos", top_title );
+    Canvas c( "mc_study_mresol_vs_vtxpos", "2016 PU cond. (13 TeV)", "Simulation" );
     TGraphErrors gr;
     for ( unsigned short i=0; i<num_vtx_pos; i++ ) {
       const double mean = h_mdiff_shift[i]->GetMean();
@@ -277,7 +284,7 @@ void mc_study()
     c.Save( "pdf,png", output_dir );
   }
   for ( unsigned short i=0; i<num_vtx_pos; i++ ) {
-    Canvas c( Form( "xxx_%d", i ), top_title );
+    Canvas c( Form( "xxx_%d", i ), "2016 PU cond. (13 TeV)", "Simulation" );
     gStyle->SetOptStat( 1111 );
     h_mdiff_shift[i]->Draw();
     c.Prettify( h_mdiff_shift[i] );
@@ -285,13 +292,13 @@ void mc_study()
   }
   gStyle->SetOptStat( 0 );
   {
-    Canvas c( "mc_study_ptevol", top_title );
+    Canvas c( "mc_study_ptevol", "2016 PU cond. (13 TeV)", "Simulation" );
     h_ptevol->Draw( "colz" );
     c.Prettify( h_ptevol );
     c.Save( "pdf,png", output_dir );
   }
   {
-    Canvas c( "mc_study_ptresol", top_title );
+    Canvas c( "mc_study_ptresol", "2016 PU cond. (13 TeV)", "Simulation" );
     double pt_error_mean[num_pt_bins], pt_error_rms[num_pt_bins];
     for ( unsigned short i=0; i<num_pt_bins; i++ ) {
       pt_error_mean[i] = h_ptdist[i]->GetMean();
@@ -309,7 +316,7 @@ void mc_study()
   }
   {
     gStyle->SetOptStat( 1111 );
-    Canvas c( "mc_study_match_mass", top_title );
+    Canvas c( "mc_study_match_mass", "2016 PU cond. (13 TeV)", "Simulation" );
     h_match_mass->Draw( "hist" );
     h_match_mass->SetMinimum( 1.e-4 );
     c.Prettify( h_match_mass );
@@ -318,7 +325,7 @@ void mc_study()
     gStyle->SetOptStat( 0 );
   }
   {
-    Canvas c( "mc_study_ptpair_ratio", top_title );
+    Canvas c( "mc_study_ptpair_ratio", "2016 PU cond. (13 TeV)", "Simulation" );
     h_diph_ptdist_numer->Divide( h_diph_ptdist_denom );
     h_diph_ptdist_numer->Sumw2();
     h_diph_ptdist_numer->SetMarkerStyle( 20 );
@@ -327,7 +334,7 @@ void mc_study()
     c.Save( "pdf,png", output_dir );
   }
   {
-    Canvas c( "mc_study_match_ptpair", top_title );
+    Canvas c( "mc_study_match_ptpair", "2016 PU cond. (13 TeV)", "Simulation" );
     h_match_ptpair->Draw( "hist" );
     c.Prettify( h_match_ptpair );
     c.SetLogy();
@@ -335,20 +342,20 @@ void mc_study()
   }
   gStyle->SetOptStat( 11111 );
   {
-    Canvas c( "mc_study_ptdiff", top_title );
+    Canvas c( "mc_study_ptdiff", "2016 PU cond. (13 TeV)", "Simulation" );
     h_ptdiff->Draw();
     c.Prettify( h_ptdiff );
     c.Save( "pdf,png", output_dir );
   }
   {
-    Canvas c( "mc_study_etadiff", top_title );
+    Canvas c( "mc_study_etadiff", "2016 PU cond. (13 TeV)", "Simulation" );
     h_etadiff->Draw();
     c.Prettify( h_etadiff );
     c.Save( "pdf,png", output_dir );
   }
   gStyle->SetOptStat( 0 );
   {
-    Canvas c( "mc_study_genvtx_dist", top_title );
+    Canvas c( "mc_study_genvtx_dist", "2016 PU cond. (13 TeV)", "Simulation" );
     h_vtxdist_gen->Draw( "hist" );
     c.Prettify( h_vtxdist_gen );
     c.SetLogy();
@@ -359,7 +366,7 @@ void mc_study()
     bool ltor = true;
     TH1D* cumul = dynamic_cast<TH1D*>( h_vtxdist_gen->GetCumulative( ltor ) ),
          *cumul_purw = dynamic_cast<TH1D*>( h_vtxdist_gen_purw->GetCumulative( ltor ) );
-    Canvas c( "mc_study_genvtx_dist_cumul", top_title );
+    Canvas c( "mc_study_genvtx_dist_cumul", "2016 PU cond. (13 TeV)", "Simulation" );
     THStack st;
     cumul->SetLineColor( kBlack );
     cumul->SetLineWidth( 2 );
@@ -386,6 +393,7 @@ void mc_study()
     //hm.push_back( make_pair( "PU reweighting", cumul_purw ) );
     //plt.draw_multiplot( "mc_study_genvtx_dist_cumul", hm );
   }
+  const char* top_title = "2016 PU cond. (13 TeV)";
   Plotter plt( output_dir, top_title );
   {
     Plotter::HistsMap hm;
@@ -428,20 +436,26 @@ void mc_study()
   plot_resol( "mc_study_singlephiresolution", h_phiresol, top_title );
 
   {
-    Canvas c( "mc_study_xiresolution", top_title );
+    Canvas c( "mc_study_xiresolution", "2016 PU cond. (13 TeV)", "Simulation" );
     c.SetLegendX1( 0.16 );
+    c.SetLegendY1( 0.58 );
+    c.SetLegendSizeY( 0.25 );
     h_xiresol1->Draw( "hist" );
     h_xiresol1->SetLineColor( kBlack );
     h_xiresol1->SetLineWidth( 2 );
     h_xiresol1->SetFillColor( kBlack );
     h_xiresol1->SetFillStyle( 3004 );
     //h_xiresol1->SetMaximum( 1.15e3 );
-    h_xiresol1->SetMaximum( 0.19 );
+    //FIXME h_xiresol1->SetMaximum( 0.19 );
+    h_xiresol1->SetMaximum( h_xiresol1->GetMaximum()*1.2 );
     TFitResultPtr fit1 = h_xiresol1->Fit( "gaus", "NS" );
     if ( fit1.Get() ) {
       const double* params_fit1 = fit1->GetParams();
       //c.AddLegendEntry( h_xiresol1, Form( "Sect.45, #sigma = %.4f", params_fit1[2] ), "f" );
-      c.AddLegendEntry( h_xiresol1, Form( "Sect.45, Mean = %.2e, RMS = %.3f", h_xiresol1->GetMean(), h_xiresol1->GetRMS() ), "f" );
+      //c.AddLegendEntry( h_xiresol1, Form( "Sect.45, Mean = %.2e, RMS = %.3f", h_xiresol1->GetMean(), h_xiresol1->GetRMS() ), "f" );
+      c.AddLegendEntry( h_xiresol1, "#font[72]{Sector 45}", "f" );
+      c.AddLegendEntry( nullptr, Form( "Mean = %.2e", h_xiresol1->GetMean() ), "" );
+      c.AddLegendEntry( nullptr, Form( "RMS = %.g", h_xiresol1->GetRMS() ), "" );
     }
     h_xiresol2->Draw( "hist same" );
     h_xiresol2->SetLineColor( kRed+1 );
@@ -453,18 +467,14 @@ void mc_study()
     if ( fit2.Get() ) {
       const double* params_fit2 = fit2->GetParams();
       //c.AddLegendEntry( h_xiresol2, Form( "Sect.56, #sigma = %.4f", params_fit2[2] ), "f" );
-      c.AddLegendEntry( h_xiresol2, Form( "Sect.56, Mean = %.2e, RMS = %.3f", h_xiresol2->GetMean(), h_xiresol2->GetRMS() ), "f" );
+      //c.AddLegendEntry( h_xiresol2, Form( "Sect.56, Mean = %.2e, RMS = %.3f", h_xiresol2->GetMean(), h_xiresol2->GetRMS() ), "f" );
+      c.AddLegendEntry( h_xiresol2, "#font[72]{Sector 56}", "f" );
+      c.AddLegendEntry( nullptr, Form( "Mean = %.2e", h_xiresol2->GetMean() ), "" );
+      c.AddLegendEntry( nullptr, Form( "RMS = %.g", h_xiresol2->GetRMS() ), "" );
     }
     c.Prettify( h_xiresol1 );
 
-    PaveText lab( 0.8, 0.6, 0.87, 0.7 );
-    //PaveText lab( 0.8, 0.6, 0.85, 0.7 );
-    lab.SetTextSize( 0.035 );
-    lab.SetFillStyle( 0 );
-    lab.SetLineWidth( 0 );
-    lab.AddText( "Elastic #gamma#gamma#rightarrow#gamma#gamma" );
-    lab.AddText( typ_lab.c_str() );
-    lab.Draw( "same" );
+    if ( lab ) lab->Draw( "same" );
 
     c.GetLegend()->SetLineColor( kWhite );
     c.Save( "pdf,png", output_dir );
@@ -472,8 +482,10 @@ void mc_study()
 }
 
 void plot_resol( const char* title, TH1D* h_resol, const char* top_title="" ) {
-  Canvas c( title, top_title );
+  Canvas c( title, top_title, "Simulation" );
   c.SetLegendX1( 0.16 );
+  //c.SetLegendY1( 0.6 );
+  //c.SetLegendSizeY( 0.3 );
   h_resol->Draw( "hist" );
   h_resol->SetLineColor( kBlack );
   h_resol->SetLineWidth( 2 );
@@ -483,20 +495,23 @@ void plot_resol( const char* title, TH1D* h_resol, const char* top_title="" ) {
   TFitResultPtr fit1 = h_resol->Fit( "gaus", "S+" );
   if ( fit1.Get() ) {
     const double* params_fit1 = fit1->GetParams();
-    c.AddLegendEntry( h_resol, Form( "Mean = %.1e, RMS = %.3f", h_resol->GetMean(), h_resol->GetRMS() ), "f" );
+    c.AddLegendEntry( h_resol, Form( "Mean = %.1e", h_resol->GetMean() ), "f" );
+    c.AddLegendEntry( nullptr, Form( "RMS = %.g", h_resol->GetRMS() ), "" );
+    //c.AddLegendEntry( h_resol, Form( "Mean = %.1e, RMS = %.3f", h_resol->GetMean(), h_resol->GetRMS() ), "f" );
     //c.AddLegendEntry( h_resol, Form( "Mean = %.2e, RMS = %.3f", params_fit1[1], params_fit1[2] ), "f" );
   }
   c.Prettify( h_resol );
 
-  PaveText lab( 0.8, 0.6, 0.87, 0.7 );
+  /*PaveText lab( 0.8, 0.6, 0.87, 0.7 );
   lab.SetTextSize( 0.035 );
   lab.SetFillStyle( 0 );
   lab.SetLineWidth( 0 );
   lab.AddText( "Elastic #gamma#gamma#rightarrow#gamma#gamma" );
-  lab.AddText( typ_lab.c_str() );
-  lab.Draw( "same" );
+  lab.AddText( typ_lab.c_str() );*/
+  if ( lab )
+    lab->Draw( "same" );
 
-  c.GetLegend()->SetY1( 0.85 );
-  c.GetLegend()->SetY2( 0.9 );
+  c.GetLegend()->SetY1( 0.725 );
+  c.GetLegend()->SetY2( 0.825 );
   c.Save( "pdf,png", output_dir );
 }

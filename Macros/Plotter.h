@@ -25,6 +25,9 @@ class Plotter
     Plotter( const char* out_path, const char* top_label ) : out_path_( out_path ), top_label_( top_label ) {}
     ~Plotter() {}
 
+    static const int* marker_pool;
+    static const int* colour_pool;
+
     void plot_multihists( const char* name, HistsMap hm, float min_ratio_y = 0., float max_ratio_y = 0.55, bool draw_overflow = true ) const {
       if ( hm.size() == 0 ) return;
 
@@ -39,8 +42,8 @@ class Plotter
         hm2.push_back( std::make_pair( h.first, hist ) );
         if ( i > 0 ) {
           if ( !draw_overflow ) hist->Sumw2();
-          hist->SetMarkerStyle( marker_pool_[i] );
-          hist->SetMarkerColor( colour_pool_[i] );
+          hist->SetMarkerStyle( marker_pool[i] );
+          hist->SetMarkerColor( colour_pool[i] );
         }
         //hist->Draw( ( i == 0 ) ? "" : "e1 same" );
         hist->Draw( ( i == 0 ) ? "hist" : "same" );
@@ -86,8 +89,8 @@ class Plotter
       for ( auto& gr : gr_map ) {
         graph = ( TGraphErrors* )gr.second;
         mg.Add( graph, "ep" );
-        graph->SetMarkerStyle( marker_pool_[i] );
-        graph->SetMarkerColor( colour_pool_[i] );
+        graph->SetMarkerStyle( marker_pool[i] );
+        graph->SetMarkerColor( colour_pool[i] );
         //c.SetLegendY1( 0.18 );
         if ( gr_map.size() > 0 && strcmp( gr.first.c_str(), "" ) != 0 ) c.AddLegendEntry( graph, gr.first.c_str(), "p" );
         i++;
@@ -135,8 +138,8 @@ class Plotter
       for ( auto& gr : graphs_map ) {
         graph = ( TGraphErrors* )gr.second;
         mg.Add( graph );
-        graph->SetMarkerStyle( marker_pool_[i] );
-        graph->SetMarkerColor( colour_pool_[i] );
+        graph->SetMarkerStyle( marker_pool[i] );
+        graph->SetMarkerColor( colour_pool[i] );
         if ( strcmp( gr.first.c_str(), "" ) != 0 ) c.AddLegendEntry( graph, gr.first.c_str(), "p" );
         i++;
       }
@@ -166,8 +169,8 @@ class Plotter
         graph = ( TGraphErrors* )gr.second;
         mg.Add( graph );
         if ( strcmp( graph->GetTitle(), "" ) != 0 ) mg.SetTitle( graph->GetTitle() );
-        graph->SetMarkerStyle( marker_pool_[i] );
-        graph->SetMarkerColor( colour_pool_[i] );
+        graph->SetMarkerStyle( marker_pool[i] );
+        graph->SetMarkerColor( colour_pool[i] );
         if ( strcmp( gr.first.c_str(), "" ) != 0 ) c.AddLegendEntry( graph, gr.first.c_str(), "p" );
         i++;
       }
@@ -239,7 +242,7 @@ class Plotter
           h_mc = dynamic_cast<TH1D*>( hist->Clone() );
         else
           h_mc->Add( hist );
-        if ( colours ) hist->SetFillColorAlpha( colour_pool_[i+1], 0.66 );
+        if ( colours ) hist->SetFillColorAlpha( colour_pool[i+1], 0.66 );
         //hist->SetFillStyle( 3002 );
         //hist->SetLineColor( kBlack );
         hist->SetLineColor( hist->GetFillColor() );
@@ -345,8 +348,8 @@ class Plotter
         hist = ( TH1D* )h.second;
         if ( i == 0 ) hs.SetTitle( hist->GetTitle() );
         if ( compute_w2 ) hist->Sumw2();
-        hist->SetMarkerStyle( marker_pool_[i] );
-        hist->SetMarkerColor( colour_pool_[i] );
+        hist->SetMarkerStyle( marker_pool[i] );
+        hist->SetMarkerColor( colour_pool[i] );
         //hist->SetLineColor( kBlack );
         hist->SetLineColor( hist->GetFillColor() );
         if ( strcmp( h.first.c_str(), "" ) != 0 ) c.AddLegendEntry( hist, h.first.c_str(), ( compute_w2 ) ? "elp" : "lp" );
@@ -448,8 +451,6 @@ class Plotter
 
     TString out_path_;
     TString top_label_;
-    static const int* marker_pool_;
-    static const int* colour_pool_;
 
     //std::shared_ptr<TGraphAsymmErrors> asym_error_bars( const TH1D* hist ) const {
     TGraphAsymmErrors* asym_error_bars( const TH1D* hist ) const {
@@ -472,7 +473,7 @@ class Plotter
 static const int markers[] = { 24, 20, 25, 21, 26, 22, 27, 23, 28, 24 };
 static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray };
 
-const int* Plotter::marker_pool_ = markers;
-const int* Plotter::colour_pool_ = colours;
+const int* Plotter::marker_pool = markers;
+const int* Plotter::colour_pool = colours;
 
 #endif

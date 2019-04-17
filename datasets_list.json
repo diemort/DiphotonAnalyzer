@@ -102,14 +102,16 @@
       "colour": 800, // kOrange
       //"path": "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8_v2.root",
       //"path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8/ntuple-GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8_miniAOD17_94x_v1.root",
-      "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/ntuple-GJet_TuneCUETP8M1_13TeV-pythia8_94x_v2_v0_prelim.root",
+      //"path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/ntuple-GJet_TuneCUETP8M1_13TeV-pythia8_94x_v2_v0_prelim.root",
+      "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/ntuple-GJet_TuneCUETP8M1_13TeV-pythia8_94x_v3_v0_prelim.root",
       //"cross_section": 863.1088, //16792*0.0514,
       //"cross_section": 862.4, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DGJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8
       "cross_section": 872.8, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DGJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCP5_13TeV_Pythia8
       //"num_events": 72342882
       //"num_events": 72429673
       //"num_events": 79243357
-      "num_events": 19206556 //FIXME
+      //"num_events": 19206556 //FIXME
+      "num_events": 56262699 //FIXME
     },
     {
       "type": "background",
@@ -121,7 +123,8 @@
       //"path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/DiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8/ntuple-DiPhotonJets_MGG-80toInf_amcatnlo_miniAOD17_94x_v4_partial.root",
       "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/DiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8/ntuple-DiPhotonJets_MGG-80toInf_amcatnlo_miniAOD16_94x_v1_partial.root",
       //"cross_section": 135.1,
-      "cross_section": 134.3, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
+      ///FIXME"cross_section": 134.3, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
+      "cross_section": 121.0043, //134.3*0.91// https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
       //"cross_section": 88.36, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa //BOXXXXXXX
       //"num_events": 35617475
       "num_events": 35350692 //FIXME temporary, 80x microAOD

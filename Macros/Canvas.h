@@ -28,6 +28,16 @@ class PaveText : public TPaveText
     TPaveText::SetTextSize( 0.033 );
     TPaveText::SetTextAlign( kHAlignRight+kVAlignBottom );
   }
+
+  static PaveText* topLabel( const char* text )
+  {
+    auto lab = new PaveText( 0.135, 0.95, 0.2, 0.96 );
+    lab->SetTextAlign( kVAlignBottom+kHAlignLeft );
+    lab->SetTextFont( 52 );
+    lab->AddText( text );
+    lab->Draw( "same" );
+    return lab;
+  }
 };
 
 class Canvas : public TCanvas

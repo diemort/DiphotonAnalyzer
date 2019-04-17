@@ -79,20 +79,22 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
   TH1D* h_rap_all = new TH1D( "rap_all", "Diproton rapidity@@Events", 20, -1., 1. );
   map<unsigned short,TH1D*> m_h_xi;
   for ( const auto& pid : pots_names )
-    m_h_xi[pid.first] = new TH1D( Form( "h_xi_%d", pid.first ), Form( "#xi (%s)@@Events", pid.second ), 50, 0., 0.25 );
-  TH1D* h_num_45 = new TH1D( "num_45", "Forward tracks multiplicity@@Events with an elastic diphoton cand.", 3, -0.5, 2.5 );
+    m_h_xi[pid.first] = new TH1D( Form( "h_xi_%d", pid.first ), Form( "#xi (%s)@@Events", pid.second ), 40, 0., 0.24 );
+  TH1D* h_num_45 = new TH1D( "num_45", "Forward tracks multiplicity@@Events", 3, -0.5, 2.5 );
   TH1D* h_num_56 = (TH1D*)h_num_45->Clone( "num_56" );
-  TH1D* h_num_sect = new TH1D( "num_sect", ";;Events with an elastic diphoton cand.", 4, -0.5, 3.5 );
+  TH1D* h_num_sect = new TH1D( "num_sect", ";;Events", 4, -0.5, 3.5 );
   /*auto h_massratio = new TH1D( "mass_ratio", "m_{pp}/m_{#gamma#gamma}@@Events@@?.g", 20, -2., 4. );
   auto h_rapdiff = new TH1D( "rap_diff", "y_{pp}-y_{#gamma#gamma}@@Events@@?.g", 20, -2.5, 2.5 );*/
-  auto h_massratio = new TH1D( "mass_ratio", "(m_{#gamma#gamma}-m_{pp})/#sigma(m_{#gamma#gamma}-m_{pp})@@Events", 20, -20., 20. );
-  auto h_rapdiff = new TH1D( "rap_diff", "(y_{#gamma#gamma}-y_{pp})/#sigma(y_{#gamma#gamma}-y_{pp})@@Events", 20, -20., 20. );
+  auto h_massratio = new TH1D( "mass_ratio", "(m_{#gamma#gamma}-m_{pp})/#sigma(m_{#gamma#gamma}-m_{pp})@@Events@@?.g", 20, -20., 20. );
+  auto h_rapdiff = new TH1D( "rap_diff", "(y_{#gamma#gamma}-y_{pp})/#sigma(y_{#gamma#gamma}-y_{pp})@@Events@@?.g", 20, -20., 20. );
 
   const unsigned long long num_events = tr->GetEntriesFast();
   for ( unsigned long long i = 0; i < num_events; ++i ) {
     tr->GetEntry( i );
 
-    cout << "event " << i << ": " << ev.num_fwd_track << " proton tracks, " << ev.num_diphoton << " diphoton candidates" << endl;
+    if ( ev.hlt_accept[0] == 0 ) continue;
+
+    //cout << "event " << i << ": " << ev.num_fwd_track << " proton tracks, " << ev.num_diphoton << " diphoton candidates" << endl;
 
     // first loop to identify the tracks and their respective pot
 
@@ -111,8 +113,8 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
 
       //----- reconstruct the kinematics
       //if ( ev.proton_track_xi[j] < pots_accept[pot_id] )
-      if ( xi < pots_accept[pot_id] )
-        continue;
+      //if ( xi < pots_accept[pot_id] )
+      if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
 
       //----- associate each track to a RP
       if      ( ev.fwd_track_arm[j] == 0 && ev.fwd_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.fwd_track_x[j]+al.x, ev.fwd_track_y[j]-al.y );
@@ -194,8 +196,9 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
       const float xip = ( ev.diphoton_pt1[j]*exp( +ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( +ev.diphoton_eta2[j] ) ) / sqrt_s,
                   xim = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
 
-//      if ( ( xim < pots_accept[102] && xim < pots_accept[103] ) || xim > 0.15 ) continue;
-//      if ( ( xip < pots_accept[2] && xip < pots_accept[3] ) || xip > 0.15 ) continue;
+      //if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
+      if ( ( xim < pots_accept_90pc[102] && xim < pots_accept_90pc[103] ) || xim > 0.15 ) continue; //FIXME FIXME
+      if ( ( xip < pots_accept_90pc[2] && xip < pots_accept_90pc[3] ) || xip > 0.15 ) continue;
 
       //----- search for associated leptons
 
@@ -357,6 +360,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     h_num_sect->SetMinimum( 0. );
     c.Prettify( h_num_sect );
     c.SetGrid( 0, 1 );
+    PaveText::topLabel( "Elastic selection" );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   {
@@ -379,6 +383,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     c.Prettify( hs.GetHistogram() );
     hs.GetHistogram()->GetXaxis()->SetNdivisions( 5 );
     c.SetGrid( 0, 1 );
+    PaveText::topLabel( "Elastic selection" );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   for ( auto& nh : map<const char*,TH1D*>{ { "mass_ratio", h_massratio }, { "rapidity_difference", h_rapdiff } } ) {
@@ -407,6 +412,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     c.AddLegendEntry( l_2sigma, "#pm 2#sigma", "l" );
     c.AddLegendEntry( l_3sigma, "#pm 3#sigma", "l" );
     c.Prettify( nh.second );
+    PaveText::topLabel( "Elastic selection" );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   for ( const auto& p : pots_names ) {
@@ -444,6 +450,7 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     c.AddLegendEntry( acc_exp, "Expected acceptance", "l" );
     c.AddLegendEntry( acc_exp_match, "Observed acceptance", "l" );
     c.AddLegendEntry( acc_exp_90pc, "< 10% rad.damage ineff.", "l" );
+    PaveText::topLabel( "Elastic selection" );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
 }
@@ -497,13 +504,7 @@ void plot_matching( double num_sigma, const char* name, TGraphErrors& gr_nomatch
   pt.AddText( "1-|#Delta#phi_{#gamma#gamma}/#pi| < 0.005" );
   pt.Draw();
 
-  PaveText pt_sig( 0.135, 0.95, 0.2, 0.96 );
-  //PaveText pt_sig( right_leg ? 0.155 : 0.675, right_leg ? 0.73 : 0.85 );
-  pt_sig.SetTextFont( 52 );
-  pt_sig.SetTextSize( 0.04 );
-  pt_sig.SetTextAlign( kHAlignLeft+kVAlignBottom );
-  pt_sig.AddText( Form( "%g#sigma matching", num_sigma ) );
-  pt_sig.Draw();
+  PaveText::topLabel( Form( "%g#sigma matching", num_sigma ) );
 
   diag->GetHistogram()->SetTitle( gr_massrapmatch.GetTitle() );
   c.Prettify( diag->GetHistogram() );
