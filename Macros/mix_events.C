@@ -11,7 +11,7 @@
 //#define OUTPUT_DIR "/afs/cern.ch/user/l/lforthom/www/private/twophoton/test"
 #define OUTPUT_DIR "/afs/cern.ch/user/l/lforthom/www/private/twophoton/test_15may"
 
-void mix_events( const char* input_filename = "fits_results.root", int scalup_1 = 0, int scalup_2 = 0, int scalup_3 = 0, int scalup_4 = 0 )
+void mix_events( const char* input_filename = "fits_results.root", bool scan = false, unsigned long long num_toys = 5000000 )
 {
 //  const double exp_yield = 586.877;
 //  const double exp_yield = 525;
@@ -24,10 +24,7 @@ void mix_events( const char* input_filename = "fits_results.root", int scalup_1 
 
   auto in_file = TFile::Open( input_filename );
   auto mix_45 = (TF1*)in_file->Get( "fit_xip" )->Clone(), mix_56 = (TF1*)in_file->Get( "fit_xim" )->Clone();
-  mix_45->SetParameter( 0, mix_45->GetParameter( 0 )+scalup_1*mix_45->GetParError( 0 ) );
-  mix_45->SetParameter( 1, mix_45->GetParameter( 1 )+scalup_2*mix_45->GetParError( 1 ) );
-  mix_56->SetParameter( 0, mix_56->GetParameter( 0 )+scalup_3*mix_56->GetParError( 0 ) );
-  mix_56->SetParameter( 1, mix_56->GetParameter( 1 )+scalup_4*mix_56->GetParError( 1 ) );
+  auto fit_1sig_45 = (TGraph*)in_file->Get( "fit_xip_1sig" )->Clone(), fit_1sig_56 = (TGraph*)in_file->Get( "fit_xim_1sig" )->Clone();
   delete in_file;
 
   //TFile f( "/eos/cms/store/user/lforthom/ProtonTree/DoubleEG/proton_ntuple-Run2016BCG_94Xrereco_v1.root" );
@@ -38,7 +35,6 @@ void mix_events( const char* input_filename = "fits_results.root", int scalup_1 
     "fill_number",
     "num_fwd_track", "fwd_track_arm", "fwd_track_pot", "fwd_track_x"
   } );
-  const unsigned long long num_toys = 5000000;
   const unsigned long long num_events = tree->GetEntriesFast();
   //xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
   xi_reco::load_optics_file( "TreeProducer/data/optics_17may22.root" );
@@ -63,10 +59,6 @@ void mix_events( const char* input_filename = "fits_results.root", int scalup_1 
        h2_ycorr_2sigma = (TH2D*)h2_ycorr->Clone( "ycorr_2sigma" ),
        h2_ycorr_3sigma = (TH2D*)h2_ycorr->Clone( "ycorr_3sigma" );
 
-  double num_nomatch = 0., num2_nomatch = 0.;
-  double num_match2d_2sigma = 0., num2_match2d_2sigma = 0.;
-  double num_match2d_3sigma = 0., num2_match2d_3sigma = 0.;
-
   cout << "number of toys: " << num_toys << endl;
 
   //const double weight = exp_yield/num_toys/mean_int; //FIXME
@@ -75,82 +67,130 @@ void mix_events( const char* input_filename = "fits_results.root", int scalup_1 
 
   unsigned long long idx = TMath::Max( 0ll, (long long)( rand()*1./RAND_MAX*num_events-num_toys ) );
 
-  for ( unsigned long long i = 0; i < num_toys; ++i ) {
-    //tree->GetEntry( rand()*1./RAND_MAX*num_events );
-    tree->GetEntry( idx++ );
-    if ( fmod( i*1., num_toys*0.1 ) == 0 )
-      cout << "event " << i << endl;
+  unsigned short num_try = 1;
+  if ( scan )
+    num_try = fit_1sig_45->GetN();
 
-    const double xi_45_rnd = mix_45->GetRandom( min( m_pot_limits[  2], m_pot_limits[  3] ), max_xigg );
-    const double xi_56_rnd = mix_56->GetRandom( min( m_pot_limits[102], m_pot_limits[103] ), max_xigg );
+  double max_nomatch = 0., err_max_nomatch = 0., max_match2d_2sigma = 0., err_max_match2d_2sigma = 0., max_match2d_3sigma = 0., err_max_match2d_3sigma = 0.;
+  double min_nomatch = 9999., err_min_nomatch = 9999., min_match2d_2sigma = 9999., err_min_match2d_2sigma = 9999., min_match2d_3sigma = 9999., err_min_match2d_3sigma = 9999.;
+  for ( unsigned short l = 0; l < num_try; ++l ) {
+    double num_nomatch = 0., num2_nomatch = 0.;
+    double num_match2d_2sigma = 0., num2_match2d_2sigma = 0.;
+    double num_match2d_3sigma = 0., num2_match2d_3sigma = 0.;
 
-    const double m_diph = 13.e3*sqrt( xi_45_rnd*xi_56_rnd );
-    const double y_diph = 0.5*log( xi_45_rnd/xi_56_rnd );
+    if ( scan ) {
+      cout << "scanning point #" << l << endl;
+      mix_45->SetParameter( 0, fit_1sig_45->GetX()[l] );
+      mix_45->SetParameter( 1, fit_1sig_45->GetY()[l] );
+      mix_56->SetParameter( 0, fit_1sig_56->GetX()[l] );
+      mix_56->SetParameter( 1, fit_1sig_56->GetY()[l] );
+    }
+    for ( unsigned long long i = 0; i < num_toys; ++i ) {
+      //tree->GetEntry( rand()*1./RAND_MAX*num_events );
+      tree->GetEntry( idx++ );
+      if ( !scan && fmod( i*1., num_toys*0.1 ) == 0 )
+        cout << "event " << i << endl;
 
-    auto align = pot_align::get_alignments( ev.fill_number );
+      const double xi_45_rnd = mix_45->GetRandom( min( m_pot_limits[  2], m_pot_limits[  3] ), max_xigg );
+      const double xi_56_rnd = mix_56->GetRandom( min( m_pot_limits[102], m_pot_limits[103] ), max_xigg );
 
-    map<unsigned short,pair<double,double> > xi_meas45, xi_meas56;
+      const double m_diph = 13.e3*sqrt( xi_45_rnd*xi_56_rnd );
+      const double y_diph = 0.5*log( xi_45_rnd/xi_56_rnd );
+
+      auto align = pot_align::get_alignments( ev.fill_number );
+
+      map<unsigned short,pair<double,double> > xi_meas45, xi_meas56;
       //cout << ev.num_fwd_track << endl;
-    for ( unsigned short j = 0; j < ev.num_fwd_track; ++j ) {
-      const unsigned short pot_id = 100*ev.fwd_track_arm[j]+ev.fwd_track_pot[j];
-      auto al = align[pot_id];
-//      pot_align::align_t al;
-      double xi, xi_err;
-      xi_reco::reconstruct( ev.fwd_track_x[j]+al.x, ev.fwd_track_arm[j], ev.fwd_track_pot[j], xi, xi_err );
-      if ( xi < m_pot_limits[pot_id] || xi > 0.15 ) continue; //FIXME
-      m_h_xireco[pot_id]->Fill( xi );
-      if ( ev.fwd_track_arm[j] == 0 ) {
-        m_h2_xicorr[pot_id]->Fill( xi, xi_45_rnd );
-        xi_meas45[pot_id] = { xi, xi_err };
+      for ( unsigned short j = 0; j < ev.num_fwd_track; ++j ) {
+        const unsigned short pot_id = 100*ev.fwd_track_arm[j]+ev.fwd_track_pot[j];
+        auto al = align[pot_id];
+//        pot_align::align_t al;
+        double xi, xi_err;
+        xi_reco::reconstruct( ev.fwd_track_x[j]+al.x, ev.fwd_track_arm[j], ev.fwd_track_pot[j], xi, xi_err );
+        if ( xi < m_pot_limits[pot_id] || xi > 0.15 ) continue; //FIXME
+        m_h_xireco[pot_id]->Fill( xi );
+        if ( ev.fwd_track_arm[j] == 0 ) {
+          m_h2_xicorr[pot_id]->Fill( xi, xi_45_rnd );
+          xi_meas45[pot_id] = { xi, xi_err };
+        }
+        if ( ev.fwd_track_arm[j] == 1 ) {
+          m_h2_xicorr[pot_id]->Fill( xi, xi_56_rnd );
+          xi_meas56[pot_id] = { xi, xi_err };
+        }
       }
-      if ( ev.fwd_track_arm[j] == 1 ) {
-        m_h2_xicorr[pot_id]->Fill( xi, xi_56_rnd );
-        xi_meas56[pot_id] = { xi, xi_err };
+      /*double m_diph = -999., y_diph = -999.;
+      for ( unsigned short j = 0; j < ev.num_diphoton; ++j ) {
+        if ( ev.diphoton_mass[j] > m_diph ) {
+          m_diph = ev.diphoton_mass[j];
+          y_diph = ev.diphoton_rapidity[j];
+        }
+      }*/
+      for ( const auto& m45 : xi_meas45 ) {
+        for ( const auto& m56 : xi_meas56 ) {
+          diproton_candidate_t pp( m45.second.first, m45.second.second, m56.second.first, m56.second.second );
+          const double m_pp = pp.mass(), err_m_pp = pp.mass_error();
+          const double y_pp = pp.rapidity(), err_y_pp = pp.rapidity_error();
+          const bool m_matched_2sig = is_matched( 2., m_diph, m_pp, m_diph*rel_err_mass, err_m_pp );
+          const bool m_matched_3sig = is_matched( 3., m_diph, m_pp, m_diph*rel_err_mass, err_m_pp );
+          const bool y_matched_2sig = is_matched( 2., y_diph, y_pp, rel_err_rap, err_y_pp );
+          const bool y_matched_3sig = is_matched( 3., y_diph, y_pp, rel_err_rap, err_y_pp );
+          num_nomatch += weight;
+          num2_nomatch += weight*weight;
+          h2_mcorr->Fill( m_pp, m_diph, weight );
+          h2_ycorr->Fill( y_pp, y_diph, weight );
+          if ( m_matched_2sig && y_matched_2sig ) {
+            num_match2d_2sigma += weight;
+            num2_match2d_2sigma += weight*weight;
+            h2_mcorr_2sigma->Fill( m_pp, m_diph, weight );
+            h2_ycorr_2sigma->Fill( y_pp, y_diph, weight );
+          }
+          if ( m_matched_3sig && y_matched_3sig ) {
+            num_match2d_3sigma += weight;
+            num2_match2d_3sigma += weight*weight;
+            h2_mcorr_3sigma->Fill( m_pp, m_diph, weight );
+            h2_ycorr_3sigma->Fill( y_pp, y_diph, weight );
+          }
+        }
       }
     }
-    /*double m_diph = -999., y_diph = -999.;
-    for ( unsigned short j = 0; j < ev.num_diphoton; ++j ) {
-      if ( ev.diphoton_mass[j] > m_diph ) {
-        m_diph = ev.diphoton_mass[j];
-        y_diph = ev.diphoton_rapidity[j];
-      }
-    }*/
-    for ( const auto& m45 : xi_meas45 ) {
-      for ( const auto& m56 : xi_meas56 ) {
-        diproton_candidate_t pp( m45.second.first, m45.second.second, m56.second.first, m56.second.second );
-        const double m_pp = pp.mass(), err_m_pp = pp.mass_error();
-        const double y_pp = pp.rapidity(), err_y_pp = pp.rapidity_error();
-        const bool m_matched_2sig = is_matched( 2., m_diph, m_pp, m_diph*rel_err_mass, err_m_pp );
-        const bool m_matched_3sig = is_matched( 3., m_diph, m_pp, m_diph*rel_err_mass, err_m_pp );
-        const bool y_matched_2sig = is_matched( 2., y_diph, y_pp, rel_err_rap, err_y_pp );
-        const bool y_matched_3sig = is_matched( 3., y_diph, y_pp, rel_err_rap, err_y_pp );
-        num_nomatch += weight;
-        num2_nomatch += weight*weight;
-        h2_mcorr->Fill( m_pp, m_diph, weight );
-        h2_ycorr->Fill( y_pp, y_diph, weight );
-        if ( m_matched_2sig && y_matched_2sig ) {
-          num_match2d_2sigma += weight;
-          num2_match2d_2sigma += weight*weight;
-          h2_mcorr_2sigma->Fill( m_pp, m_diph, weight );
-          h2_ycorr_2sigma->Fill( y_pp, y_diph, weight );
-        }
-        if ( m_matched_3sig && y_matched_3sig ) {
-          num_match2d_3sigma += weight;
-          num2_match2d_3sigma += weight*weight;
-          h2_mcorr_3sigma->Fill( m_pp, m_diph, weight );
-          h2_ycorr_3sigma->Fill( y_pp, y_diph, weight );
-        }
-      }
+    const double err_num_nomatch = sqrt( num2_nomatch );
+    const double err_num_match2d_2sigma = sqrt( num2_match2d_2sigma );
+    const double err_num_match2d_3sigma = sqrt( num2_match2d_3sigma );
+
+    cout << "num unmatched: " << num_nomatch << " +/- " << err_num_nomatch << endl;
+    cout << "num matched at 2 sigma: " << num_match2d_2sigma << " +/- " << err_num_match2d_2sigma << endl;
+    cout << "num matched at 3 sigma: " << num_match2d_3sigma << " +/- " << err_num_match2d_3sigma << endl;
+    if ( max_nomatch < num_nomatch ) {
+      max_nomatch = num_nomatch;
+      err_max_nomatch = err_num_nomatch;
+    }
+    if ( min_nomatch > num_nomatch ) {
+      min_nomatch = num_nomatch;
+      err_min_nomatch = err_num_nomatch;
+    }
+    if ( max_match2d_2sigma < num_match2d_2sigma ) {
+      max_match2d_2sigma = num_match2d_2sigma;
+      err_max_match2d_2sigma = err_num_match2d_2sigma;
+    }
+    if ( min_match2d_2sigma > num_match2d_2sigma ) {
+      min_match2d_2sigma = num_match2d_2sigma;
+      err_min_match2d_2sigma = err_num_match2d_2sigma;
+    }
+    if ( max_match2d_3sigma < num_match2d_3sigma ) {
+      max_match2d_3sigma = num_match2d_3sigma;
+      err_max_match2d_3sigma = err_num_match2d_3sigma;
+    }
+    if ( min_match2d_3sigma > num_match2d_3sigma ) {
+      min_match2d_3sigma = num_match2d_3sigma;
+      err_min_match2d_3sigma = err_num_match2d_3sigma;
     }
   }
-  const double err_num_nomatch = sqrt( num2_nomatch );
-  const double err_num_match2d_2sigma = sqrt( num2_match2d_2sigma );
-  const double err_num_match2d_3sigma = sqrt( num2_match2d_3sigma );
-
-  cout << "num unmatched: " << num_nomatch << " +/- " << err_num_nomatch << endl;
-  cout << "num matched at 2 sigma: " << num_match2d_2sigma << " +/- " << err_num_match2d_2sigma << endl;
-  cout << "num matched at 3 sigma: " << num_match2d_3sigma << " +/- " << err_num_match2d_3sigma << endl;
-
+  cout << "min num unmatched: " << min_nomatch << " +/- " << err_min_nomatch << endl;
+  cout << "min num matched at 2 sigma: " << min_match2d_2sigma << " +/- " << err_min_match2d_2sigma << endl;
+  cout << "min num matched at 3 sigma: " << min_match2d_3sigma << " +/- " << err_min_match2d_3sigma << endl;
+  cout << "max num unmatched: " << max_nomatch << " +/- " << err_max_nomatch << endl;
+  cout << "max num matched at 2 sigma: " << max_match2d_2sigma << " +/- " << err_max_match2d_2sigma << endl;
+  cout << "max num matched at 3 sigma: " << max_match2d_3sigma << " +/- " << err_max_match2d_3sigma << endl;
   gStyle->SetOptStat( 0 );
 
   const string title = "2016 conditions (13 TeV)";

@@ -38,19 +38,21 @@ void plot_sel_efficiency()
   TGraph2D g_el_eff;
   gggg::TreeEvent ev;
   const float sqrt_s = 13.e3, lumi = 9.36e3;
+  const TString ylabel = "Events";
+  //const TString ylabel = "Events fraction";
   unsigned short i = 0;
   for ( const auto& s : samples ) {
     unique_ptr<TFile> file( TFile::Open( s.path.c_str() ) );
     auto tree = dynamic_cast<TTree*>( file->Get( "ntp" ) );
-    v_h_mass[i] = TH1D( Form( "mass_%d", i ), "m_{#gamma#gamma}@@Events fraction@@GeV", 18, 200., 2000. );
-    v_h_ptpair[i] = TH1D( Form( "ptpair_%d", i ), "p_{T}^{#gamma#gamma}@@Events fraction@@GeV", 25, 0., 100. );
-    v_h_ptlead[i] = TH1D( Form( "leadpt_%d", i ), "p_{T}^{#gamma} (leading gamma)@@Events fraction@@GeV", 50, 50., 1050. );
-    v_h_acop[i] = TH1D( Form( "acop_%d", i ), "1-|#Delta#phi_{#gamma#gamma}/#pi|@@Events fraction@@?.g", 50, 0., 0.005 );
+    v_h_mass[i] = TH1D( Form( "mass_%d", i ), Form( "m_{#gamma#gamma}@@%s@@GeV", ylabel.Data() ), 18, 200., 2000. );
+    v_h_ptpair[i] = TH1D( Form( "ptpair_%d", i ), Form( "p_{T}^{#gamma#gamma}@@%s@@GeV", ylabel.Data() ), 25, 0., 100. );
+    v_h_ptlead[i] = TH1D( Form( "leadpt_%d", i ), Form( "p_{T}^{#gamma} (leading gamma)@@%s@@GeV", ylabel.Data() ), 50, 50., 1050. );
+    v_h_acop[i] = TH1D( Form( "acop_%d", i ), Form( "1-|#Delta#phi_{#gamma#gamma}/#pi|@@%s@@?.g", ylabel.Data() ), 50, 0., 0.005 );
     ev.attach( tree );
     //cout << s.xsec << endl;
     unsigned short num_passing = 0;
-    //const double weight = s.xsec/s.num_events*lumi;
-    const double weight = 1./s.num_events;
+    const double weight = s.xsec/s.num_events*lumi;
+    //const double weight = 1./s.num_events;
     for ( long long j = 0; j < tree->GetEntriesFast(); ++j ) {
       tree->GetEntry( j );
       if ( ev.hlt_accept[0] == 0 ) continue;
@@ -132,8 +134,8 @@ void plot_sel_efficiency()
   };
   i = 0;
   for ( auto& p : plots ) {
-    //Canvas c( p.first.c_str(), Form( "%.1f fb^{-1} (%g TeV)", lumi/1.e3, sqrt_s/1.e3 ), "Simulation preliminary" );
-    Canvas c( p.first.c_str(), Form( "FPMC #gamma#gamma #rightarrow #gamma#gamma (%g TeV)", sqrt_s/1.e3 ), "Simulation preliminary" );
+    Canvas c( p.first.c_str(), Form( "FPMC #gamma#gamma #rightarrow #gamma#gamma, yields @ %.1f fb^{-1} (%g TeV)", lumi/1.e3, sqrt_s/1.e3 ), "Simulation preliminary" );
+    //Canvas c( p.first.c_str(), Form( "FPMC #gamma#gamma #rightarrow #gamma#gamma (%g TeV)", sqrt_s/1.e3 ), "Simulation preliminary" );
     THStack hs;
     if ( i++ > 2 )
       c.SetLegendY1( 0.695 );

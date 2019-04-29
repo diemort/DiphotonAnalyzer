@@ -114,7 +114,7 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
       //----- reconstruct the kinematics
       //if ( ev.proton_track_xi[j] < pots_accept[pot_id] )
       //if ( xi < pots_accept[pot_id] )
-      if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
+//      if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
 
       //----- associate each track to a RP
       if      ( ev.fwd_track_arm[j] == 0 && ev.fwd_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.fwd_track_x[j]+al.x, ev.fwd_track_y[j]-al.y );
@@ -197,8 +197,8 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
                   xim = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
 
       //if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
-      if ( ( xim < pots_accept_90pc[102] && xim < pots_accept_90pc[103] ) || xim > 0.15 ) continue; //FIXME FIXME
-      if ( ( xip < pots_accept_90pc[2] && xip < pots_accept_90pc[3] ) || xip > 0.15 ) continue;
+//      if ( ( xim < pots_accept_90pc[102] && xim < pots_accept_90pc[103] ) || xim > 0.15 ) continue; //FIXME FIXME
+//      if ( ( xip < pots_accept_90pc[2] && xip < pots_accept_90pc[3] ) || xip > 0.15 ) continue;
 
       //----- search for associated leptons
 
@@ -258,6 +258,12 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
           cout << "event:" << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;
           cout << "masses: central system: " << cms.M() << ", diphoton: " << ev.diphoton_mass[j] << " +/- " << diphoton_mass_error << ", diproton: " << cand.mass() << " +/- " << cand.mass_error() << endl;
           cout << "rapidities: central system: " << cms.Rapidity() << ", diphoton: " << ev.diphoton_rapidity[j] << " +/- " << diphoton_rapidity_error << ", diproton: " << cand.rapidity() << " +/- " << cand.rapidity_error() << endl;
+          cout << "xis: central system: " << xip << " / " << xim << ", pots:";
+          cout << " 45n: "; for ( const auto& xi : xi_45n ) cout << xi.xi << " +- " << xi.err_xi << ",";
+          cout << " 45f: "; for ( const auto& xi : xi_45f ) cout << xi.xi << " +- " << xi.err_xi << ",";
+          cout << " 56n: "; for ( const auto& xi : xi_56n ) cout << xi.xi << " +- " << xi.err_xi << ",";
+          cout << " 56f: "; for ( const auto& xi : xi_56f ) cout << xi.xi << " +- " << xi.err_xi << ",";
+          cout << endl;
 /*          cout << "xi-per-pot: " << "45-near: " << ( xi_45n.size() > 0 ? xi_45n[0].xi : -1. )
                << ", 45-far: " << ( xi_45f.size() > 0 ? xi_45f[0].xi : -1. )
                << ", 56-near: " << ( xi_56n.size() > 0 ? xi_56n[0].xi : -1. )

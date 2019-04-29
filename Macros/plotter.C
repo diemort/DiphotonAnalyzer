@@ -13,6 +13,11 @@
 #include "TVector3.h"
 #include "TLorentzVector.h"
 
+#include "TStyle.h"
+
+#include "TMinuit.h"
+#include "TVirtualFitter.h"
+
 #include <string.h>
 
 using namespace gggg;
@@ -51,9 +56,11 @@ void
 plotter()
 {
   const float scaling_signal = 100.;
+  unsigned int num_gen_cand_events = 0;
 
   // turn off "Info in TCanvas::Print: file XXX has been created" messages
   gErrorIgnoreLevel = kWarning;
+  gStyle->SetEndErrorSize( 0. ); // remove ticks at end of error bars
 
   gSystem->Load( "libEventFilterUtilities.so" );
   DatasetHandler dsh( "datasets_list.json" );
@@ -61,10 +68,10 @@ plotter()
 
   const unsigned short num_samples = dsh.size();
 
-  typedef enum { nosel = 0, presel, elastic, xicomp, xitight, inelastic, qcd, incl, presel_noneleveto, num_regions } regions;
-  const vector<string> kin_regions = { "nosel", "presel", "elastic", "xicomp", "xitight", "inelastic", "qcd", "incl", "presel_noneleveto" };
-  const vector<string> kin_regions_label = { "After HLT", "Preselection",  "Elastic selection", "#xi^{#pm}_{#gamma#gamma} in acceptance", "#xi^{#pm}_{#gamma#gamma} in acc., #epsilon(#xi^{#pm}_{#gamma#gamma}) > 90%", "Anti-elastic sel.", "QCD selection", "Inclusive selection", "Preselection (no electron veto)" };
-  const vector<string> kin_regions_label_small = { "m_{#gamma#gamma}>350 GeV", "Presel.", "Elastic sel.", "Acc. #xi^{#pm}_{#gamma#gamma}", "#epsilon(#xi^{#pm}_{#gamma#gamma}) > 90%", "Presel. (no e-veto)" };
+  typedef enum { nosel = 0, presel, elastic, xicomp, xitight, inelastic, qcd, incl, presel_noneleveto, singlevtx, num_regions } regions;
+  const vector<string> kin_regions = { "nosel", "presel", "elastic", "xicomp", "xitight", "inelastic", "qcd", "incl", "presel_noneleveto", "singlevtx" };
+  const vector<string> kin_regions_label = { "After HLT", "Preselection",  "Elastic selection", "#xi^{#pm}_{#gamma#gamma} in acceptance", "#xi^{#pm}_{#gamma#gamma} in acc., #epsilon(#xi^{#pm}_{#gamma#gamma}) > 90%", "Anti-elastic sel.", "QCD selection", "Inclusive selection", "Preselection (no electron veto)", "Single vertex in event" };
+  const vector<string> kin_regions_label_small = { "m_{#gamma#gamma}>350 GeV", "Presel.", "Elastic sel.", "Acc. #xi^{#pm}_{#gamma#gamma}", "#epsilon(#xi^{#pm}_{#gamma#gamma}) > 90%", "Presel. (no e-veto)", "Single vertex" };
   const vector<string> types_names = { "data", "backgr", "signal" };
 
   //const PhotonScalesParser pho_scales( "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/egammaEffi.txt_EGM2D.root" );
@@ -104,6 +111,8 @@ plotter()
   //TF1 f_expo( "my_expo", "[0]+[1]/x", 0., 0.25 );
   //TF1 f_expo( "my_expo", "[0]+[1]/x**2", 0., 0.25 );
   //TF1 f_expo( "my_expo", "[0]*exp(-[1]*x**2)", 0., 0.25 );
+  f_expo.SetParName( 0, "Intercept" );
+  f_expo.SetParName( 1, "Slope" );
 
   //Plotter::HistsMap hm_nvtx[num_regions][3];
   //vector< pair<const char*, TH1*> > hm_nvtx[num_regions][3];
@@ -140,7 +149,9 @@ plotter()
   const float r9_cut = 0.94;
   const float mass_cut = 350.;
   //-----------------------------------------------------------------------------------------------
-  unsigned short num_cand_signal = 0;
+  unsigned short num_cand_signal[num_regions];
+  for ( unsigned short i = 0; i < num_regions; ++i )
+    num_cand_signal[i] = 0;
 
   for ( unsigned short i = 0; i < num_samples; ++i ) {
     Sample s = dsh.sample( i );
@@ -190,6 +201,7 @@ plotter()
       h_mass[qcd][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[qcd].c_str(), k, i ), "m_{#gamma#gamma}@@Events@@GeV", 8, 300., 900. );
       h_mass[presel][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[presel].c_str(), k, i ), "m_{#gamma#gamma}@@Events@@GeV", 24, 350., 2750. );
       h_mass[presel_noneleveto][k][i] = (TH1D*)h_mass[presel][k][i]->Clone();
+      h_mass[singlevtx][k][i] = (TH1D*)h_mass[presel][k][i]->Clone();
       h_mass[incl][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[incl].c_str(), k, i ), "m_{#gamma#gamma}@@Events@@GeV", 20, 250., 2750. );
       h_mass[elastic][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[elastic].c_str(), k, i ), "m_{#gamma#gamma}@@Events@@GeV", 16, 350., 1950. );
       h_mass[xicomp][k][i] = new TH1D( Form( "h_%s_%d_mass_%d", kin_regions[xicomp].c_str(), k, i ), "m_{#gamma#gamma}@@Events@@GeV", 16, 350., 1950. );
@@ -200,6 +212,7 @@ plotter()
       h_ptpair[qcd][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[qcd].c_str(), k, i ), "p_{T}^{#gamma#gamma}@@Events@@GeV", 11, 0., 440. );
       h_ptpair[presel][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[presel].c_str(), k, i ), "p_{T}^{#gamma#gamma}@@Events@@GeV", 25, 0., 500. );
       h_ptpair[presel_noneleveto][k][i] = (TH1D*)h_ptpair[presel][k][i]->Clone();
+      h_ptpair[singlevtx][k][i] = (TH1D*)h_ptpair[presel][k][i]->Clone();
       h_ptpair[incl][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[incl].c_str(), k, i ), "p_{T}^{#gamma#gamma}@@Events@@GeV", 31, 0., 775. );
       h_ptpair[elastic][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[elastic].c_str(), k, i ), "p_{T}^{#gamma#gamma}@@Events@@GeV", 15, 0., 150. );
       h_ptpair[xicomp][k][i] = new TH1D( Form( "h_%s_%d_ptpair_%d", kin_regions[xicomp].c_str(), k, i ), "p_{T}^{#gamma#gamma}@@Events@@GeV", 10, 0., 100. );
@@ -210,6 +223,7 @@ plotter()
       h_pt[qcd][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[qcd].c_str(), k, i ), "p_{T}^{#gamma}@@Events@@GeV", 24, 0., 200. );
       h_pt[presel][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[presel].c_str(), k, i ), "p_{T}^{#gamma}@@Events@@GeV", 40, 0., 600. );
       h_pt[presel_noneleveto][k][i] = (TH1D*)h_pt[presel][k][i]->Clone();
+      h_pt[singlevtx][k][i] = (TH1D*)h_pt[presel][k][i]->Clone();
       h_pt[incl][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[incl].c_str(), k, i ), "p_{T}^{#gamma}@@Events@@GeV", 40, 150., 750. );
       h_pt[elastic][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[elastic].c_str(), k, i ), "p_{T}^{#gamma}@@Events@@GeV", 20, 0., 600. );
       h_pt[xicomp][k][i] = new TH1D( Form( "h_%s_%d_pt_%d", kin_regions[xicomp].c_str(), k, i ), "p_{T}^{#gamma}@@Events@@GeV", 20, 0., 600. );
@@ -220,6 +234,7 @@ plotter()
       h_eta[qcd][k][i] = new TH1D( Form( "h_%s_%d_eta_%d", kin_regions[qcd].c_str(), k, i ), "#eta^{#gamma}@@Events@@?g", 20, -3., 3. );
       h_eta[presel][k][i] = new TH1D( Form( "h_%s_%d_eta_%d", kin_regions[presel].c_str(), k, i ), "#eta^{#gamma}@@Events@@?g", 30, -3., 3. );
       h_eta[presel_noneleveto][k][i] = (TH1D*)h_eta[presel][k][i]->Clone();
+      h_eta[singlevtx][k][i] = (TH1D*)h_eta[presel][k][i]->Clone();
       h_eta[incl][k][i] = new TH1D( Form( "h_%s_%d_eta_%d", kin_regions[incl].c_str(), k, i ), "#eta^{#gamma}@@Events@@?g", 30, -3., 3. );
       h_eta[elastic][k][i] = new TH1D( Form( "h_%s_%d_eta_%d", kin_regions[elastic].c_str(), k, i ), "#eta^{#gamma}@@Events@@?g", 30, -3., 3. );
       h_eta[xicomp][k][i] = new TH1D( Form( "h_%s_%d_eta_%d", kin_regions[xicomp].c_str(), k, i ), "#eta^{#gamma}@@Events@@?g", 30, -3., 3. );
@@ -231,6 +246,7 @@ plotter()
       h_r9[presel][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[presel].c_str(), k, i ), "R_{9}^{#gamma}@@Events@@?g", 30, 0.94, 1. );
       h_r9[presel_noneleveto][k][i] = (TH1D*)h_r9[presel][k][i]->Clone();
       h_r9[incl][k][i] = (TH1D*)h_r9[nosel][k][i]->Clone();
+      h_r9[singlevtx][k][i] = (TH1D*)h_r9[nosel][k][i]->Clone();
       h_r9[elastic][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[elastic].c_str(), k, i ), "R_{9}^{#gamma}@@Events@@?g", 15, 0.94, 1. );
       h_r9[xicomp][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[xicomp].c_str(), k, i ), "R_{9}^{#gamma}@@Events@@?g", 6, 0.94, 1. );
       h_r9[xitight][k][i] = new TH1D( Form( "h_%s_%d_r9_%d", kin_regions[xitight].c_str(), k, i ), "R_{9}^{#gamma}@@Events@@?g", 6, 0.94, 1. );
@@ -240,6 +256,7 @@ plotter()
       h_xip[qcd][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[qcd].c_str(), k, i ), "#xi_{#gamma#gamma}^{+}@@Events@@?g", 25, 0., 0.5 );
       h_xip[presel][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[presel].c_str(), k, i ), "#xi_{#gamma#gamma}^{+}@@Events@@?g", 50, 0., 0.5 );
       h_xip[presel_noneleveto][k][i] = (TH1D*)h_xip[presel][k][i]->Clone();
+      h_xip[singlevtx][k][i] = (TH1D*)h_xip[presel][k][i]->Clone();
       //h_xip[incl][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[incl].c_str(), k, i ), "#xi_{#gamma#gamma}^{+}@@Events@@?g", 25, 0., 0.5 );
       //////h_xip[incl][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[incl].c_str(), k, i ), "#xi_{#gamma#gamma}^{+}@@Events@@?g", 15, 0., 0.3 );
       h_xip[incl][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[incl].c_str(), k, i ), "#xi_{#gamma#gamma}^{+}@@Events@@?g", 25, 0., 0.2 );
@@ -249,7 +266,7 @@ plotter()
       h_xip[xitight][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[xitight].c_str(), k, i ), "#xi_{#gamma#gamma}^{+}@@Events@@?g", 5, 0.05, 0.15 );
       h_xip[inelastic][k][i] = new TH1D( Form( "h_%s_%d_xip_%d", kin_regions[inelastic].c_str(), k, i ), "#xi_{#gamma#gamma}^{+}@@Events@@?g", 50, 0., 0.5 );
       //-------------------------------------------------------------------------------------------
-      for ( const auto& reg : { nosel, qcd, presel, presel_noneleveto, incl, elastic, xicomp, xitight, inelastic } ) {
+      for ( const auto& reg : { nosel, qcd, presel, presel_noneleveto, incl, elastic, xicomp, xitight, inelastic, singlevtx } ) {
         h_ptlead[reg][k][i] = (TH1D*)h_pt[reg][k][i]->Clone( Form( "h_%s_%d_ptlead_%d", kin_regions[reg].c_str(), k, i ) );
         h_ptlead[reg][k][i]->SetTitle( "p_{T}^{#gamma} (leading #gamma)@@Events@@GeV" );
         h_ptsublead[reg][k][i] = (TH1D*)h_pt[reg][k][i]->Clone( Form( "h_%s_%d_ptsublead_%d", kin_regions[reg].c_str(), k, i ) );
@@ -277,6 +294,7 @@ plotter()
       h_dphi[presel][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[presel].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi|@@Events@@?.3f", 40, 0., 1. );
       h_dphi[presel_noneleveto][k][i] = (TH1D*)h_dphi[presel][k][i]->Clone();
       h_dphi[incl][k][i] = (TH1D*)h_dphi[presel][k][i]->Clone();
+      h_dphi[singlevtx][k][i] = (TH1D*)h_dphi[presel][k][i]->Clone();
       h_dphi[elastic][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[elastic].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi| (#times 10^{-3})@@Events@@?.4f", 10, 0., 5. );
       h_dphi[xicomp][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[xicomp].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi| (#times 10^{-3})@@Events@@?.3f", 5, 0., 5. );
       h_dphi[xitight][k][i] = new TH1D( Form( "h_%s_%d_dphi_%d", kin_regions[xitight].c_str(), k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi| (#times 10^{-3})@@Events@@?.3f", 5, 0., 5. );
@@ -287,6 +305,7 @@ plotter()
       h_met[presel][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[presel].c_str(), k, i ), "p_{T}^{miss}@@Events@@GeV", 50, 0., 150. );
       h_met[presel_noneleveto][k][i] = (TH1D*)h_met[presel][k][i]->Clone();
       h_met[incl][k][i] = (TH1D*)h_met[presel][k][i]->Clone();
+      h_met[singlevtx][k][i] = (TH1D*)h_met[presel][k][i]->Clone();
       h_met[elastic][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[elastic].c_str(), k, i ), "p_{T}^{miss}@@Events@@GeV", 25, 0., 150. );
       h_met[xicomp][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[xicomp].c_str(), k, i ), "p_{T}^{miss}@@Events@@GeV", 25, 0., 150. );
       h_met[xitight][k][i] = new TH1D( Form( "h_%s_%d_met_%d", kin_regions[xitight].c_str(), k, i ), "p_{T}^{miss}@@Events@@GeV", 10, 0., 100. );
@@ -297,6 +316,7 @@ plotter()
       h_diph_vtxz[presel][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[presel].c_str(), k, i ), "Diphoton vertex z@@Events@@cm", 40, -20., 20. );
       h_diph_vtxz[presel_noneleveto][k][i] = (TH1D*)h_diph_vtxz[presel][k][i]->Clone();
       h_diph_vtxz[incl][k][i] = (TH1D*)h_diph_vtxz[presel][k][i]->Clone();
+      h_diph_vtxz[singlevtx][k][i] = (TH1D*)h_diph_vtxz[presel][k][i]->Clone();
       h_diph_vtxz[elastic][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[elastic].c_str(), k, i ), "Diphoton vertex z@@Events@@cm", 20, -20., 20. );
       h_diph_vtxz[xicomp][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[xicomp].c_str(), k, i ), "Diphoton vertex z@@Events@@cm", 20, -20., 20. );
       h_diph_vtxz[xitight][k][i] = new TH1D( Form( "h_%s_%d_diph_vtxz_%d", kin_regions[xitight].c_str(), k, i ), "Diphoton vertex z@@Events@@cm", 20, -20., 20. );
@@ -311,9 +331,12 @@ plotter()
     rescaled[i] = false;
 
     cout << s.name() << "\t" << sample_weight << endl;
-    if ( sample_type == mc_signal && scaling_signal > 1. && sample_weight < 0.001 ) {
-      sample_weight *= scaling_signal;
-      rescaled[i] = true;
+    if ( sample_type == mc_signal ) {
+      if ( scaling_signal > 1. && sample_weight < 0.001 ) {
+        sample_weight *= scaling_signal;
+        rescaled[i] = true;
+      }
+      num_gen_cand_events = s.num_events();
     }
     // loop on events
     for ( unsigned long long j = 0; j < num_entries; ++j ) {
@@ -325,6 +348,7 @@ plotter()
         continue;
 
       bool has_diphoton_cand = false, has_elastic_diphoton_cand = false, has_inelastic_diphoton_cand = false;
+      bool has_elastic_xicomp_cand = false, has_elastic_xitight_cand = false;
 
       //if ( s.type() == Sample::kData && !ev_selector.isSelected( ev.run_id, ev.lumisection, ev.event_number ) ) continue;
 
@@ -427,6 +451,33 @@ plotter()
           h_diph_vtxz[nosel][c][i]->Fill( diph_vtx.z(), s_weight );
           h_diph_numjets[nosel][c][i]->Fill( num_matched_jets, s_weight );
           h_diph_numleptons[nosel][c][i]->Fill( num_matched_ele+num_matched_mu, s_weight );
+        }
+        if ( ev.num_vertex == 1 ) {
+          for ( auto c : vector<unsigned short>{ TreeEvent::all, ev_class } ) {
+            h_ptlead[singlevtx][c][i]->Fill( ev.diphoton_pt1[k], s_weight );
+            h_ptsublead[singlevtx][c][i]->Fill( ev.diphoton_pt2[k], s_weight );
+            h_pt[singlevtx][c][i]->Fill( ev.diphoton_pt1[k], s_weight );
+            h_pt[singlevtx][c][i]->Fill( ev.diphoton_pt2[k], s_weight );
+            h_pt_varbins[singlevtx][c][i]->Fill( ev.diphoton_pt1[k], s_weight );
+            h_pt_varbins[singlevtx][c][i]->Fill( ev.diphoton_pt2[k], s_weight );
+            h_etalead[singlevtx][c][i]->Fill( ev.diphoton_eta1[k], s_weight );
+            h_etasublead[singlevtx][c][i]->Fill( ev.diphoton_eta2[k], s_weight );
+            h_eta[singlevtx][c][i]->Fill( ev.diphoton_eta1[k], s_weight );
+            h_eta[singlevtx][c][i]->Fill( ev.diphoton_eta2[k], s_weight );
+            h_r9lead[singlevtx][c][i]->Fill( ev.diphoton_r91[k], s_weight );
+            h_r9sublead[singlevtx][c][i]->Fill( ev.diphoton_r92[k], s_weight );
+            h_r9[singlevtx][c][i]->Fill( ev.diphoton_r91[k], s_weight );
+            h_r9[singlevtx][c][i]->Fill( ev.diphoton_r92[k], s_weight );
+            h_mass[singlevtx][c][i]->Fill( ev.diphoton_mass[k], s_weight );
+            h_ptpair[singlevtx][c][i]->Fill( ev.diphoton_pt[k], s_weight );
+            h_dphi[singlevtx][c][i]->Fill( acop, s_weight );
+            h_met[singlevtx][c][i]->Fill( ev.met, s_weight );
+            h_xip[singlevtx][c][i]->Fill( xip, s_weight );
+            h_xim[singlevtx][c][i]->Fill( xim, s_weight );
+            h_diph_vtxz[singlevtx][c][i]->Fill( diph_vtx.z(), s_weight );
+            h_diph_numjets[singlevtx][c][i]->Fill( num_matched_jets, s_weight );
+            h_diph_numleptons[singlevtx][c][i]->Fill( num_matched_ele+num_matched_mu, s_weight );
+          }
         }
 //        h2_eleveto[i]->Fill( ev.diphoton_ele_veto1[k], ev.diphoton_ele_veto2[k] );
 
@@ -636,6 +687,7 @@ plotter()
               h_diph_vtxz[xicomp][c][i]->Fill( diph_vtx.z(), s_weight );
               h_diph_numjets[xicomp][c][i]->Fill( num_matched_jets, s_weight );
               h_diph_numleptons[xicomp][c][i]->Fill( num_matched_ele+num_matched_mu, s_weight );
+              has_elastic_xicomp_cand = true;
               if ( ( ( xim > pots_accept_tight["56N"] || xim > pots_accept_tight["56F"] ) && xim < 0.15 )
                 && ( ( xip > pots_accept_tight["45N"] || xip > pots_accept_tight["45F"] ) && xip < 0.15 ) ) {
                 h_ptlead[xitight][c][i]->Fill( ev.diphoton_pt1[k], s_weight );
@@ -661,10 +713,8 @@ plotter()
                 h_diph_vtxz[xitight][c][i]->Fill( diph_vtx.z(), s_weight );
                 h_diph_numjets[xitight][c][i]->Fill( num_matched_jets, s_weight );
                 h_diph_numleptons[xitight][c][i]->Fill( num_matched_ele+num_matched_mu, s_weight );
-                if ( s.type() == Sample::kSignal ) {
-                  num_cand_signal++;
-                  //cout << ">> MC signal candidate!" << endl;
-                }
+                has_elastic_xitight_cand = true;
+                //if ( s.type() == Sample::kSignal ) num_cand_signal[xitight]++;
               }
             }
             num_after[i][xicomp] += s_weight * sample_weight;
@@ -723,25 +773,36 @@ plotter()
       h_ndiph[nosel][0][i]->Fill( ev.num_diphoton, sp_weight );
       h_nvtx[nosel][0][i]->Fill( ev.num_vertex, sp_weight );
       h_nvtx_unc[nosel][0][i]->Fill( ev.num_vertex, 1. );
+      if ( s.type() == Sample::kSignal ) num_cand_signal[nosel]++;
       if ( num_preselected_diphotons == 0 ) {
         h_ndiph[qcd][0][i]->Fill( ev.num_diphoton, sp_weight );
         h_nvtx[qcd][0][i]->Fill( ev.num_vertex, sp_weight );
         h_nvtx_unc[qcd][0][i]->Fill( ev.num_vertex, 1. );
+        if ( s.type() == Sample::kSignal ) num_cand_signal[qcd]++;
       }
       if ( has_diphoton_cand ) {
         h_ndiph[presel][0][i]->Fill( ev.num_diphoton, sp_weight );
         h_nvtx[presel][0][i]->Fill( ev.num_vertex, sp_weight );
         h_nvtx_unc[presel][0][i]->Fill( ev.num_vertex, 1. );
+        if ( s.type() == Sample::kSignal ) num_cand_signal[presel]++;
       }
       if ( has_elastic_diphoton_cand ) {
         h_ndiph[elastic][0][i]->Fill( ev.num_diphoton, sp_weight );
         h_nvtx[elastic][0][i]->Fill( ev.num_vertex, sp_weight );
         h_nvtx_unc[elastic][0][i]->Fill( ev.num_vertex, 1. );
+        if ( s.type() == Sample::kSignal ) num_cand_signal[elastic]++;
+        if ( has_elastic_xicomp_cand ) {
+          if ( s.type() == Sample::kSignal ) num_cand_signal[xicomp]++;
+          if ( has_elastic_xitight_cand ) {
+            if ( s.type() == Sample::kSignal ) num_cand_signal[xitight]++;
+          }
+        }
       }
       if ( has_inelastic_diphoton_cand ) {
         h_ndiph[inelastic][0][i]->Fill( ev.num_diphoton, sp_weight );
         h_nvtx[inelastic][0][i]->Fill( ev.num_vertex, sp_weight );
         h_nvtx_unc[inelastic][0][i]->Fill( ev.num_vertex, 1. );
+        if ( s.type() == Sample::kSignal ) num_cand_signal[inelastic]++;
       }
     } // loop on events
 
@@ -970,11 +1031,14 @@ plotter()
          << "  data: " << n_data << " +/- " << sqrt( n_data_err ) << "\n"
          << "    MC: " << n_mc << " +/- " << sqrt( n_mc_err ) << "\n"
          << " ratio: " << n_data/n_mc << " +/- " << ( n_data/n_mc*sqrt( n_data_err/n_data/n_data+n_mc_err/n_mc/n_mc ) ) << endl;
+    cout << "signal cand fraction: " << num_cand_signal[i]*1./num_gen_cand_events << endl;
   }
-  cout << "candidate for xi tight: " << num_cand_signal << endl;
   TF1* f_xim = nullptr, *f_xip = nullptr;
+  TGraph* gr_1sig_xim = nullptr, *gr_1sig_xip = nullptr;
   TH1D* h_mc_xim = nullptr, *h_mc_xip = nullptr;
   TH1D* h_data_xim = nullptr, *h_data_xip = nullptr;
+  TFitResult* fit_xim = nullptr, *fit_xip = nullptr;
+  TVirtualFitter::SetDefaultFitter( "Minuit" );
   for ( auto& hm : map<string,Plotter::HistsMap*>{ { "xim_incl", hm_xim[incl][0] }, { "xip_incl", hm_xip[incl][0] } } ) {
     gStyle->SetOptFit( 1 );
     Canvas c( hm.first.c_str(), Form( "%.1f fb^{-1} (13 TeV)", the_lumi/1.e3 ), "Preliminary" );
@@ -1005,32 +1069,83 @@ plotter()
     //TFitResultPtr fit_mc = h_sum_mc->Fit( "expo", "sr", "", 0.012, 0.14 );
     //TFitResultPtr fit_mc = h_sum_mc->Fit( &f_expo, "sr", "", 350./13000., 0.2 );
     //TFitResultPtr fit_data = h_sum_data->Fit( &f_expo, "sr", "", 350./13000., 0.2 );
-    TFitResultPtr fit_data = h_sum_data->Fit( &f_expo, "sr,l", "", 350./13000., 0.15 );
+    TFitResultPtr fit_data = h_sum_data->Fit( &f_expo, "sr", "", 350./13000., 0.15 );
     //TFitResultPtr fit_data = h_sum_data->Fit( &f_expo, "sr", "", 0.045, 0.175 );
     /////TFitResultPtr fit_data = h_sum_data->Fit( &f_expo, "sr", "", 0.065, 0.3 );
+    cout << hm.first << ", prob = " << fit_data->Prob() << endl;
+    TString label;
     if ( hm.first == "xim_incl" ) {
       f_xim = (TF1*)f_expo.Clone( "fit_xim" );
       h_mc_xim = (TH1D*)h_sum_mc->Clone( "sum_mc_xim" );
       h_data_xim = (TH1D*)h_sum_data->Clone( "sum_data_xim" );
+      fit_xim = (TFitResult*)fit_data->Clone( "res_fit_xim" );
+      label = "#xi_{#gamma#gamma}^{-}";
     }
     else {
       f_xip = (TF1*)f_expo.Clone( "fit_xip" );
       h_mc_xip = (TH1D*)h_sum_mc->Clone( "sum_mc_xip" );
       h_data_xip = (TH1D*)h_sum_mc->Clone( "sum_data_xip" );
+      fit_xip = (TFitResult*)fit_data->Clone( "res_fit_xip" );
+      label = "#xi_{#gamma#gamma}^{+}";
     }
+    fit_data->GetCorrelationMatrix().Print();
     //TFitResultPtr fit_mc = h_sum_mc->Fit( "expo", "s" );
     //TFitResultPtr fit_data = h_sum_data->Fit( "expo", "s+" );
     /*if ( fit.Get() ) {
       const double* params_fit = fit->GetParams();
       c.AddLegendEntry( h_sum, Form( "%g+Sect.45, Mean = %.2e, RMS = %.3f", params_fit[0], params_fit[1] ), "f" );
     }*/
-    PaveText::topLabel( ( kin_regions_label[incl]+" (data)" ).c_str() );
+    auto top = PaveText::topLabel( ( kin_regions_label[incl]+" (data)" ).c_str() );
     c.Prettify( h_sum_data );
     c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    //--- parameters correlation
+    Canvas c2( ( hm.first+"_param_corr" ).c_str(), Form( "%.1f fb^{-1} (13 TeV)", the_lumi/1.e3 ), "Preliminary" );
+    c2.SetLegendX1( 0.6 );
+    c2.SetLegendY1( 0.2 );
+    gMinuit->SetErrorDef( 4 );
+    auto gr2 = dynamic_cast<TGraph*>( gMinuit->Contour( 100, 0, 1 ) );
+    //gr2->SetFillColor( 42 );
+    //gr2->SetFillColor( 5 );
+    gr2->SetFillColor( kYellow-4 );
+    gr2->Draw( "alf" );
+    gMinuit->SetErrorDef( 1 );
+    auto gr1 = dynamic_cast<TGraph*>( gMinuit->Contour( 100, 0, 1 ) );
+    //gr1->SetFillColor( 38 );
+    //gr1->SetFillColor( 3 );
+    if ( hm.first == "xim_incl" )
+      gr_1sig_xim = (TGraph*)gr1->Clone( "fit_xim_1sig" );
+    else
+      gr_1sig_xip = (TGraph*)gr1->Clone( "fit_xip_1sig" );
+    gr1->SetFillColor( kGreen+1 );
+    gr1->Draw( "lf" );
+    auto params = fit_data->GetParams(), err_params = fit_data->GetErrors();
+    TGraphErrors gr_central;
+    gr_central.SetPoint( 0, params[0], params[1] );
+    gr_central.SetPointError( 0, err_params[0], err_params[1] );
+    gr_central.SetLineWidth( 3 );
+    //gr_central.SetMarkerStyle( 20 );
+    //gr_central.SetMarkerColor( kBlack );
+    gr_central.Draw( "e,same" );
+    gr2->GetHistogram()->SetTitle( ";Intercept;Slope" );
+    c2.Prettify( gr2->GetHistogram() );
+    top->Draw( "same" );
+    c2.AddLegendEntry( &gr_central, "1D uncert.", "l" );
+    c2.AddLegendEntry( gr1, "#pm 1 #sigma", "f" );
+    c2.AddLegendEntry( gr2, "#pm 2 #sigma", "f" );
+    PaveText pt( 0.18, 0.7 );
+    pt.AddText( Form( "%s (#rho = %.3f)", label.Data(), fit_data->GetCorrelationMatrix()[0][1] ) );
+    pt.SetTextAlign( kHAlignLeft+kVAlignBottom );
+    pt.SetTextSize( 0.045 );
+    pt.Draw( "same" );
+    c2.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   auto f_fits = TFile::Open( "fits_results.root", "RECREATE" );
   f_xim->Write();
   f_xip->Write();
+  gr_1sig_xim->Write();
+  gr_1sig_xip->Write();
+  fit_xim->Write();
+  fit_xip->Write();
   h_mc_xim->Write();
   h_mc_xip->Write();
   h_data_xim->Write();
