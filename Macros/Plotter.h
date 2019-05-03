@@ -471,7 +471,7 @@ class Plotter
 };
 
 static const int markers[] = { 24, 20, 25, 21, 26, 22, 27, 23, 28, 24 };
-static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray };
+static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray, kViolet-7, kYellow+3, kSpring+4, kTeal-5, kCyan-2, kTeal-1, kRed-2, kGreen-2, kBlue-2, kMagenta, kOrange, kViolet, kYellow };
 
 const int* Plotter::marker_pool = markers;
 const int* Plotter::colour_pool = colours;

@@ -114,7 +114,7 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
       //----- reconstruct the kinematics
       //if ( ev.proton_track_xi[j] < pots_accept[pot_id] )
       //if ( xi < pots_accept[pot_id] )
-//      if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
+      if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
 
       //----- associate each track to a RP
       if      ( ev.fwd_track_arm[j] == 0 && ev.fwd_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.fwd_track_x[j]+al.x, ev.fwd_track_y[j]-al.y );
@@ -191,14 +191,14 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
       if ( 1.-fabs( ev.diphoton_dphi[j] )/M_PI > 0.005 ) continue;
       //if ( 1.-fabs( ev.diphoton_dphi[j] )/M_PI > 0.1 ) continue;
 
-      has_diph_cand = true;
-
       const float xip = ( ev.diphoton_pt1[j]*exp( +ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( +ev.diphoton_eta2[j] ) ) / sqrt_s,
                   xim = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
 
       //if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
-//      if ( ( xim < pots_accept_90pc[102] && xim < pots_accept_90pc[103] ) || xim > 0.15 ) continue; //FIXME FIXME
-//      if ( ( xip < pots_accept_90pc[2] && xip < pots_accept_90pc[3] ) || xip > 0.15 ) continue;
+      if ( ( xim < pots_accept_90pc[102] && xim < pots_accept_90pc[103] ) || xim > 0.15 ) continue; //FIXME FIXME
+      if ( ( xip < pots_accept_90pc[2] && xip < pots_accept_90pc[3] ) || xip > 0.15 ) continue;
+
+      has_diph_cand = true;
 
       //----- search for associated leptons
 
@@ -364,6 +364,8 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
     axis->SetBinLabel( 3, "Sector 56 only" );
     axis->SetBinLabel( 4, "Both sectors" );
     h_num_sect->SetMinimum( 0. );
+    for ( unsigned short i = 1; i < 5; ++i )
+      cout << axis->GetBinLabel( i ) << ": " << h_num_sect->GetBinContent( i ) << endl;
     c.Prettify( h_num_sect );
     c.SetGrid( 0, 1 );
     PaveText::topLabel( "Elastic selection" );
