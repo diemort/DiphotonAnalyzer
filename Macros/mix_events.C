@@ -11,7 +11,7 @@
 //#define OUTPUT_DIR "/afs/cern.ch/user/l/lforthom/www/private/twophoton/test"
 #define OUTPUT_DIR "/afs/cern.ch/user/l/lforthom/www/private/twophoton/test_15may"
 
-void mix_events( const char* input_filename = "fits_results.root", bool scan = false, unsigned long long num_toys = 5000000 )
+void mix_events( const char* input_filename = "fits_results.root", bool scan = true, unsigned long long num_toys = 5000000 )
 {
 //  const double exp_yield = 586.877;
 //  const double exp_yield = 525;

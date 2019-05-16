@@ -317,9 +317,8 @@ class Plotter
         hs_mc.SetTitle( "" );
         auto ratio = c.RatioPlot( hm, -0.4, 2.4, "Data/MC", 1.0 );
         if ( angle != -1. )
-          for ( unsigned short j = 1; j < ratio->GetNbinsX(); ++j ) {
-            cout << j << "---> " << ratio->GetNbinsX() << endl;
-            ratio->GetXaxis()->ChangeLabel( j, -45. );}
+          for ( unsigned short j = 1; j < ratio->GetNbinsX(); ++j )
+            ratio->GetXaxis()->ChangeLabel( j, -45. );
         //c.RatioPlot( hm, 0.05, 1.95, "Data/MC", 1.0 );
         c.cd( 1 );
       }
@@ -471,7 +470,7 @@ class Plotter
 };
 
 static const int markers[] = { 24, 20, 25, 21, 26, 22, 27, 23, 28, 24 };
-static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray, kViolet-7, kYellow+3, kSpring+4, kTeal-5, kCyan-2, kTeal-1, kRed-2, kGreen-2, kBlue-2, kMagenta, kOrange, kViolet, kYellow };
+static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray, kViolet-7, kYellow+3, kSpring+4, kTeal-5, kCyan-2, kTeal-1, kRed-2, kGreen-2, kBlue-2, kMagenta, kOrange, kViolet, kYellow, kOrange-3 };
 
 const int* Plotter::marker_pool = markers;
 const int* Plotter::colour_pool = colours;

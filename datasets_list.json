@@ -123,8 +123,10 @@
       //"path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/DiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8/ntuple-DiPhotonJets_MGG-80toInf_amcatnlo_miniAOD17_94x_v4_partial.root",
       "path": "/eos/cms/store/group/phys_exotica/PPS-Diphoton/DiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8/ntuple-DiPhotonJets_MGG-80toInf_amcatnlo_miniAOD16_94x_v1_partial.root",
       //"cross_section": 135.1,
-      ///FIXME"cross_section": 134.3, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
-      "cross_section": 121.0043, //134.3*0.91// https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
+      //"cross_section": 134.3, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
+      "cross_section": 134.3, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
+//      "cross_section": 121.0043, //134.3*0.91// https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
+//      "cross_section": 116.2834, //134.3*0.865848// https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJets_MGG-80toInf_13TeV_amcatnloFXFX_pythia8
       //"cross_section": 88.36, // https://cms-gen-dev.cern.ch/xsdb/?columns=67108863&currentPage=0&pageSize=10&searchQuery=process_name%3DDiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa //BOXXXXXXX
       //"num_events": 35617475
       "num_events": 35350692 //FIXME temporary, 80x microAOD

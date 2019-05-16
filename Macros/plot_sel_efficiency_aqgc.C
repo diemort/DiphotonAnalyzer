@@ -7,7 +7,6 @@
 
 #include "TFile.h"
 #include "TGraph.h"
-#include "TGraphErrors.h"
 #include "TGraph2D.h"
 #include "TH1.h"
 #include "THStack.h"
@@ -18,7 +17,7 @@ void plot_sel_efficiency_aqgc()
   {
     double zeta1, zeta2;
     string path;
-    double xsec;
+    double xsec, xsec_bare;
     unsigned int num_events;
   };
   map<string,float> pots_accept_tight = { { "45N", 0.067 }, { "45F", 0.066 }, { "56N", 0.070 }, { "56F", 0.061 } };
@@ -26,35 +25,38 @@ void plot_sel_efficiency_aqgc()
   //retrieved from /afs/cern.ch/user/j/juwillia/public/forLaurent/AC_microAOD
   vector<sample_t> samples = {
     //{ 0., 0., "/eos/cms/store/user/lforthom/twophoton/samples_80x/output_GammaGammaToGammaGamma_fpmc_justin_sm.root", 1.3988e-05, 100000 },
-    //{ 0., 0., "samples/ntuple-sm_gggg.root", 1.3988e-05, 5000 },
-    { 0., 1.e-13, "samples/ntuple-aqgc-zeta1_0_zeta2_1e-13.root", 1.3068e-4, 5000 },
-    { 1.e-13, 0., "samples/ntuple-aqgc-zeta1_1e-13_zeta2_0.root", 5.7066e-4, 5000 },
-    { 1.e-13, 1.e-13, "samples/ntuple-aqgc-zeta1_1e-13_zeta2_1e-13.root", 1.1770e-3, 5000 },
-    { 1.e-13, 1.e-12, "samples/ntuple-aqgc-zeta1_1e-13_zeta2_1e-12.root", 1.8399e-2, 5000 },
-    { 5.e-13, 0., "samples/ntuple-aqgc-zeta1_5e-13_zeta2_0.root", 1.4263e-2, 4900 },
-    { 5.e-13, 5.e-13, "samples/ntuple-aqgc-zeta1_5e-13_zeta2_5e-13.root", 2.9418e-2, 5000 },
-    { 5.e-13, 1.e-13, "samples/ntuple-aqgc-zeta1_5e-13_zeta2_1e-13.root", 1.6771e-2, 5000 },
-    { 1.e-12, 0., "samples/ntuple-aqgc-zeta1_1e-12_zeta2_0.root", 5.7055e-2, 5000 },
-    { 1.e-12, 1.e-12, "samples/ntuple-aqgc-zeta1_1e-12_zeta2_1e-12.root", 0.1177, 5000 },
-    { 5.e-12, 0., "samples/ntuples-aqgc-zeta1_5e-12_zeta2_0.root", 5.7055e-2, 5000 },
+    //{ 0.,     0.,      "samples/ntuple-sm_gggg.root", 1.3988e-05, 0.1398, 5000 },
+    { 0.,     1.e-13,  "samples/ntuple-aqgc-zeta1_0_zeta2_1e-13.root",        1.3068e-4, 9.3727e-3, 5000 },
+    { 1.e-13, 0.,      "samples/ntuple-aqgc-zeta1_1e-13_zeta2_0.root",        5.7066e-4, 4.0904e-2, 5000 },
+    { 1.e-13, 1.e-13,  "samples/ntuple-aqgc-zeta1_1e-13_zeta2_1e-13.root",    1.1770e-3, 8.4366e-2, 5000 },
+    { 1.e-12, 0.,      "samples/ntuple-aqgc-zeta1_1e-12_zeta2_0.root",        5.7055e-2, 4.0906,    5000 },
+    { 1.e-12, 1.e-12,  "samples/ntuple-aqgc-zeta1_1e-12_zeta2_1e-12.root",    0.1177,    8.4370,    5000 },
+    //{ 5.e-12, 0.,      "samples/ntuples-aqgc-zeta1_5e-12_zeta2_0.root",       5.7055e-2, 102.2665,  5000 },
+    { 5.e-12, 0.,      "samples/ntuples-aqgc-zeta1_5e-12_zeta2_0.root",       1.4410,    102.2665,  5000 },
     // negative
-    { 1.e-12, -1.e-12, "samples/ntuple-aqgc-zeta1_1e-12_zeta2_-1e-12.root", 2.2584e-2, 4200 },
-    { -1.e-12, -1.e-12, "samples/ntuple-aqgc-zeta1_-1e-12_zeta2_-1e-12.root", 0.1177, 5000 },
-    { -1.e-12, 1.e-12, "samples/ntuple-aqgc-zeta1_-1e-12_zeta2_1e-12.root", 2.2585e-2, 5000 },
-    { -1.e-12, 0., "samples/ntuple-aqgc-zeta1_-1e-12_zeta2_0.root", 5.7644e-2, 5000 },
-    { -5.e-12, -1.e-12, "samples/ntuple-aqgc-zeta1_-5e-12_zeta2_-1e-12.root", 0., 5000 },
-    { -5.e-12, 0., "samples/ntuple-aqgc-zeta1_-5e-12_zeta2_0.root", 1.4410, 5000 },
-    { -5.e-12, 1.e-12, "samples/ntuple-aqgc-zeta1_-5e-12_zeta2_1e-12.root", 1.2141, 5000 },
-    //{ 0., -5.e-12, "samples/ntuple-aqgc-zeta1_0_zeta2_-5e-12.root", 0.3302, 5000 },
-    { 1.e-12, 5.e-13, "samples/ntuple-aqgc-zeta1_1e-12_zeta2_5e-13.root", 8.4941e-2, 5000 },
-    { 5.e-12, -1.e-12, "samples/ntuple-aqgc-zeta1_5e-12_zeta2_-1e-12.root", 1.2140, 5000 },
-    { 5.e-12, 1.e-12, "samples/ntuple-aqgc-zeta1_5e-12_zeta2_1e-12.root", 1.6944, 5000 },
+    { 1.e-12, -1.e-12,  "samples/ntuple-aqgc-zeta1_1e-12_zeta2_-1e-12.root",  2.2584e-2, 1.6192,    4200 },
+    { -1.e-12, -1.e-12, "samples/ntuple-aqgc-zeta1_-1e-12_zeta2_-1e-12.root", 0.1177,    8.4370,    5000 },
+    { -1.e-12, 1.e-12,  "samples/ntuple-aqgc-zeta1_-1e-12_zeta2_1e-12.root",  2.2585e-2, 1.6192,    5000 },
+    { -1.e-12, 0.,      "samples/ntuple-aqgc-zeta1_-1e-12_zeta2_0.root",      5.7644e-2, 4.0907,    5000 },
+    { -5.e-12, -1.e-12, "samples/ntuple-aqgc-zeta1_-5e-12_zeta2_-1e-12.root", 0.,        120.2486,  5000 },
+    { -5.e-12, 0.,      "samples/ntuple-aqgc-zeta1_-5e-12_zeta2_0.root",      1.4410,    102.2667,  5000 },
+    { -5.e-12, 1.e-12,  "samples/ntuple-aqgc-zeta1_-5e-12_zeta2_1e-12.root",  1.2141,    86.1597,   5000 },
+    //{ 0., -5.e-12,      "samples/ntuple-aqgc-zeta1_0_zeta2_-5e-12.root",      0.3302,    23.4362,   5000 },
+    { 1.e-12, 5.e-13,   "samples/ntuple-aqgc-zeta1_1e-12_zeta2_5e-13.root",   8.4941e-2, 6.0294,    5000 },
+    { 5.e-12, -1.e-12,  "samples/ntuple-aqgc-zeta1_5e-12_zeta2_-1e-12.root",  1.2140,    86.1595,   5000 },
+    { 5.e-12, 1.e-12,   "samples/ntuple-aqgc-zeta1_5e-12_zeta2_1e-12.root",   1.6944,    120.2484,  5000 },
+    // to check?
+    { 1.e-13, 1.e-12,  "samples/ntuple-aqgc-zeta1_1e-13_zeta2_1e-12.root",    1.8399e-2, 1.3192,    5000 },
+    { 5.e-13, 0.,      "samples/ntuple-aqgc-zeta1_5e-13_zeta2_0.root",        1.4263e-2, 1.0227,    4900 },
+    { 5.e-13, 5.e-13,  "samples/ntuple-aqgc-zeta1_5e-13_zeta2_5e-13.root",    2.9418e-2, 2.1092,    5000 },
+    { 5.e-13, 1.e-13,  "samples/ntuple-aqgc-zeta1_5e-13_zeta2_1e-13.root",    1.6771e-2, 1.2025,    5000 },
   };
   const size_t num_samples = samples.size();
   vector<TH1D> v_h_mass( num_samples ), v_h_ptpair( num_samples ), v_h_ptlead( num_samples ), v_h_acop( num_samples );
+  TGraph g_el_vals;
   TGraphErrors g_el_eff_z1, g_el_eff_z2;
-  TGraph g_el_eff_vals;
-  TGraph2D g_el_eff;
+  TGraph g_xs_z1, g_xs_z2;
+  TGraph2D g_xs, g_el_eff, g_el_acc;
   gggg::TreeEvent ev;
   const float sqrt_s = 13.e3, lumi = 9.36e3;
   const TString ylabel = "Events";
@@ -66,7 +68,7 @@ void plot_sel_efficiency_aqgc()
     v_h_mass[i] = TH1D( Form( "mass_%d", i ), Form( "m_{#gamma#gamma}@@%s@@GeV", ylabel.Data() ), 18, 200., 2000. );
     v_h_ptpair[i] = TH1D( Form( "ptpair_%d", i ), Form( "p_{T}^{#gamma#gamma}@@%s@@GeV", ylabel.Data() ), 25, 0., 100. );
     v_h_ptlead[i] = TH1D( Form( "leadpt_%d", i ), Form( "p_{T}^{#gamma} (leading gamma)@@%s@@GeV", ylabel.Data() ), 50, 50., 1050. );
-    v_h_acop[i] = TH1D( Form( "acop_%d", i ), Form( "1-|#Delta#phi_{#gamma#gamma}/#pi|@@%s@@?.g", ylabel.Data() ), 50, 0., 0.005 );
+    v_h_acop[i] = TH1D( Form( "acop_%d", i ), Form( "1-|#Delta#phi_{#gamma#gamma}/#pi| (#times 10^{-3})@@%s@@?.g", ylabel.Data() ), 50, 0., 5. );
     ev.attach( tree );
     //cout << s.xsec << endl;
     unsigned short num_passing = 0;
@@ -91,7 +93,7 @@ void plot_sel_efficiency_aqgc()
         const float acop = 1.-fabs( ev.diphoton_dphi[k]/M_PI );
         const float xip = ( ev.diphoton_pt1[k]*exp( +ev.diphoton_eta1[k] ) + ev.diphoton_pt2[k]*exp( +ev.diphoton_eta2[k] ) ) / sqrt_s,
                     xim = ( ev.diphoton_pt1[k]*exp( -ev.diphoton_eta1[k] ) + ev.diphoton_pt2[k]*exp( -ev.diphoton_eta2[k] ) ) / sqrt_s;
-        v_h_acop[i].Fill( acop, weight );
+        v_h_acop[i].Fill( acop*1.e3, weight );
         if ( acop > 0.005 ) continue;
         v_h_mass[i].Fill( ev.diphoton_mass[k], weight );
         v_h_ptpair[i].Fill( ev.diphoton_pt[k], weight );
@@ -103,55 +105,119 @@ void plot_sel_efficiency_aqgc()
       if ( has_diphoton ) num_passing++;
     }
     const double el_eff = num_passing*1./s.num_events, el_eff_unc = el_eff*sqrt( 1./num_passing+1./s.num_events );
+    const double el_acc = s.xsec/s.xsec_bare;
     if ( s.zeta1 == 0. ) {
       unsigned short k = g_el_eff_z2.GetN();
       g_el_eff_z2.SetPoint( k, s.zeta2, el_eff );
       g_el_eff_z2.SetPointError( k, 0., el_eff_unc );
+      g_xs_z2.SetPoint( k, s.zeta2, s.xsec );
     }
     if ( s.zeta2 == 0. ) {
       unsigned short k = g_el_eff_z1.GetN();
       g_el_eff_z1.SetPoint( k, s.zeta1, el_eff );
       g_el_eff_z1.SetPointError( k, 0., el_eff_unc );
+      g_xs_z1.SetPoint( k, s.zeta1, s.xsec );
     }
+    //if ( fabs( s.zeta1 ) <= 1.e-12 )
+      g_xs.SetPoint( i, s.zeta1*1.e12, s.zeta2*1.e12, s.xsec_bare );
     g_el_eff.SetPoint( i, s.zeta1*1.e12, s.zeta2*1.e12, el_eff );
-    g_el_eff_vals.SetPoint( i, s.zeta1*1.e12, s.zeta2*1.e12 );
-    cout << s.path << ": " << el_eff << endl;
+    if ( el_acc > 0.01 ) //FIXME
+      g_el_acc.SetPoint( g_el_acc.GetN(), s.zeta1*1.e12, s.zeta2*1.e12, el_acc );
+    g_el_vals.SetPoint( i, s.zeta1*1.e12, s.zeta2*1.e12 );
+    cout << s.path << ": " << el_eff << "|" << el_acc << endl;
     ++i;
   }
-  g_el_eff_vals.SetPoint( g_el_eff_vals.GetN(), 0., 0. );
+  g_el_vals.SetPoint( g_el_vals.GetN(), 0., 0. );
   //gStyle->SetPalette( kSunset );
   gStyle->SetPalette( kBeach );
   //const char* top_label = "Elastic selection";
   const char* top_label = "#xi^{#pm}_{#gamma#gamma} in acc., #epsilon(#xi^{#pm}_{#gamma#gamma}) > 90%";
   {
+    Canvas c( "elastic_xsec_scan_aqgc", "FPMC #gamma#gamma #rightarrow #gamma#gamma, AQGC", "Simulation preliminary" );
+    c.SetRightMargin( 0.15 );
+    g_xs.SetTitle( ";#zeta_{1} (#times 10^{-12});#zeta_{2} (#times 10^{-12});Signal cross section (pb)" );
+    g_el_vals.SetMarkerStyle( 20 );
+    g_xs.Draw( "colz" );
+//    g_xs.SetMaximum( 20. );
+    g_el_vals.Draw( "p same" );
+    g_el_vals.SetMarkerStyle( 3 );
+    g_xs.GetZaxis()->SetTitleOffset( 1.4 );
+//    PaveText::topLabel( top_label );
+    c.Prettify( (TH1*)g_el_vals.GetHistogram() );
+//    g_xs.GetYaxis()->SetLimits( -5.e-12, 5.e-12 );
+//    g_el_vals.GetYaxis()->SetRangeUser( -5.e-12, 5.e-12 );
+//    g_xs.GetYaxis()->SetRangeUser( -5.e-12, 5.e-12 );
+    c.SetLogz();
+    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  }
+  {
+    Canvas c( "elastic_acc_scan_aqgc", "FPMC #gamma#gamma #rightarrow #gamma#gamma, AQGC", "Simulation preliminary" );
+    c.SetRightMargin( 0.15 );
+    g_el_acc.SetTitle( ";#zeta_{1} (#times 10^{-12});#zeta_{2} (#times 10^{-12});Signal acceptance" );
+    g_el_vals.SetMarkerStyle( 20 );
+    g_el_acc.Draw( "colz" );
+    //g_el_acc.SetMinimum( 0.4 ); g_el_acc.SetMaximum( 0.455 );
+    //g_el_acc.SetMinimum( 0.01 );
+    //g_el_acc.SetMaximum( 0.02 );
+    g_el_vals.Draw( "p same" );
+    g_el_vals.SetMarkerStyle( 3 );
+    g_el_acc.GetZaxis()->SetTitleOffset( 1.4 );
+    c.SetLogz();
+    c.Prettify( (TH1*)g_el_vals.GetHistogram() );
+    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  }
+  {
     Canvas c( "elastic_eff_scan_aqgc", "FPMC #gamma#gamma #rightarrow #gamma#gamma, AQGC", "Simulation preliminary" );
     c.SetRightMargin( 0.15 );
-    g_el_eff.SetTitle( ";#zeta_{1} (#times 10^{-12});#zeta_{2} (#times 10^{-12});#varepsilon" );
-    g_el_eff_vals.SetMarkerStyle( 20 );
-    //g_el_eff_vals.Draw( "a*" );
+    g_el_eff.SetTitle( ";#zeta_{1} (#times 10^{-12});#zeta_{2} (#times 10^{-12});Sel.efficiency" );
+    g_el_vals.SetMarkerStyle( 20 );
+    //g_el_vals.Draw( "a*" );
     //g_el_eff.Draw( "arr colz" );
     g_el_eff.Draw( "colz" );
     //g_el_eff.SetMinimum( 0.5 ); g_el_eff.SetMaximum( 0.6 );
     //g_el_eff.SetMinimum( 0.35 ); g_el_eff.SetMaximum( 0.45 );
     g_el_eff.SetMinimum( 0.4 ); g_el_eff.SetMaximum( 0.455 );
     //c.SetLogx(); c.SetLogy();
-    g_el_eff_vals.Draw( "p same" );
-    g_el_eff_vals.SetMarkerStyle( 3 );
+    g_el_vals.Draw( "p same" );
+    g_el_vals.SetMarkerStyle( 3 );
+    g_el_eff.GetZaxis()->SetTitleOffset( 1.4 );
     PaveText::topLabel( top_label );
-    c.Prettify( (TH1*)g_el_eff_vals.GetHistogram() );
+    c.Prettify( (TH1*)g_el_vals.GetHistogram() );
+    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  }
+  {
+    TF1 f_pol2( "f_pol2", "[0]+[1]*x+[2]*x**2" );
+    Canvas c( "elastic_xsec_scan_aqgc_1d", "FPMC #gamma#gamma #rightarrow #gamma#gamma, AQGC", "Simulation preliminary" );
+    c.SetLegendX1( 0.68 );
+    g_xs_z1.SetTitle( ";#zeta_{1,2};Visible cross section (pb)" );
+    g_xs_z1.Draw( "ap" );
+    g_xs_z1.SetMarkerStyle( 24 );
+    //g_xs_z1.Fit( "pol2" );
+    //g_xs_z1.Fit( &f_pol2, "s" );
+    g_xs_z2.Draw( "p,same" );
+    g_xs_z2.SetMarkerStyle( 20 );
+    //g_xs_z2.Fit( "pol2" );
+    //g_xs_z2.Fit( &f_pol2, "s+" );
+    c.AddLegendEntry( &g_xs_z1, "#zeta_{2} = 0", "ep" );
+    c.AddLegendEntry( &g_xs_z2, "#zeta_{1} = 0", "ep" );
+    PaveText::topLabel( top_label );
+    c.Prettify( g_xs_z1.GetHistogram() );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   {
     Canvas c( "elastic_eff_scan_aqgc_1d", "FPMC #gamma#gamma #rightarrow #gamma#gamma, AQGC", "Simulation preliminary" );
+    c.SetLegendX1( 0.68 );
     g_el_eff_z1.SetTitle( ";#zeta_{1,2};Selection efficiency" );
     g_el_eff_z1.Draw( "ap" );
     g_el_eff_z1.SetMarkerStyle( 24 );
     g_el_eff_z1.SetMinimum( 0. );
     g_el_eff_z1.SetMaximum( 1.05 );
+    g_el_eff_z1.Fit( "pol0" );
     g_el_eff_z2.Draw( "p,same" );
     g_el_eff_z2.SetMarkerStyle( 20 );
-    c.AddLegendEntry( &g_el_eff_z1, "#zeta_{1} (#zeta_{2} = 0)", "ep" );
-    c.AddLegendEntry( &g_el_eff_z2, "#zeta_{2} (#zeta_{1} = 0)", "ep" );
+    g_el_eff_z2.Fit( "pol0", "+" );
+    c.AddLegendEntry( &g_el_eff_z1, "#zeta_{2} = 0", "ep" );
+    c.AddLegendEntry( &g_el_eff_z2, "#zeta_{1} = 0", "ep" );
     PaveText::topLabel( top_label );
     c.Prettify( g_el_eff_z1.GetHistogram() );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
@@ -165,7 +231,7 @@ void plot_sel_efficiency_aqgc()
   };
   i = 0;
   for ( auto& p : plots ) {
-    Canvas c( p.first.c_str(), Form( "FPMC #gamma#gamma #rightarrow #gamma#gamma, yields @ %.1f fb^{-1} (%g TeV)", lumi/1.e3, sqrt_s/1.e3 ), "Simulation preliminary" );
+    Canvas c( p.first.c_str(), Form( "FPMC #gamma#gamma #rightarrow #gamma#gamma (AQGC), yields for %.1f fb^{-1} (%g TeV)", lumi/1.e3, sqrt_s/1.e3 ), "Simulation preliminary" );
     //Canvas c( p.first.c_str(), Form( "FPMC #gamma#gamma #rightarrow #gamma#gamma (%g TeV)", sqrt_s/1.e3 ), "Simulation preliminary" );
     THStack hs;
     /*if ( i++ > 2 )
@@ -175,17 +241,22 @@ void plot_sel_efficiency_aqgc()
       c.SetLegendX1( 0.18 );
     }
     c.SetLegendSizeY( 0.2 );*/
-    c.SetLegendY1( 0.68 );
+    /*c.SetLegendY1( 0.68 );
     c.SetLegendX1( 0.18 );
     c.SetLegendSizeX( 0.7 );
-    c.SetLegendSizeY( 0.15 );
+    c.SetLegendSizeY( 0.15 );*/
+    c.SetLegendY1( 0.62 );
+    c.SetLegendX1( 0.17 );
+    c.SetLegendSizeX( 0.7 );
+    c.SetLegendSizeY( 0.225 );
     for ( unsigned short j = 0; j < num_samples; ++j ) {
       //TString label = Form( "#zeta_{1} = %g, #zeta_{2} = %g", samples[j].zeta1, samples[j].zeta2 );
       TString label = Form( "(%g, %g)", samples[j].zeta1, samples[j].zeta2 );
       if ( samples[j].zeta1 == 0. && samples[j].zeta2 == 0. )
         label += " (SM)";
-      p.second[j].SetLineColor( Plotter::colour_pool[j] );
-      p.second[j].SetFillColorAlpha( Plotter::colour_pool[j], 0.25 );
+      p.second[j].SetLineColor( Plotter::colour_pool[j/3] );
+      p.second[j].SetLineStyle( 1+j%3 );
+      p.second[j].SetFillColorAlpha( Plotter::colour_pool[j/3], 0.25 );
       p.second[j].SetLineWidth( 2 );
       hs.Add( &p.second[j] );
       c.AddLegendEntry( &p.second[j], label, "f" );
@@ -195,6 +266,12 @@ void plot_sel_efficiency_aqgc()
     hs.SetMaximum( hs.GetHistogram()->GetMaximum()*1.5 );
     hs.GetHistogram()->SetTitle( p.second[0].GetTitle() );
     c.Prettify( hs.GetHistogram() );
+    if ( p.first == "anom_aqgc_elastic_ptpair"
+      || p.first == "anom_aqgc_elastic_mpair" ) {
+      c.SetLogy();
+      hs.SetMaximum( hs.GetHistogram()->GetMaximum()*25. );
+      hs.SetMinimum( 5.e-2 );
+    }
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
 }
