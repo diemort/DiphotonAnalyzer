@@ -57,6 +57,7 @@ void plot_limits_asym()
       }
       ++i;
     }
+    const double min_mass = *smp.masses.begin(), max_mass = *smp.masses.rbegin();
     {
       Canvas c( smp.out_file.c_str(), "9.4 fb^{-1} (13 TeV)" );
       g_exp_2sig.SetFillColor( kYellow-4 );
@@ -75,16 +76,25 @@ void plot_limits_asym()
       g_one.Draw( "l" );
       g_exp.Draw( "l" );
       g_obs.Draw( "l" );
+      double x = 0., y = 0.;
+      int mode = 1;
+      auto obs_clone = (TGraph*)g_obs.Clone();
+      for ( int i = 0; i < obs_clone->GetN(); ++i )
+        obs_clone->GetY()[i] -= 1.;
+      //obs_clone->Zero( mode, 300., 2000., 1.e-3, x, y, 100 );
+      obs_clone->Zero( mode, 0., 1., 1.e-3, x, y, 100 );
+      obs_clone->Draw( "l" );
+      cout << x << "|" << y << endl;
       c.AddLegendEntry( &g_obs, "Observed", "l" );
       c.AddLegendEntry( &g_exp, "Expected", "l" );
       c.AddLegendEntry( &g_exp_1sig, "68% expected", "f" );
       c.AddLegendEntry( &g_exp_2sig, "95% expected", "f" );
       //g_exp_2sig.SetTitle( ";m_{a} (GeV);Upper limit on #sigma/#sigma(#gamma#gamma#rightarrowa#rightarrow#gamma#gamma) (pb)" );
-      g_exp_2sig.SetTitle( ";m_{a} (GeV);Upper limit on #sigma/#sigma_{ALP}" );
+      g_exp_2sig.SetTitle( ";m_{a} (GeV);Upper limit on #sigma/#sigma_{SM}" );
       c.Prettify( g_exp_2sig.GetHistogram() );
-      g_exp_2sig.GetXaxis()->SetRangeUser( *smp.masses.begin(), *smp.masses.rbegin() );
-      g_exp_2sig.SetMaximum( 1.e3 );
-      c.SetLogy();
+      g_exp_2sig.GetXaxis()->SetRangeUser( min_mass, max_mass );
+      //g_exp_2sig.SetMaximum( 1.e3 );
+      //c.SetLogy();
       PaveText::topLabel( Form( "f^{-1} = %s GeV^{-1}", smp.k_nm.c_str() ) );
       c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
     }

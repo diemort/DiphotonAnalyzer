@@ -368,7 +368,8 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
       cout << axis->GetBinLabel( i ) << ": " << h_num_sect->GetBinContent( i ) << endl;
     c.Prettify( h_num_sect );
     c.SetGrid( 0, 1 );
-    PaveText::topLabel( "Elastic selection" );
+    //PaveText::topLabel( "Elastic selection" );
+    PaveText::topLabel( "#xi^{#pm}_{#gamma#gamma} in acc., #epsilon(#xi^{#pm}_{#gamma#gamma}) > 90%" );
     c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   {
