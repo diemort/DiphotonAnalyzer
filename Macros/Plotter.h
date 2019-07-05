@@ -25,9 +25,6 @@ class Plotter
     Plotter( const char* out_path, const char* top_label ) : out_path_( out_path ), top_label_( top_label ) {}
     ~Plotter() {}
 
-    static const int* marker_pool;
-    static const int* colour_pool;
-
     void plot_multihists( const char* name, HistsMap hm, float min_ratio_y = 0., float max_ratio_y = 0.55, bool draw_overflow = true ) const {
       if ( hm.size() == 0 ) return;
 
@@ -42,8 +39,8 @@ class Plotter
         hm2.push_back( std::make_pair( h.first, hist ) );
         if ( i > 0 ) {
           if ( !draw_overflow ) hist->Sumw2();
-          hist->SetMarkerStyle( marker_pool[i] );
-          hist->SetMarkerColor( colour_pool[i] );
+          hist->SetMarkerStyle( Canvas::marker_pool[i] );
+          hist->SetMarkerColor( Canvas::colour_pool[i] );
         }
         //hist->Draw( ( i == 0 ) ? "" : "e1 same" );
         hist->Draw( ( i == 0 ) ? "hist" : "same" );
@@ -89,8 +86,8 @@ class Plotter
       for ( auto& gr : gr_map ) {
         graph = ( TGraphErrors* )gr.second;
         mg.Add( graph, "ep" );
-        graph->SetMarkerStyle( marker_pool[i] );
-        graph->SetMarkerColor( colour_pool[i] );
+        graph->SetMarkerStyle( Canvas::marker_pool[i] );
+        graph->SetMarkerColor( Canvas::colour_pool[i] );
         //c.SetLegendY1( 0.18 );
         if ( gr_map.size() > 0 && strcmp( gr.first.c_str(), "" ) != 0 ) c.AddLegendEntry( graph, gr.first.c_str(), "p" );
         i++;
@@ -138,8 +135,8 @@ class Plotter
       for ( auto& gr : graphs_map ) {
         graph = ( TGraphErrors* )gr.second;
         mg.Add( graph );
-        graph->SetMarkerStyle( marker_pool[i] );
-        graph->SetMarkerColor( colour_pool[i] );
+        graph->SetMarkerStyle( Canvas::marker_pool[i] );
+        graph->SetMarkerColor( Canvas::colour_pool[i] );
         if ( strcmp( gr.first.c_str(), "" ) != 0 ) c.AddLegendEntry( graph, gr.first.c_str(), "p" );
         i++;
       }
@@ -169,8 +166,8 @@ class Plotter
         graph = ( TGraphErrors* )gr.second;
         mg.Add( graph );
         if ( strcmp( graph->GetTitle(), "" ) != 0 ) mg.SetTitle( graph->GetTitle() );
-        graph->SetMarkerStyle( marker_pool[i] );
-        graph->SetMarkerColor( colour_pool[i] );
+        graph->SetMarkerStyle( Canvas::marker_pool[i] );
+        graph->SetMarkerColor( Canvas::colour_pool[i] );
         if ( strcmp( gr.first.c_str(), "" ) != 0 ) c.AddLegendEntry( graph, gr.first.c_str(), "p" );
         i++;
       }
@@ -199,7 +196,7 @@ class Plotter
       c.Save( "pdf,png", out_path_ );
     }
 
-    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, TString label = "", bool colours = true, bool logy = false, bool draw_legend = true, double angle = -1. ) const {
+    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, TString label = "", bool colours = true, bool logy = false, bool draw_legend = true, bool logx = false, double min_y = -0.4, double max_y = 2.4 ) const {
       std::string ratio_plot_filename = Form( "%s_ratio", filename );
       Canvas c( filename, top_label_, "Preliminary", true );
       TH1D* h_data = 0;
@@ -222,7 +219,7 @@ class Plotter
         // draw the data distributions unstacked
         //hist_data->Sumw2();
         //hist_data->SetBinErrorOption( TH1::kPoisson );
-        hist_data->SetMarkerStyle( 20+i );
+        hist_data->SetMarkerStyle( Canvas::marker_pool[i] );
         hist_data->SetMarkerColor( kBlack );
         hist_data->SetLineColor( kBlack );
         hist_data->SetLineWidth( 2 );
@@ -238,11 +235,13 @@ class Plotter
       i = 0;
       for ( auto& h : h_map_mc ) {
         hist = dynamic_cast<TH1D*>( h.second );
-        if ( i == 0 )
+        if ( i == 0 ) {
           h_mc = dynamic_cast<TH1D*>( hist->Clone() );
+          h_mc->SetTitle( hist->GetTitle() );
+        }
         else
           h_mc->Add( hist );
-        if ( colours ) hist->SetFillColorAlpha( colour_pool[i+1], 0.66 );
+        if ( colours ) hist->SetFillColorAlpha( Canvas::colour_pool[i+1], 0.66 );
         //hist->SetFillStyle( 3002 );
         //hist->SetLineColor( kBlack );
         hist->SetLineColor( hist->GetFillColor() );
@@ -286,14 +285,15 @@ class Plotter
       }
       //gStyle->SetErrorX( 0. );
       gStyle->SetEndErrorSize( 0. );
-      if ( hist_data ) {
+      if ( hist_data )
         hist_data->Draw( "p same" );
-      }
       max_bin = TMath::Max( h_data->GetMaximum(), max_bin );
       max_bin = TMath::Max( hs_mc.GetMaximum(), max_bin );
       max_bin = TMath::Max( hs_sig.GetMaximum(), max_bin );
       hist = ( TH1D* )hs_mc.GetHistogram();
       double min_bin = ( logy ) ? 5.e-1 : 0.;
+      if ( h_mc->GetMinimum() < min_bin )
+        min_bin /= 5.;
       c.Prettify( hist );
       /*if ( logy ) {
         hs_mc.SetMaximum( max_bin*10. );
@@ -307,6 +307,7 @@ class Plotter
       //hist->GetYaxis()->SetRangeUser( min_bin, max_bin*( logy ? 10. : 1.55 ) );
       hs_mc.SetMinimum( min_bin );
       hs_mc.SetMaximum( max_bin*( logy ? 10. : 1.6 ) );
+      TH1* ratio = nullptr;
       if ( h_data ) {
         HistsMap hm;
         hm.emplace_back( "mc", h_mc );
@@ -315,14 +316,24 @@ class Plotter
         h_data->SetLineWidth( 2 );
         hm.emplace_back( "data", h_data );
         hs_mc.SetTitle( "" );
-        auto ratio = c.RatioPlot( hm, -0.4, 2.4, "Data/MC", 1.0 );
-        if ( angle != -1. )
+        ratio = c.RatioPlot( hm, min_y, max_y, "Data/MC", 1.0 );
+        /*if ( angle != -1. )
           for ( unsigned short j = 1; j < ratio->GetNbinsX(); ++j )
-            ratio->GetXaxis()->ChangeLabel( j, -45. );
+            ratio->GetXaxis()->ChangeLabel( j, -45. );*/
         //c.RatioPlot( hm, 0.05, 1.95, "Data/MC", 1.0 );
         c.cd( 1 );
       }
       if ( logy ) dynamic_cast<TPad*>( c.GetPad( 1 ) )->SetLogy();
+      if ( logx ) {
+        if ( ratio && ratio->GetXaxis()->GetXmin() == 0. ) {
+          const double min_x = 1.e-3, max_x = ratio->GetXaxis()->GetXmax();
+          ratio->GetXaxis()->SetRangeUser( min_x, max_x );
+          hist->GetXaxis()->SetRangeUser( min_x, max_x );
+        }
+        dynamic_cast<TPad*>( c.GetPad( 1 ) )->SetLogx();
+        dynamic_cast<TPad*>( c.GetPad( 2 ) )->SetLogx();
+        //c.SetLogx();
+      }
       c.cd();
       if ( !label.IsNull() ) {
         //auto lab = new PaveText( 0.135, 0.96, 0.2, 0.97 );
@@ -347,8 +358,8 @@ class Plotter
         hist = ( TH1D* )h.second;
         if ( i == 0 ) hs.SetTitle( hist->GetTitle() );
         if ( compute_w2 ) hist->Sumw2();
-        hist->SetMarkerStyle( marker_pool[i] );
-        hist->SetMarkerColor( colour_pool[i] );
+        hist->SetMarkerStyle( Canvas::marker_pool[i] );
+        hist->SetMarkerColor( Canvas::colour_pool[i] );
         //hist->SetLineColor( kBlack );
         hist->SetLineColor( hist->GetFillColor() );
         if ( strcmp( h.first.c_str(), "" ) != 0 ) c.AddLegendEntry( hist, h.first.c_str(), ( compute_w2 ) ? "elp" : "lp" );
@@ -468,11 +479,5 @@ class Plotter
       return g;
     }
 };
-
-static const int markers[] = { 24, 20, 25, 21, 26, 22, 27, 23, 28, 24 };
-static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray, kViolet-7, kYellow+3, kSpring+4, kTeal-5, kCyan-2, kTeal-1, kRed-2, kGreen-2, kBlue-2, kMagenta, kOrange, kViolet, kYellow, kOrange-3 };
-
-const int* Plotter::marker_pool = markers;
-const int* Plotter::colour_pool = colours;
 
 #endif

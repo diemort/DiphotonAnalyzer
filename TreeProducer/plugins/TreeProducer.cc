@@ -95,6 +95,7 @@ class TreeProducer : public edm::one::EDAnalyzer<edm::one::WatchRuns,edm::one::S
     edm::EDGetTokenT<edm::View<PileupSummaryInfo> > pileupToken_;
     edm::EDGetTokenT<edm::TriggerResults> triggerResultsToken_;
 
+    bool print_candidates_;
     bool isData_;
     double sqrtS_;
     double singlePhotonMinPt_, singlePhotonMaxEta_, singlePhotonMinR9_;
@@ -135,6 +136,7 @@ TreeProducer::TreeProducer( const edm::ParameterSet& iConfig ) :
   genPhoToken_        ( consumes<edm::View<pat::PackedGenParticle> >    ( iConfig.getParameter<edm::InputTag>( "genPhoLabel" ) ) ),
   pileupToken_        ( consumes<edm::View<PileupSummaryInfo> >         ( iConfig.getParameter<edm::InputTag>( "pileupLabel" ) ) ),
   triggerResultsToken_( consumes<edm::TriggerResults>                   ( triggerResults_ ) ),
+  print_candidates_   ( iConfig.getParameter<bool>       ( "printCandidates" ) ),
   isData_             ( iConfig.getParameter<bool>       ( "isData" ) ),
   sqrtS_              ( iConfig.getParameter<double>     ( "sqrtS" ) ),
   singlePhotonMinPt_  ( iConfig.getParameter<double>     ( "minPtSinglePhoton" ) ),
@@ -515,7 +517,8 @@ TreeProducer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup )
 
   //----- event-wide information -----
 
-  std::cout << "# found " << ev_.num_diphoton << " diphoton candidate(s) with " << ev_.num_proton_track << " proton track(s) (all pots)!" << std::endl;
+  if ( print_candidates_ )
+    std::cout << "# found " << ev_.num_diphoton << " diphoton candidate(s) with " << ev_.num_proton_track << " proton track(s) (all pots)!" << std::endl;
   // retrieve the missing ET
   edm::Handle<edm::View<flashgg::Met> > mets;
   iEvent.getByToken( metToken_, mets );
@@ -637,6 +640,7 @@ TreeProducer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )
   edm::ParameterSetDescription desc;
 
   //--- general parameters
+  desc.add<bool>( "printCandidates", true );
   desc.add<bool>( "isData", true );
   desc.add<double>( "sqrtS", 13.e3 );
   desc.add<std::string>( "outputFilename", "output.root" );

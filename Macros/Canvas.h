@@ -5,6 +5,7 @@
 #include "TLegend.h"
 #include "TPaveText.h"
 #include "TH1.h"
+#include "THStack.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
 #include "TObjArray.h"
@@ -43,6 +44,8 @@ class PaveText : public TPaveText
 class Canvas : public TCanvas
 {
  public:
+  static const int* marker_pool;
+  static const int* colour_pool;
   enum struct Align { left = 0, right = 1 };
   inline Canvas( const char* name, const char* title = "", const char* type = "Preliminary", bool ratio = false, Align label_align = Align::left ) :
     //TCanvas(name, "", 450, 450),
@@ -152,48 +155,61 @@ class Canvas : public TCanvas
     divided_ = true;
   }
 
-  typedef std::vector< std::pair<std::string,TH1*> > HistsMap;
-  inline TH1* RatioPlot( HistsMap hm, float ymin = -999., float ymax = -999., const char* yaxis = "", float xline = -999. ) {
+  typedef std::vector<std::pair<std::string,TH1*> > HistsMap;
+  inline TH1* RatioPlot( HistsMap hm, float ymin = -999., float ymax = -999., const std::string& yaxis_label = "", float xline = -999. ) {
     if ( !fRatio )
       return nullptr;
-    TH1* denom = hm.begin()->second,
-        *numer = 0;
-    denom->GetXaxis()->SetTitle( "" );
+    TH1* denom = hm.begin()->second;
+    denom->SetLineStyle( 0 );
+    denom->SetLineColor( 0 );
+    Prettify( denom );
     TCanvas::cd( 2 );
 
-    TH1D* denom_err = (TH1D*)denom->Clone(),
-         *denom_err2 = (TH1D*)denom->Clone();
+    TH1D* denom_err = (TH1D*)denom->Clone(), *denom_err2 = (TH1D*)denom->Clone();
     denom_err2->Sumw2( false );
     denom_err->Divide( denom_err2 );
 
+    auto hs_ratio = new THStack();
+    TH1* numer[hm.size()-1];
     unsigned short i = 0;
     for ( HistsMap::const_iterator it = hm.begin()+1; it != hm.end(); ++it ) {
-      numer = dynamic_cast<TH1*>( it->second->Clone() );
+      numer[i] = dynamic_cast<TH1*>( it->second->Clone() );
       //ratio1->Sumw2(); ratio2->Sumw2();
-      numer->Divide( denom );
-      numer->Draw( ( i == 0 ) ? "p" : "p same" );
-      //numer->Draw( "p same" );
-      if ( ymin != ymax ) {
-        numer->GetYaxis()->SetRangeUser( ymin, ymax );
-      }
-      Prettify( numer );
-      if ( strcmp( yaxis, "" ) == 0 ) numer->GetYaxis()->SetTitle( Form( "Ratio%s", ( hm.size() > 2 ) ? "s" : "" ) );
-      else numer->GetYaxis()->SetTitle( yaxis );
-      i++;
+      numer[i]->Divide( denom );
+      numer[i]->SetMarkerStyle( marker_pool[i] );
+      hs_ratio->Add( numer[i] );
+      ++i;
     }
+    hs_ratio->Draw( "p,nostack" );
+
+    hs_ratio->GetHistogram()->GetXaxis()->SetTitle( denom->GetXaxis()->GetTitle() );
+    //denom->GetXaxis()->SetTitle( "" );
+    Prettify( hs_ratio->GetHistogram() );
+    hs_ratio->GetXaxis()->SetTickLength( 0.05 );
+    hs_ratio->GetYaxis()->SetTitle( yaxis_label != ""
+      ? yaxis_label.c_str()
+      : Form( "Ratio%s", hm.size() > 2 ? "s" : "" )
+    );
     denom_err->Draw( "e2same" );
     denom_err->SetFillColor( kBlack );
     denom_err->SetFillStyle( 3004 );
+    if ( ymin != ymax ) {
+      hs_ratio->SetMinimum( ymin );
+      hs_ratio->SetMaximum( ymax );
+      //hs_ratio->GetYaxis()->SetRangeUser( ymin, ymax );
+      //hs_ratio->GetHistogram()->GetYaxis()->SetRangeUser( ymin, ymax );
+      //hs_ratio->GetHistogram()->GetYaxis()->SetLimits( ymin, ymax );
+      //hs_ratio->GetYaxis()->SetLimits( ymin, ymax );
+    }
 
     if ( xline != -999. ) {
-      TLine* l = new TLine( denom->GetXaxis()->GetXmin(), xline, denom->GetXaxis()->GetXmax(), xline );
+      auto l = new TLine( denom->GetXaxis()->GetXmin(), xline, denom->GetXaxis()->GetXmax(), xline );
       l->SetLineColor( kBlack );
       l->SetLineWidth( 1 );
       l->Draw();
     }
-    Prettify( denom );
     TCanvas::cd();
-    return denom;
+    return hs_ratio->GetHistogram();
   }
 
   inline void SetTopLabel( const char* lab = "" ) {
@@ -340,5 +356,11 @@ WithOverflow( TH1* h )
   htmp->SetEntries( h->GetEffectiveEntries() );
   return htmp;
 }
+
+static const int markers[] = { 20, 24, 21, 25, 22, 26, 23, 27, 24, 28 };
+static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray, kViolet-7, kYellow+3, kSpring+4, kTeal-5, kCyan-2, kTeal-1, kRed-2, kGreen-2, kBlue-2, kMagenta, kOrange, kViolet, kYellow, kOrange-3 };
+
+const int* Canvas::marker_pool = markers;
+const int* Canvas::colour_pool = colours;
 
 #endif

@@ -1,9 +1,12 @@
 #include "Canvas.h"
 
-void plot_limits_aqgc( const char* path = "/afs/cern.ch/work/l/lforthom/private/twophoton/mcprod/fpmc/build/scan_result.dat" )
+#define OUT_PATH "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp/limits"
+
+void plot_limits_aqgc( const char* path = "/afs/cern.ch/work/l/lforthom/private/twophoton/mcprod/fpmc/build/scan_result_aqgc.dat" )
 {
   gStyle->SetPalette( kBeach );
-  const double xsec_limit = 12.64e-3; //FIXME
+  //const double xsec_limit = 12.64e-3; //FIXME
+  const double xsec_limit = 13.352e-3; //FIXME
   const double sel_eff = 0.415;
   ifstream file( path );
   //TGraph2D gr_xs( path, "%lg\t%lg\t%lg" );
@@ -16,9 +19,9 @@ void plot_limits_aqgc( const char* path = "/afs/cern.ch/work/l/lforthom/private/
     z2 *= 1.e12;
     xs *= sel_eff;
     min_z1 = min( min_z1, z1 );
-    max_z1 = max( min_z1, z1 );
+    max_z1 = max( max_z1, z1 );
     min_z2 = min( min_z2, z2 );
-    max_z2 = max( min_z2, z2 );
+    max_z2 = max( max_z2, z2 );
     //if ( fabs( z1 ) < 3.5e-12 && fabs( z2 ) < 3.5e-12 )
       gr_xs.SetPoint( gr_xs.GetN(), z1, z2, xs );
     if ( fabs( z1 ) < 1.e-6 )
@@ -113,7 +116,7 @@ void plot_limits_aqgc( const char* path = "/afs/cern.ch/work/l/lforthom/private/
     mg.SetMinimum( 1.4e-4 );
     c.SetLogy();
     c.SetGrid();
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
   auto cont = gr_xs.GetContourList( xsec_limit );
   if ( !cont || cont->GetSize() > 1 )
@@ -145,7 +148,7 @@ void plot_limits_aqgc( const char* path = "/afs/cern.ch/work/l/lforthom/private/
     c.Prettify( (TH1D*)gr_cont->GetHistogram() );
     c.SetLogz();
     //gr_xs.GetXaxis()->SetRangeUser( -2.5e-12, 2.5e-12 );
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
   {
     Canvas c( "scan_xsec_aqgc", top_label, "Simulation preliminary" );
@@ -176,6 +179,6 @@ void plot_limits_aqgc( const char* path = "/afs/cern.ch/work/l/lforthom/private/
     c.SetLogz();
     c.SetGrid();
     //gr_xs.GetXaxis()->SetRangeUser( -2.5e-12, 2.5e-12 );
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
 }

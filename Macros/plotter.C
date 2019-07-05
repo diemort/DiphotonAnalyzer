@@ -60,8 +60,14 @@ plotter()
 {
   const float scaling_signal = 100.;
   unsigned int num_gen_cand_events = 0;
-  const float rescaling_background = 0.901;
-  //const float rescaling_background = 1.;
+  //const float rescaling_background = 0.901;
+  const float rescaling_background = 1.;
+  const bool rescale_background_parametric = true;
+//  const bool rescale_background_parametric = false;
+
+  TF1* incl_fit_func = nullptr;
+  if ( rescale_background_parametric )
+    incl_fit_func = (TF1*)( TFile::Open( "incl_fit_result.root" )->Get( "fit_func" ) );
 
   // turn off "Info in TCanvas::Print: file XXX has been created" messages
   //gErrorIgnoreLevel = kWarning;
@@ -85,7 +91,8 @@ plotter()
   const PhotonScalesParser pho_scales( "effLooseMvaBins.root", "h_eff" );
 
   TH1D* h_mass[num_regions][TreeEvent::num_classes-2][num_samples], *h_mass_rebin[num_regions][TreeEvent::num_classes-2][num_samples],
-       *h_ptpair[num_regions][TreeEvent::num_classes-2][num_samples], *h_dphi[num_regions][TreeEvent::num_classes-2][num_samples],
+       *h_ptpair[num_regions][TreeEvent::num_classes-2][num_samples],
+       *h_dphi[num_regions][TreeEvent::num_classes-2][num_samples], *h_dphi_varbins[num_regions][TreeEvent::num_classes-2][num_samples], *h_dphi_logbins[num_regions][TreeEvent::num_classes-2][num_samples], *h_dphi_tightbins[num_regions][TreeEvent::num_classes-2][num_samples],
        *h_met[num_regions][TreeEvent::num_classes-2][num_samples],
        *h_ptlead[num_regions][TreeEvent::num_classes-2][num_samples], *h_ptsublead[num_regions][TreeEvent::num_classes-2][num_samples], *h_pt[num_regions][TreeEvent::num_classes-2][num_samples],
        *h_pt_varbins[num_regions][TreeEvent::num_classes-2][num_samples],
@@ -125,7 +132,8 @@ plotter()
   //vector< pair<const char*, TH1*> > hm_nvtx[num_regions][3];
   Plotter::HistsMap hm_ndiph[num_regions][TreeEvent::num_classes-2][3], hm_nvtx[num_regions][TreeEvent::num_classes-2][3], hm_nvtx_unc[num_regions][TreeEvent::num_classes-2][3],
                     hm_mass[num_regions][TreeEvent::num_classes-2][3], hm_mass_rebin[num_regions][TreeEvent::num_classes-2][3],
-                    hm_ptpair[num_regions][TreeEvent::num_classes-2][3], hm_dphi[num_regions][TreeEvent::num_classes-2][3],
+                    hm_ptpair[num_regions][TreeEvent::num_classes-2][3],
+                    hm_dphi[num_regions][TreeEvent::num_classes-2][3], hm_dphi_varbins[num_regions][TreeEvent::num_classes-2][3], hm_dphi_logbins[num_regions][TreeEvent::num_classes-2][3], hm_dphi_tightbins[num_regions][TreeEvent::num_classes-2][3],
                     hm_met[num_regions][TreeEvent::num_classes-2][3],
                     hm_ptlead[num_regions][TreeEvent::num_classes-2][3], hm_ptsublead[num_regions][TreeEvent::num_classes-2][3], hm_pt[num_regions][TreeEvent::num_classes-2][3],
                     hm_pt_varbins[num_regions][TreeEvent::num_classes-2][3],
@@ -136,8 +144,6 @@ plotter()
                     hm_diph_numjets[num_regions][TreeEvent::num_classes-2][3], hm_diph_numleptons[num_regions][TreeEvent::num_classes-2][3];
   Plotter::HistsMap hm_fwdtrk_x[num_regions][TreeEvent::num_classes-2][3], hm_fwdtrk_y[num_regions][TreeEvent::num_classes-2][3];
   Plotter::HistsMap hm_cutflow[TreeEvent::num_classes-2][3];
-
-  //float num_backgrnd_45n = 0., num_backgrnd_45f = 0., num_backgrnd_56n = 0., num_backgrnd_56f = 0.;
 
   map<string,float> in_pot_accept;
   for ( const auto& pot : pots_accept ) {
@@ -184,6 +190,9 @@ plotter()
     }
 
     const vector<double> pt_bins_arr = { 75., 100., 150., 250., 500. };
+    //const vector<double> acop_bins_arr = { 0., 0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1. };
+    const vector<double> acop_bins_arr = { 0., 0.001, 0.002, 0.005, 0.01, 0.05, 0.25, 1. };
+    const vector<double> lacop_bins_arr = { -6., -4., -2.5, -2., -1.5, -1.25, -1., -0.75, -0.5, -0.25, 0. };
     for ( unsigned short k = 0; k < TreeEvent::num_classes-2; ++k ) {
       { // same plots features for all regions
         unsigned short j = 0;
@@ -192,6 +201,10 @@ plotter()
           h_ndiph[j][k][i] = new TH1D( Form( "h_%s_%d_ndiph_%d", region, k, i ), "Number of diphoton candidates@@Events", 7, 1., 8. );
           h_nvtx[j][k][i] = new TH1D( Form( "h_%s_%d_nvtx_%d", region, k, i ), "Number of primary vertices@@Events", 50, 0., 50. );
           h_pt_varbins[j][k][i] = new TH1D( Form( "h_%s_%d_pt_varbins_%d", region, k, i ), "p_{T}^{#gamma}@@Events@@GeV", pt_bins_arr.size()-1, pt_bins_arr.data() );
+          h_dphi_varbins[j][k][i] = new TH1D( Form( "h_%s_%d_dphi_varbins_%d", region, k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi|@@Events@@?.g", acop_bins_arr.size()-1, acop_bins_arr.data() );
+          //h_dphi_logbins[j][k][i] = new TH1D( Form( "h_%s_%d_dphi_logbins_%d", region, k, i ), "log_{10}(1-|#Delta#phi_{#gamma#gamma}/#pi|)@@Events@@?.g", 20, -4., 0. );
+          h_dphi_logbins[j][k][i] = new TH1D( Form( "h_%s_%d_dphi_logbins_%d", region, k, i ), "log_{10}(1-|#Delta#phi_{#gamma#gamma}/#pi|)@@Events@@?.g", lacop_bins_arr.size()-1, lacop_bins_arr.data() );
+          h_dphi_tightbins[j][k][i] = new TH1D( Form( "h_%s_%d_dphi_tightbins_%d", region, k, i ), "1-|#Delta#phi_{#gamma#gamma}/#pi| (#times 10^{-3})@@Events@@?.g", 25, 0., 5. );
           h_diph_numjets[j][k][i] = new TH1D( Form( "h_%s_%d_diph_numjets_%d", region, k, i ), "Number of jets surrounding diphoton vertex@@Events", 10, 0., 10. );
           h_diph_numleptons[j][k][i] = new TH1D( Form( "h_%s_%d_diph_numleptons_%d", region, k, i ), "Number of leptons surrounding diphoton vertex@@Events", 10, 0., 10. );
           //h_fwdtrk_x[j][k][i] = new TH1D( Form( "h_%s_%d_fwdtrk_x_%d", region, k, i ), "Forward track x@@Events@@mm", 100, 0., 50. );
@@ -341,7 +354,8 @@ plotter()
     }
     const double unrescaled_sample_weight = sample_weight;
     if ( s.type() == Sample::kBackground && strstr( s.name(), "Inclusive #gamma#gamma" ) != 0 )
-      sample_weight *= rescaling_background;
+      if ( !rescale_background_parametric )
+        sample_weight *= rescaling_background;
     // loop on events
     for ( unsigned long long j = 0; j < num_entries; ++j ) {
       if ( fmod( j*1./num_entries, 0.1 ) == 0 ) { cerr << "   event " << j << " / " << num_entries << endl; }
@@ -385,6 +399,7 @@ plotter()
 //        if ( ev.diphoton_r91[k] < 0.8 || ev.diphoton_r92[k] < 0.8 ) continue; //FIXME for safety (avoids a bug in the TTree producer...)
 
         const float acop = 1.-fabs( ev.diphoton_dphi[k]/M_PI );
+        const float lacop = log10( acop );
         const float xip = ( ev.diphoton_pt1[k]*exp( +ev.diphoton_eta1[k] ) + ev.diphoton_pt2[k]*exp( +ev.diphoton_eta2[k] ) ) / sqrt_s,
                     xim = ( ev.diphoton_pt1[k]*exp( -ev.diphoton_eta1[k] ) + ev.diphoton_pt2[k]*exp( -ev.diphoton_eta2[k] ) ) / sqrt_s;
 
@@ -402,6 +417,8 @@ plotter()
           *///FIXME!!!!!!!!!!!!!!!!!!!!FIXME!!!!!!!!!!!!!!!!!!!!!!!!!FIXME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           s_weight = sp_weight * ( eff_pho1*eff_pho2 );
         }
+        if ( rescale_background_parametric && s.type() == Sample::kBackground && strstr( s.name(), "Inclusive #gamma#gamma" ) != 0 )
+          s_weight *= incl_fit_func->Eval( lacop );
 
         //----- look at surrounding objects
 
@@ -450,6 +467,9 @@ plotter()
           h_mass_rebin[nosel][c][i]->Fill( ev.diphoton_mass[k], s_weight );
           h_ptpair[nosel][c][i]->Fill( ev.diphoton_pt[k], s_weight );
           h_dphi[nosel][c][i]->Fill( acop, s_weight );
+          h_dphi_varbins[nosel][c][i]->Fill( acop, s_weight );
+          h_dphi_logbins[nosel][c][i]->Fill( lacop, s_weight );
+          h_dphi_tightbins[nosel][c][i]->Fill( acop*1.e3, s_weight );
           h_met[nosel][c][i]->Fill( ev.met, s_weight );
           h_xip[nosel][c][i]->Fill( xip, s_weight );
           h_xim[nosel][c][i]->Fill( xim, s_weight );
@@ -477,6 +497,9 @@ plotter()
             h_mass_rebin[singlevtx][c][i]->Fill( ev.diphoton_mass[k], s_weight );
             h_ptpair[singlevtx][c][i]->Fill( ev.diphoton_pt[k], s_weight );
             h_dphi[singlevtx][c][i]->Fill( acop, s_weight );
+            h_dphi_varbins[singlevtx][c][i]->Fill( acop, s_weight );
+            h_dphi_logbins[singlevtx][c][i]->Fill( lacop, s_weight );
+            h_dphi_tightbins[singlevtx][c][i]->Fill( acop*1.e3, s_weight );
             h_met[singlevtx][c][i]->Fill( ev.met, s_weight );
             h_xip[singlevtx][c][i]->Fill( xip, s_weight );
             h_xim[singlevtx][c][i]->Fill( xim, s_weight );
@@ -521,6 +544,9 @@ plotter()
             h_mass_rebin[qcd][c][i]->Fill( ev.diphoton_mass[k], s_weight );
             h_ptpair[qcd][c][i]->Fill( ev.diphoton_pt[k], s_weight );
             h_dphi[qcd][c][i]->Fill( acop, s_weight );
+            h_dphi_varbins[qcd][c][i]->Fill( acop, s_weight );
+            h_dphi_logbins[qcd][c][i]->Fill( lacop, s_weight );
+            h_dphi_tightbins[qcd][c][i]->Fill( acop*1.e3, s_weight );
             h_met[qcd][c][i]->Fill( ev.met, s_weight );
             h_xip[qcd][c][i]->Fill( xip, s_weight );
             h_xim[qcd][c][i]->Fill( xim, s_weight );
@@ -533,12 +559,19 @@ plotter()
 
         //--- preselection definition
 
-        is_preselected &= ( ev.diphoton_pt1[k] >= pt_cut && ev.diphoton_pt2[k] >= pt_cut );
 //        is_preselected &= ( ev.diphoton_id1[k] >= -0.2 && ev.diphoton_id2[k] >= -0.2 );
 
         //if ( is_preselected && ev.diphoton_pt1[k] >= 300. && ev.diphoton_pt2[k] >= 300. ) {
         //if ( is_preselected && ev.diphoton_pt1[k] >= 250. && ev.diphoton_pt2[k] >= 250. ) {
         //if ( is_preselected && ev.diphoton_pt1[k] >= 200. && ev.diphoton_pt2[k] >= 200. ) {
+        if ( is_preselected && ev.diphoton_pt1[k] >= 200. && ev.diphoton_pt2[k] >= 200. ) {
+          for ( auto c : vector<unsigned short>{ TreeEvent::all, ev_class } ) {
+            //FIXME h_dphi[incl][c][i]->Fill( acop, s_weight );
+            h_dphi_varbins[incl][c][i]->Fill( acop, s_weight );
+            h_dphi_logbins[incl][c][i]->Fill( lacop, s_weight );
+            h_dphi_tightbins[incl][c][i]->Fill( acop*1.e3, s_weight );
+          }
+        }
         if ( is_preselected && ev.diphoton_pt1[k] >= 200. && ev.diphoton_pt2[k] >= 200. && acop > 0.025 ) {
         //if ( is_preselected && ev.diphoton_pt1[k] >= 200. && ev.diphoton_pt2[k] >= 200. && acop > 0.005 ) {
           for ( auto c : vector<unsigned short>{ TreeEvent::all, ev_class } ) {
@@ -569,6 +602,7 @@ plotter()
           num_after[i][incl] += s_weight * sample_weight;
         }
 
+        is_preselected &= ( ev.diphoton_pt1[k] >= pt_cut && ev.diphoton_pt2[k] >= pt_cut );
         is_preselected &= ( ev.diphoton_r91[k] >= r9_cut );
         is_preselected &= ( ev.diphoton_r92[k] >= r9_cut );
         is_preselected &= ( ev.diphoton_mass[k] >= mass_cut );
@@ -596,6 +630,9 @@ plotter()
           h_mass_rebin[presel_noneleveto][c][i]->Fill( ev.diphoton_mass[k], s_weight );
           h_ptpair[presel_noneleveto][c][i]->Fill( ev.diphoton_pt[k], s_weight );
           h_dphi[presel_noneleveto][c][i]->Fill( acop, s_weight );
+          h_dphi_varbins[presel_noneleveto][c][i]->Fill( acop, s_weight );
+          h_dphi_logbins[presel_noneleveto][c][i]->Fill( lacop, s_weight );
+          h_dphi_tightbins[presel_noneleveto][c][i]->Fill( acop*1.e3, s_weight );
           h_met[presel_noneleveto][c][i]->Fill( ev.met, s_weight );
           h_xip[presel_noneleveto][c][i]->Fill( xip, s_weight );
           h_xim[presel_noneleveto][c][i]->Fill( xim, s_weight );
@@ -631,6 +668,9 @@ plotter()
           h_mass_rebin[presel][c][i]->Fill( ev.diphoton_mass[k], s_weight );
           h_ptpair[presel][c][i]->Fill( ev.diphoton_pt[k], s_weight );
           h_dphi[presel][c][i]->Fill( acop, s_weight );
+          h_dphi_varbins[presel][c][i]->Fill( acop, s_weight );
+          h_dphi_logbins[presel][c][i]->Fill( lacop, s_weight );
+          h_dphi_tightbins[presel][c][i]->Fill( acop*1.e3, s_weight );
           h_met[presel][c][i]->Fill( ev.met, s_weight );
           h_xip[presel][c][i]->Fill( xip, s_weight );
           h_xim[presel][c][i]->Fill( xim, s_weight );
@@ -647,15 +687,6 @@ plotter()
 
         if ( acop < 0.005 ) {
           //--- elastic region
-
-          /*if ( s.type() == Sample::kBackground ) {
-            //---- look at pots acceptance
-            if ( xip > pots_accept["45N"] ) num_backgrnd_45n += sample_weight*s_weight;
-            if ( xip > pots_accept["45F"] ) num_backgrnd_45f += sample_weight*s_weight;
-            if ( xim > pots_accept["56N"] ) num_backgrnd_56n += sample_weight*s_weight;
-            if ( xim > pots_accept["56F"] ) num_backgrnd_56f += sample_weight*s_weight;
-          }*/
-
           for ( auto c : vector<unsigned short>{ TreeEvent::all, ev_class } ) {
             h_ptlead[elastic][c][i]->Fill( ev.diphoton_pt1[k], s_weight );
             h_ptsublead[elastic][c][i]->Fill( ev.diphoton_pt2[k], s_weight );
@@ -675,6 +706,9 @@ plotter()
             h_mass_rebin[elastic][c][i]->Fill( ev.diphoton_mass[k], s_weight );
             h_ptpair[elastic][c][i]->Fill( ev.diphoton_pt[k], s_weight );
             h_dphi[elastic][c][i]->Fill( acop*1.e3, s_weight );
+            h_dphi_varbins[elastic][c][i]->Fill( acop, s_weight );
+            h_dphi_logbins[elastic][c][i]->Fill( lacop, s_weight );
+            h_dphi_tightbins[elastic][c][i]->Fill( acop*1.e3, s_weight );
             h_met[elastic][c][i]->Fill( ev.met, s_weight );
             h_xip[elastic][c][i]->Fill( xip, s_weight );
             h_xim[elastic][c][i]->Fill( xim, s_weight );
@@ -716,6 +750,9 @@ plotter()
               h_mass_rebin[xicomp][c][i]->Fill( ev.diphoton_mass[k], s_weight );
               h_ptpair[xicomp][c][i]->Fill( ev.diphoton_pt[k], s_weight );
               h_dphi[xicomp][c][i]->Fill( acop*1.e3, s_weight );
+              h_dphi_varbins[xicomp][c][i]->Fill( acop, s_weight );
+              h_dphi_logbins[xicomp][c][i]->Fill( lacop, s_weight );
+              h_dphi_tightbins[xicomp][c][i]->Fill( acop*1.e3, s_weight );
               h_met[xicomp][c][i]->Fill( ev.met, s_weight );
               h_xip[xicomp][c][i]->Fill( xip, s_weight );
               h_xim[xicomp][c][i]->Fill( xim, s_weight );
@@ -743,6 +780,9 @@ plotter()
                 h_mass_rebin[xitight][c][i]->Fill( ev.diphoton_mass[k], s_weight );
                 h_ptpair[xitight][c][i]->Fill( ev.diphoton_pt[k], s_weight );
                 h_dphi[xitight][c][i]->Fill( acop*1.e3, s_weight );
+                h_dphi_varbins[xitight][c][i]->Fill( acop, s_weight );
+                h_dphi_logbins[xitight][c][i]->Fill( lacop, s_weight );
+                h_dphi_tightbins[xitight][c][i]->Fill( acop*1.e3, s_weight );
                 h_met[xitight][c][i]->Fill( ev.met, s_weight );
                 h_xip[xitight][c][i]->Fill( xip, s_weight );
                 h_xim[xitight][c][i]->Fill( xim, s_weight );
@@ -836,6 +876,9 @@ plotter()
         h_r9sublead[j][k][i]->Scale( sample_weight );
         h_r9[j][k][i]->Scale( sample_weight );
         h_dphi[j][k][i]->Scale( sample_weight );
+        h_dphi_logbins[j][k][i]->Scale( sample_weight );
+        h_dphi_varbins[j][k][i]->Scale( sample_weight );
+        h_dphi_tightbins[j][k][i]->Scale( sample_weight );
         h_xip[j][k][i]->Scale( sample_weight );
         h_xim[j][k][i]->Scale( sample_weight );
         h_diph_vtxz[j][k][i]->Scale( sample_weight );
@@ -863,6 +906,9 @@ plotter()
         hm_r9sublead[j][k][sample_type].emplace_back( sample_name, h_r9sublead[j][k][i] );
         hm_r9[j][k][sample_type].emplace_back( sample_name, h_r9[j][k][i] );
         hm_dphi[j][k][sample_type].emplace_back( sample_name, h_dphi[j][k][i] );
+        hm_dphi_varbins[j][k][sample_type].emplace_back( sample_name, h_dphi_varbins[j][k][i] );
+        hm_dphi_logbins[j][k][sample_type].emplace_back( sample_name, h_dphi_logbins[j][k][i] );
+        hm_dphi_tightbins[j][k][sample_type].emplace_back( sample_name, h_dphi_tightbins[j][k][i] );
         hm_xip[j][k][sample_type].emplace_back( sample_name, h_xip[j][k][i] );
         hm_xim[j][k][sample_type].emplace_back( sample_name, h_xim[j][k][i] );
         hm_diph_vtxz[j][k][sample_type].emplace_back( sample_name, h_diph_vtxz[j][k][i] );
@@ -890,6 +936,9 @@ plotter()
           h_r9sublead[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
           h_r9[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
           h_dphi[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
+          h_dphi_varbins[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
+          h_dphi_logbins[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
+          h_dphi_tightbins[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
           h_xip[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
           h_xim[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
           h_diph_vtxz[j][k][i]->SetFillColorAlpha( s.colour(), alpha );
@@ -941,7 +990,7 @@ plotter()
   //Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp", Form( "#sqrt{s} = 13 TeV, L = %g fb^{-1}", the_lumi*1.e-3 ) );
   Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ) );
   for ( unsigned short j = 0; j < 1; ++j ) { // classes
-    plt.draw_multiplot( Form( "cutflow_%s", TreeEvent::classes[j] ), hm_cutflow[j][0], hm_cutflow[j][1], hm_cutflow[j][2], "", false, true, false, -45. );
+    plt.draw_multiplot( Form( "cutflow_%s", TreeEvent::classes[j] ), hm_cutflow[j][0], hm_cutflow[j][1], hm_cutflow[j][2], "", false, true, false );
   }
   for ( unsigned short i = 0; i < num_regions; ++i ) {
     //for ( unsigned short j = 0; j < TreeEvent::num_classes-2; ++j ) {
@@ -965,6 +1014,10 @@ plotter()
       plt.draw_multiplot( Form( "%s_diphoton_r9_leadpho_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_r9lead[i][j][0], hm_r9lead[i][j][1], hm_r9lead[i][j][2], class_name.c_str(), false );
       plt.draw_multiplot( Form( "%s_diphoton_r9_subleadpho_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_r9sublead[i][j][0], hm_r9sublead[i][j][1], hm_r9sublead[i][j][2], class_name.c_str(), false );
       plt.draw_multiplot( Form( "%s_diphoton_dphi_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_dphi[i][j][0], hm_dphi[i][j][1], hm_dphi[i][j][2], class_name.c_str(), false );
+      //plt.draw_multiplot( Form( "%s_diphoton_dphi_varbins_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_dphi_varbins[i][j][0], hm_dphi_varbins[i][j][1], hm_dphi_varbins[i][j][2], class_name.c_str(), false, true, false, true, -2.1, 4.1 );
+      plt.draw_multiplot( Form( "%s_diphoton_dphi_varbins_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_dphi_varbins[i][j][0], hm_dphi_varbins[i][j][1], hm_dphi_varbins[i][j][2], ( class_name+" (no acop.sel.)" ).c_str(), false, true, false, true );
+      plt.draw_multiplot( Form( "%s_diphoton_dphi_logbins_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_dphi_logbins[i][j][0], hm_dphi_logbins[i][j][1], hm_dphi_logbins[i][j][2], ( class_name+" (no acop.sel.)" ).c_str(), false, true, false, false );
+      plt.draw_multiplot( Form( "%s_diphoton_dphi_tightbins_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_dphi_tightbins[i][j][0], hm_dphi_tightbins[i][j][1], hm_dphi_tightbins[i][j][2], ( class_name+" (no acop.sel.)" ).c_str(), false, true, false, false, 0.24, 1.76 );
       plt.draw_multiplot( Form( "%s_diphoton_xip_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_xip[i][j][0], hm_xip[i][j][1], hm_xip[i][j][2], class_name.c_str(), false );
       plt.draw_multiplot( Form( "%s_diphoton_xim_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_xim[i][j][0], hm_xim[i][j][1], hm_xim[i][j][2], class_name.c_str(), false );
       plt.draw_multiplot( Form( "%s_diphoton_vtx_z_%s", kin_regions[i].c_str(), TreeEvent::classes[j] ), hm_diph_vtxz[i][j][0], hm_diph_vtxz[i][j][1], hm_diph_vtxz[i][j][2], class_name.c_str(), false );
@@ -976,6 +1029,35 @@ plotter()
     plt.draw_multiplot( Form( "%s_diphoton_nvtx_logscale", kin_regions[i].c_str() ), hm_nvtx[i][0][0], hm_nvtx[i][0][1], hm_nvtx[i][0][2], class_name.c_str(), false, true, false );
     plt.draw_multiplot( Form( "%s_diphoton_nvtx_uncorr_logscale", kin_regions[i].c_str() ), hm_nvtx_unc[i][0][0], hm_nvtx_unc[i][0][1], hm_nvtx_unc[i][0][2], class_name.c_str(), false, true, false );
   }
+  if ( !rescale_background_parametric ) {
+    gStyle->SetOptFit( 1 );
+    Canvas c( "data_mc_dphi_presel", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "Preliminary" );
+    const auto reg = incl;
+//    c.SetLogx();
+    THStack hs_mc;
+    TH1D* h_mc = nullptr;
+    unsigned short i = 0;
+    for ( const auto& plt : hm_dphi_logbins[reg][0][1] ) {
+      if ( i == 0 )
+        h_mc = (TH1D*)plt.second->Clone();
+      else
+        h_mc->Add( plt.second );
+      ++i;
+    }
+    auto h_data = hm_dphi_logbins[reg][0][0].begin()->second;
+    auto h_ratio = (TH1D*)h_data->Clone();
+    h_ratio->Divide( h_mc );
+    h_ratio->Draw( "p" );
+    auto fit_func = new TF1( "fit_func", "pol1", -3., 0. );
+    h_ratio->Fit( fit_func );
+    cout << "integral [0.,0.005] = " << fit_func->Integral( -4., log10( 0.005 ) ) << endl;
+    cout << "integral [0.25,1.0] = " << fit_func->Integral( log10(0.25), log10( 1. ) ) << endl;
+    fit_func->SaveAs( "incl_fit_result.root" );
+    c.Prettify( h_ratio );
+    h_ratio->GetYaxis()->SetTitle( "Data/MC" );
+    PaveText::topLabel( ( kin_regions_label[reg]+" (no acop.sel.)" ).c_str() );
+    c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  }
   {
     Canvas c( "num_diph_vtxaround", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "Preliminary" );
     THStack hs;
@@ -983,7 +1065,7 @@ plotter()
     TString label[4] = { "at 1 mm distance", "at 2 mm distance", "at 5 mm distance", "at 1 cm distance" };
     for ( unsigned short i = 0; i < 4; ++i ) {
       h_diph_nvtxaround[i]->SetMarkerStyle( 20+i );
-      h_diph_nvtxaround[i]->SetMarkerColor( Plotter::colour_pool[i] );
+      h_diph_nvtxaround[i]->SetMarkerColor( Canvas::colour_pool[i] );
       h_diph_nvtxaround[i]->SetLineColor( kBlack );
       h_diph_nvtxaround[i]->SetLineWidth( 2 );
       c.AddLegendEntry( h_diph_nvtxaround[i], label[i], "elp" );
@@ -999,6 +1081,7 @@ plotter()
     c.SetLogy();
     PaveText::topLabel( kin_regions_label[elastic].c_str() );
     c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    gStyle->SetOptFit( 0 );
   }
 
   for ( unsigned short i = 0; i < num_regions; ++i ) {

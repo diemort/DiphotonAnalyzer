@@ -1,5 +1,4 @@
 #include "Canvas.h"
-#include "Plotter.h"
 #include "DiphotonAnalyzer/TreeProducer/interface/TreeEvent.h"
 
 #include <iostream>
@@ -10,6 +9,8 @@
 #include "TGraph2D.h"
 #include "TH1.h"
 #include "THStack.h"
+
+#define OUT_PATH "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp/limits"
 
 void plot_sel_efficiency_aqgc()
 {
@@ -148,7 +149,7 @@ void plot_sel_efficiency_aqgc()
 //    g_el_vals.GetYaxis()->SetRangeUser( -5.e-12, 5.e-12 );
 //    g_xs.GetYaxis()->SetRangeUser( -5.e-12, 5.e-12 );
     c.SetLogz();
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
   {
     Canvas c( "elastic_acc_scan_aqgc", "FPMC #gamma#gamma #rightarrow #gamma#gamma, AQGC", "Simulation preliminary" );
@@ -164,7 +165,7 @@ void plot_sel_efficiency_aqgc()
     g_el_acc.GetZaxis()->SetTitleOffset( 1.4 );
     c.SetLogz();
     c.Prettify( (TH1*)g_el_vals.GetHistogram() );
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
   {
     Canvas c( "elastic_eff_scan_aqgc", "FPMC #gamma#gamma #rightarrow #gamma#gamma, AQGC", "Simulation preliminary" );
@@ -183,7 +184,7 @@ void plot_sel_efficiency_aqgc()
     g_el_eff.GetZaxis()->SetTitleOffset( 1.4 );
     PaveText::topLabel( top_label );
     c.Prettify( (TH1*)g_el_vals.GetHistogram() );
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
   {
     TF1 f_pol2( "f_pol2", "[0]+[1]*x+[2]*x**2" );
@@ -202,7 +203,7 @@ void plot_sel_efficiency_aqgc()
     c.AddLegendEntry( &g_xs_z2, "#zeta_{1} = 0", "ep" );
     PaveText::topLabel( top_label );
     c.Prettify( g_xs_z1.GetHistogram() );
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
   {
     Canvas c( "elastic_eff_scan_aqgc_1d", "FPMC #gamma#gamma #rightarrow #gamma#gamma, AQGC", "Simulation preliminary" );
@@ -220,7 +221,7 @@ void plot_sel_efficiency_aqgc()
     c.AddLegendEntry( &g_el_eff_z2, "#zeta_{1} = 0", "ep" );
     PaveText::topLabel( top_label );
     c.Prettify( g_el_eff_z1.GetHistogram() );
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
 
   const unordered_map<string,vector<TH1D>&> plots = {
@@ -254,9 +255,9 @@ void plot_sel_efficiency_aqgc()
       TString label = Form( "(%g, %g)", samples[j].zeta1, samples[j].zeta2 );
       if ( samples[j].zeta1 == 0. && samples[j].zeta2 == 0. )
         label += " (SM)";
-      p.second[j].SetLineColor( Plotter::colour_pool[j/3] );
+      p.second[j].SetLineColor( Canvas::colour_pool[j/3] );
       p.second[j].SetLineStyle( 1+j%3 );
-      p.second[j].SetFillColorAlpha( Plotter::colour_pool[j/3], 0.25 );
+      p.second[j].SetFillColorAlpha( Canvas::colour_pool[j/3], 0.25 );
       p.second[j].SetLineWidth( 2 );
       hs.Add( &p.second[j] );
       c.AddLegendEntry( &p.second[j], label, "f" );
@@ -272,6 +273,6 @@ void plot_sel_efficiency_aqgc()
       hs.SetMaximum( hs.GetHistogram()->GetMaximum()*25. );
       hs.SetMinimum( 5.e-2 );
     }
-    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+    c.Save( "pdf,png", OUT_PATH );
   }
 }
