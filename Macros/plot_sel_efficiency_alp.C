@@ -42,6 +42,8 @@ void plot_sel_efficiency_alp()
 
   //retrieved from /afs/cern.ch/user/j/juwillia/public/forLaurent/AC_microAOD
   vector<sample_t> samples = {
+    { 500.,  5.,     "samples/ntuple-alp-m500_f5e0.root",    -1., -1., 5000 },
+    { 500.,  1.,     "samples/ntuple-alp-m500_f1e0.root",    -1., -1., 5000 },
     { 500.,  0.6,    "samples/ntuple-alp-m500_f6e-1.root",    8.343e-2, 2.004e-1, 5000 },
     { 500.,  0.5,    "samples/ntuple-alp-m500_f5e-1.root",    5.884e-2, 1.504e-1, 5000 },
     { 500.,  0.25,   "samples/ntuple-alp-m500_f2p5e-1.root",  1.448e-2, 3.521e-2, 5000 },
@@ -49,9 +51,13 @@ void plot_sel_efficiency_alp()
     { 500.,  0.1,    "samples/ntuple-alp-m500_f1e-1.root",    2.310e-3, 5.912e-3, 5000 },
     { 500.,  0.06,   "samples/ntuple-alp-m500_f6e-2.root",    8.147e-4, 1.867e-3, 5000 },
     { 500.,  0.0316, "samples/ntuple-alp-m500_f1e-1p5.root",  2.297e-4, 8.623e-4, 5000 },
+    { 750.,  5.,     "samples/ntuple-alp-m750_f5e0.root",    -1., -1., 5000 },
+    { 750.,  1.,     "samples/ntuple-alp-m750_f1e0.root",    -1., -1., 5000 },
     { 750.,  0.5,    "samples/ntuple-alp-m750_f5e-1.root",    5.015e-2, 7.633e-2, 5000 },
     { 750.,  0.1,    "samples/ntuple-alp-m750_f1e-1.root",    1.978e-3, 3.116e-3, 5000 },
     { 750.,  0.0316, "samples/ntuple-alp-m750_f1e-1p5.root",  2.001e-4, 3.809e-4, 5000 },
+    { 1000., 5.,     "samples/ntuple-alp-m1000_f5e0.root",    -1., -1., 5000 },
+    { 1000., 1.,     "samples/ntuple-alp-m1000_f1e0.root",    -1., -1., 5000 },
     { 1000., 0.6,    "samples/ntuple-alp-m1000_f6e-1.root",   3.393e-2, 6.693e-2, 5000 },
     { 1000., 0.5,    "samples/ntuple-alp-m1000_f5e-1.root",   2.382e-2, 4.377e-2, 5000 },
     { 1000., 0.25,   "samples/ntuple-alp-m1000_f2p5e-1.root", 6.159e-3, 1.136e-2, 5000 },
@@ -59,9 +65,13 @@ void plot_sel_efficiency_alp()
     { 1000., 0.1,    "samples/ntuple-alp-m1000_f1e-1.root",   9.534e-4, 1.745e-3, 5000 },
     { 1000., 0.06,   "samples/ntuple-alp-m1000_f6e-2.root",   3.355e-4, 6.796e-4, 5000 },
     { 1000., 0.0316, "samples/ntuple-alp-m1000_f1e-1p5.root", 9.595e-5, 1.466e-4, 5000 },
+    { 1250., 5.,     "samples/ntuple-alp-m1250_f5e0.root",    -1., -1., 5000 },
+    { 1250., 1.,     "samples/ntuple-alp-m1250_f1e0.root",    -1., -1., 5000 },
     { 1250., 0.5,    "samples/ntuple-alp-m1250_f5e-1.root",   1.089e-2, 3.062e-2, 5000 },
     { 1250., 0.1,    "samples/ntuple-alp-m1250_f1e-1.root",   4.624e-4, 1.282e-3, 5000 },
     { 1250., 0.0316, "samples/ntuple-alp-m1250_f1e-1p5.root", 4.654e-5, 1.163e-4, 5000 },
+    { 1500., 5.,     "samples/ntuple-alp-m1500_f5e0.root",    -1., -1., 5000 },
+    { 1500., 1.,     "samples/ntuple-alp-m1500_f1e0.root",    -1., -1., 5000 },
     { 1500., 0.6,    "samples/ntuple-alp-m1500_f6e-1.root",   6.680e-3, 2.722e-2, 5000 },
     { 1500., 0.5,    "samples/ntuple-alp-m1500_f5e-1.root",   4.823e-3, 2.015e-2, 5000 },
     { 1500., 0.25,   "samples/ntuple-alp-m1500_f2p5e-1.root", 1.305e-3, 4.919e-3, 5000 },
@@ -69,9 +79,13 @@ void plot_sel_efficiency_alp()
     { 1500., 0.1,    "samples/ntuple-alp-m1500_f1e-1.root",   1.968e-4, 7.331e-4, 5000 },
     { 1500., 0.06,   "samples/ntuple-alp-m1500_f6e-2.root",   6.940e-5, 2.729e-4, 5000 },
     { 1500., 0.0316, "samples/ntuple-alp-m1500_f1e-1p5.root", 1.968e-5, 7.123e-5, 5000 },
+    { 1750., 5.,     "samples/ntuple-alp-m1750_f5e0.root",    -1., -1., 5000 },
+    { 1750., 1.,     "samples/ntuple-alp-m1750_f1e0.root",    -1., -1., 5000 },
     { 1750., 0.5,    "samples/ntuple-alp-m1750_f5e-1.root",   1.504e-3, 1.214e-2, 5000 },
     { 1750., 0.1,    "samples/ntuple-alp-m1750_f1e-1.root",   5.819e-5, 5.556e-4, 5000 },
     { 1750., 0.0316, "samples/ntuple-alp-m1750_f1e-1p5.root", 5.799e-6, 5.155e-5, 5000 },
+    { 2000., 5.,     "samples/ntuple-alp-m2000_f5e0.root",    -1., -1., 5000 },
+    { 2000., 1.,     "samples/ntuple-alp-m2000_f1e0.root",    -1., -1., 5000 },
     { 2000., 0.5,    "samples/ntuple-alp-m2000_f5e-1.root",   2.162e-4, 8.872e-3, 5000 },
     { 2000., 0.1,    "samples/ntuple-alp-m2000_f1e-1.root",   3.777e-7, 3.344e-4, 5000 },
     { 2000., 0.0316, "samples/ntuple-alp-m2000_f1e-1p5.root", 3.552e-9, 3.346e-5, 5000 },
@@ -228,7 +242,7 @@ void plot_sel_efficiency_alp()
   {
     Canvas c( "elastic_eff_scan_alp", "FPMC #gamma#gamma #rightarrow #gamma#gamma + ALP", "Simulation preliminary" );
     c.SetRightMargin( 0.15 );
-    g_el_eff.SetTitle( ";m_{a} (GeV);log(f^{-1}/GeV^{-1});#varepsilon" );
+    g_el_eff.SetTitle( ";m_{a} (GeV);log(f^{-1}/GeV^{-1});Sel. efficiency" );
     g_el_vals.SetMarkerStyle( 20 );
     //g_el_vals.Draw( "a*" );
     //g_el_eff.Draw( "arr colz" );
@@ -255,7 +269,9 @@ void plot_sel_efficiency_alp()
     vector<TF1*> fits_res;
     for ( auto& g : g_el_eff_k ) {
       mg.Add( &g.second );
-      g.second.SetMarkerStyle( 24+i );
+      g.second.SetLineColor( kBlack );
+      g.second.SetMarkerStyle( Canvas::marker_pool[i] );
+      g.second.SetMarkerColor( Canvas::colour_pool[i] );
       c.AddLegendEntry( &g.second, Form( "m = %g GeV", g.first ), "ep" );
       ++i;
     }
@@ -265,22 +281,25 @@ void plot_sel_efficiency_alp()
     mg.SetMinimum( 0. );
     //mg.SetMaximum( 1.05 );
     mg.SetMaximum( 0.85 );
-    mg.GetHistogram()->SetTitle( ";k^{-1} (GeV^{-1});Selection efficiency" );
+    mg.GetHistogram()->SetTitle( ";f^{-1} (GeV^{-1});Selection efficiency" );
     PaveText::topLabel( top_label );
     c.Prettify( mg.GetHistogram() );
     c.Save( "pdf,png", OUT_PATH );
   }
   {
     Canvas c( "elastic_eff_scan_alp_1d_mass", "FPMC #gamma#gamma #rightarrow #gamma#gamma + ALP", "Simulation preliminary" );
-    c.SetLegendY1( 0.15 );
-    c.SetLegendSizeY( 0.225 );
+    c.SetLegendY1( 0.55 );
+    c.SetLegendX1( 0.15 );
+    c.SetLegendSizeY( 0.275 );
     TMultiGraph mg;
     unsigned short i = 0;
     TF1 f_fit( "f_fit", "pol2" );
     vector<TF1*> fits_res;
     for ( auto& g : g_el_eff_m ) {
       mg.Add( &g.second );
-      g.second.SetMarkerStyle( 24+i );
+      g.second.SetLineColor( kBlack );
+      g.second.SetMarkerStyle( Canvas::marker_pool[i] );
+      g.second.SetMarkerColor( Canvas::colour_pool[i] );
 /*      TFitResultPtr fit_res = g.second.Fit( &f_fit, "s0+" );
       if ( (int)fit_res ) {
         f_fit.SetLineStyle( i+1 );

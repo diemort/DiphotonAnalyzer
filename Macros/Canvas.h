@@ -357,7 +357,7 @@ WithOverflow( TH1* h )
   return htmp;
 }
 
-static const int markers[] = { 20, 24, 21, 25, 22, 26, 23, 27, 24, 28 };
+static const int markers[] = { 20, 24, 21, 25, 22, 26, 23, 27, 28, 29, 30, 31, 32, 33 };
 static const int colours[] = { kBlack, kRed+1, kGreen+2, kBlue+1, kMagenta+1, kOrange+1, kGray, kViolet-7, kYellow+3, kSpring+4, kTeal-5, kCyan-2, kTeal-1, kRed-2, kGreen-2, kBlue-2, kMagenta, kOrange, kViolet, kYellow, kOrange-3 };
 
 const int* Canvas::marker_pool = markers;

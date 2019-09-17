@@ -60,8 +60,8 @@ plotter()
 {
   const float scaling_signal = 100.;
   unsigned int num_gen_cand_events = 0;
-  //const float rescaling_background = 0.901;
-  const float rescaling_background = 1.;
+  const float rescaling_background = 0.901;
+  //const float rescaling_background = 1.;
   const bool rescale_background_parametric = true;
 //  const bool rescale_background_parametric = false;
 
