@@ -30,7 +30,7 @@ class Sample
       name_( name ), type_( type ), tree_( tree ), xsection_( xsection ), nevts_( nevts ), colour_( col ) {}
     ~Sample() {}
 
-    const char* name() const { return name_.c_str(); }
+    const std::string& name() const { return name_; }
     SampleType type() const { return type_; }
     TTree* tree() { return tree_; }
     float cross_section() const { return xsection_; }

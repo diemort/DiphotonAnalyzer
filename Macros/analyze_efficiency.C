@@ -2,6 +2,7 @@
 #include "TH2.h"
 #include "THStack.h"
 #include "TF1.h"
+#include "TProfile.h"
 #include "TGraphAsymmErrors.h"
 #include "TEfficiency.h"
 #include "TFile.h"
@@ -20,7 +21,7 @@
 #include "pot_alignment.h"
 #include "DiphotonAnalyzer/TreeProducer/interface/MBTreeEvent.h"
 
-#define loc_www "/afs/cern.ch/user/l/lforthom/www/private/ctpps/efficiency"
+static const char* loc_www = "/afs/cern.ch/user/l/lforthom/www/private/ctpps/efficiency";
 
 void analyze_efficiency()
 {
@@ -29,14 +30,15 @@ void analyze_efficiency()
   //const unsigned int ref_fill = 4964;
   const double minimum_threshold = 0.95;
 
+  xi_reco::load_optics_file( "TreeProducer/data/optics_17may22.root" );
   pot_align::load_file( "TreeProducer/data/alignment_collection_v2.out" );
-  xi_reco::load_file( "TreeProducer/data/optics_jun22.root" );
 
   map<unsigned short,const char*> pot_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
   map<unsigned short,pair<double,double> > pot_fit_limits = {
     { 2, { 9., 14. } },
     //{ 3, { 12., 14. } },
-    { 3, { 8., 13. } },
+    //{ 3, { 8., 13. } },
+    { 3, { 8., 12. } },
     { 102, { 7., 12. }  },
     { 103, { 6., 12. } } };
   map<unsigned short,double> pot_x_mineff = {
@@ -75,6 +77,7 @@ void analyze_efficiency()
    -8., -6., -5., -4., -3.5, -3., -2.5, -2., -1.5, -1.25, -1., -0.75, -0.5, -0.25, -0.125,
     0., 0.125, 0.25, 0.5, 0.75, 1., 1.25, 1.5, 2., 2.5, 3., 3.5, 4., 5., 6., 8. };
   map<unsigned short,map<unsigned short,TH1D*> > m_h_num_x, m_h_num_xi;
+  map<unsigned short,TProfile*> m_p_xvsxi;
   for ( const auto& p : pot_names ) {
     h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.1f", p.second ), 40, 0., 20. );
 //    h_num_x[p.first] = new TH1D( Form( "h_num_x_%d", p.first ), Form( "Track x (%s)@@Entries@@mm?.2f", p.second ), 100, 0., 20. );
@@ -93,11 +96,14 @@ void analyze_efficiency()
     h2_num_xy[p.first] = new TH2D( Form( "h2_num_xy_%d", p.first ), Form( "Track x (%s) (mm)@@Track y (%s) (mm)", p.second, p.second ), 48, 0., 12., 64, -8., 8. );
 //    h2_num_xy[p.first] = new TH2D( Form( "h2_num_xy_%d", p.first ), Form( "Track x (%s) (mm)@@Track y (%s) (mm)", p.second, p.second ), sizeof( x_bins_2d )/sizeof( double )-1, x_bins_2d, sizeof( y_bins_2d )/sizeof( double )-1, y_bins_2d );
     h2_denom_xy[p.first] = dynamic_cast<TH2D*>( h2_num_xy[p.first]->Clone( Form( "h2_denom_xy_%d", p.first ) ) );
+    //m_p_xvsxi[p.first] = new TProfile( Form( "p_xvsxi_%d", p.first ), "Track #xi@@Track x (mm)", 52, 0.02, 0.15 );
+    m_p_xvsxi[p.first] = new TProfile( Form( "p_xvsxi_%d", p.first ), "Track #xi@@Track x (m)", 52, 0.02, 0.15 );
   }
 
   //map<unsigned int,pot_align::align_t> align_el = { { 2, { 1.7773, 0., 0.5484, 0. } }, { 3, { -1.25905, 0., -0.533, 0. } }, { 102, { -0.0385, 0., 0.77165, 0. } }, { 103, { -0.55638, 0., 0.5982, 0. } } };
 
-  auto mb_tree = dynamic_cast<TTree*>( TFile::Open( "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_alignmentrun_mbtree.root" )->Get( "ntp" ) );
+  //auto mb_tree = dynamic_cast<TTree*>( TFile::Open( "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_0_26_patch1/src/DiphotonAnalyzer/Samples/output_alignmentrun_mbtree.root" )->Get( "ntp" ) );
+  auto mb_tree = dynamic_cast<TTree*>( TFile::Open( "/eos/cms/store/user/lforthom/ctpps/efficiency_study/output_alignmentrun_mbtree.root" )->Get( "ntp" ) );
   unsigned int num_strips_track;
   float strips_track_x[50], strips_track_y[50];
   unsigned int strips_track_arm[50], strips_track_pot[50];
@@ -124,7 +130,8 @@ void analyze_efficiency()
   }
 
   //auto f = TFile::Open( "/eos/cms/store/user/lforthom/ctpps/efficiency_study/merged_eff_outputBCG.root" );
-  auto f = TFile::Open( "/eos/cms/store/group/dpg_ctpps/comm_ctpps/RadiationDamage/DoubleEG/mbntuple-Run2016BCG_94Xrereco_v1.root" );
+  //auto f = TFile::Open( "/eos/cms/store/group/dpg_ctpps/comm_ctpps/RadiationDamage/DoubleEG/mbntuple-Run2016BCG_94Xrereco_v1.root" );
+  auto f = TFile::Open( "/eos/cms/store/group/dpg_ctpps/comm_ctpps/RadiationDamage/DoubleMuon/mbntuple-Run2016BCG_94Xrereco_doublemu_v1.root" );
   MBTreeEvent mb_phys;
   auto tree = dynamic_cast<TTree*>( f->Get( "ntp" ) );
   mb_phys.attach( tree, { "fill_number", "num_fwd_track", "fwd_track_x", "fwd_track_y", "fwd_track_arm", "fwd_track_pot" } );
@@ -146,7 +153,7 @@ void analyze_efficiency()
         m_h_num_x[pid][mb_phys.fill_number] = dynamic_cast<TH1D*>( h_num_x[pid]->Clone( Form( "h_num_x_%d_%d", pid, mb_phys.fill_number ) ) );
 
       double xi = 0., xi_err = 0.;
-      xi_reco::reconstruct( ( mb_phys.fwd_track_x[j]+align[pid].x )*1.e3, mb_phys.fwd_track_arm[j], mb_phys.fwd_track_pot[j], xi, xi_err );
+      xi_reco::reconstruct( mb_phys.fwd_track_x[j]+align[pid].x, mb_phys.fwd_track_arm[j], mb_phys.fwd_track_pot[j], xi, xi_err );
       const double trk_x = ( mb_phys.fwd_track_x[j]+align[pid].x )*1.e3;
       const double trk_y = ( mb_phys.fwd_track_y[j]-align[pid].y )*1.e3;
       h_num_x[pid]->Fill( trk_x );
@@ -157,6 +164,8 @@ void analyze_efficiency()
       m_h_num_xi[pid][mb_phys.fill_number]->Fill( xi );
       if ( trk_x > pot_x_mineff[pid] ) h_num_y_win[pid]->Fill( trk_y );
       h2_num_xy[pid]->Fill( trk_x, trk_y, 1./num_entries );
+      //m_p_xvsxi[pid]->Fill( xi, trk_x );
+      m_p_xvsxi[pid]->Fill( xi, trk_x*1.e-3 );
     }
   }
 
@@ -445,6 +454,30 @@ void analyze_efficiency()
         c.Save( "pdf,png", loc_www );
       }
     }
+  }
+
+  {
+    Canvas c( "x_vs_xi_profile", top_title.c_str(), "Preliminary" );
+    c.SetLegendY1( 0.7 );
+    unsigned short i = 0;
+    for ( const auto& plt : m_p_xvsxi ) {
+      plt.second->Draw( i > 0 ? "lp same" : "lp" );
+      plt.second->SetLineColor( kBlack );
+      plt.second->SetMarkerColor( Canvas::colour_pool[i] );
+      plt.second->SetMarkerStyle( Canvas::marker_pool[i] );
+      c.AddLegendEntry( plt.second, pot_names[plt.first], "lp" );
+      auto gr = (TGraph*)xi_reco::get_graph( plt.first/100, plt.first % 100 )->Clone();
+      /*for ( unsigned int j = 0; j < gr->GetN(); ++j )
+        gr->SetPoint( j, gr->GetX()[j], gr->GetY()[j]*1.e3 );*/
+      if ( gr ) {
+        gr->Draw( "l same" );
+        gr->SetLineWidth( 3 );
+        gr->SetLineColor( Canvas::colour_pool[i] );
+      }
+      ++i;
+    }
+    c.Prettify( m_p_xvsxi.begin()->second );
+    c.Save( "pdf,png", loc_www );
   }
 }
 

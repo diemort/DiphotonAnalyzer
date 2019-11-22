@@ -30,12 +30,12 @@ class PaveText : public TPaveText
     TPaveText::SetTextAlign( kHAlignRight+kVAlignBottom );
   }
 
-  static PaveText* topLabel( const char* text )
+  static PaveText* topLabel( const std::string& text )
   {
     auto lab = new PaveText( 0.135, 0.95, 0.2, 0.96 );
     lab->SetTextAlign( kVAlignBottom+kHAlignLeft );
     lab->SetTextFont( 52 );
-    lab->AddText( text );
+    lab->AddText( text.c_str() );
     lab->Draw( "same" );
     return lab;
   }
@@ -190,6 +190,7 @@ class Canvas : public TCanvas
       ? yaxis_label.c_str()
       : Form( "Ratio%s", hm.size() > 2 ? "s" : "" )
     );
+    //hs_ratio->GetYaxis()->SetNdivisions( -510 );
     denom_err->Draw( "e2same" );
     denom_err->SetFillColor( kBlack );
     denom_err->SetFillStyle( 3004 );

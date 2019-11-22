@@ -8,7 +8,7 @@
 namespace xi_reco
 {
   std::map<unsigned short,TSpline*> splines, r_splines;
-  std::map<unsigned short,TGraph*> g_x_vs_xi, g_Lx_vs_xi, g_vx_vs_xi, g_xi_vs_x;
+  std::map<unsigned short,TGraph*> g_x0_vs_xi, g_x_vs_xi, g_Lx_vs_xi, g_vx_vs_xi, g_xi_vs_x;
   std::map<unsigned short,double> disp_rel_err;
   std::map<unsigned short,std::pair<double,double> > dispersions; // RP -> ( disp, err_disp )
 
@@ -38,7 +38,10 @@ namespace xi_reco
       { 103, "ctppsPlotOpticalFunctions_56/ip5_to_station_150_h_2_lhcb1" } // 56F
     };
     for ( const auto& p : paths ) {
-      g_x_vs_xi[p.first] = dynamic_cast<TGraph*>( file.Get( Form( "%s/g_x0_vs_xi", p.second ) )->Clone() );
+      g_x0_vs_xi[p.first] = dynamic_cast<TGraph*>( file.Get( Form( "%s/g_x0_vs_xi", p.second ) )->Clone() );
+      g_x_vs_xi[p.first] = new TGraph;
+      for ( int i = 0; i < g_x0_vs_xi[p.first]->GetN(); ++i )
+        g_x_vs_xi[p.first]->SetPoint( i, g_x0_vs_xi[p.first]->GetX()[i], g_x0_vs_xi[p.first]->GetY()[i]-g_x0_vs_xi[p.first]->GetY()[0] );
       g_Lx_vs_xi[p.first] = dynamic_cast<TGraph*>( file.Get( Form( "%s/g_L_x_vs_xi", p.second ) )->Clone() );
       g_vx_vs_xi[p.first] = dynamic_cast<TGraph*>( file.Get( Form( "%s/g_v_x_vs_xi", p.second ) )->Clone() );
       g_xi_vs_x[p.first] = dynamic_cast<TGraph*>( file.Get( Form( "%s/g_xi_vs_xso", p.second ) )->Clone() );
@@ -56,11 +59,19 @@ namespace xi_reco
     return 100*arm+pot;
   }
 
+  TGraph*
+  get_graph( unsigned int arm, unsigned int pot )
+  {
+    auto it_gr = g_x_vs_xi.find( get_id( arm, pot ) );
+    if ( it_gr == g_x_vs_xi.end() ) return nullptr;
+    return it_gr->second;
+  }
+
   TSpline*
   get_spline( unsigned int arm, unsigned int pot )
   {
     auto it_sp = splines.find( get_id( arm, pot ) );
-    if ( it_sp == splines.end() ) return 0;
+    if ( it_sp == splines.end() ) return nullptr;
     return it_sp->second;
   }
 
@@ -95,7 +106,7 @@ namespace xi_reco
     xi = sp->Eval( x );
     // prepare the run for xi uncertainty
     const double de_xi = 1.e-3;
-    const double de_x = g_x_vs_xi.at( sid )->Eval( xi+de_xi/2. ) - g_x_vs_xi.at( sid )->Eval( xi-de_xi/2. );
+    const double de_x = g_x0_vs_xi.at( sid )->Eval( xi+de_xi/2. ) - g_x0_vs_xi.at( sid )->Eval( xi-de_xi/2. );
     const double D = de_x / de_xi;  // m
     const double Lx = g_Lx_vs_xi.at( sid )->Eval( xi ); // m
     const double vx = g_vx_vs_xi.at( sid )->Eval( xi );

@@ -72,6 +72,7 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
 
   TGraphErrors gr_mass_massrapmatch, gr_mass_massmatch, gr_mass_rapmatch, gr_mass_nomatch;
   TGraphErrors gr_rap_massrapmatch, gr_rap_massmatch, gr_rap_rapmatch, gr_rap_nomatch;
+  TGraphErrors gr_massrap;
 
   unsigned int num_massmatch = 0, num_rapmatch = 0, num_massrapmatch = 0, num_nomatch = 0;
 
@@ -113,8 +114,8 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
 
       //----- reconstruct the kinematics
       //if ( ev.proton_track_xi[j] < pots_accept[pot_id] )
-      //if ( xi < pots_accept[pot_id] )
-      if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
+      //if ( xi < pots_accept[pot_id] || xi > 0.15 ) continue;
+      //if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
 
       //----- associate each track to a RP
       if      ( ev.fwd_track_arm[j] == 0 && ev.fwd_track_pot[j] == 2 ) xi_45n.emplace_back( xi, xi_err, ev.fwd_track_x[j]+al.x, ev.fwd_track_y[j]-al.y );
@@ -180,8 +181,8 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
 
       if ( ev.diphoton_pt1[j] < 75. ) continue;
       if ( ev.diphoton_pt2[j] < 75. ) continue;
-      if ( fabs( ev.diphoton_eta1[j] ) > eta_cut || ( fabs( ev.diphoton_eta1[j] ) > min_etaveto && fabs( ev.diphoton_eta1[j] ) < max_etaveto ) ) continue;
-      if ( fabs( ev.diphoton_eta2[j] ) > eta_cut || ( fabs( ev.diphoton_eta2[j] ) > min_etaveto && fabs( ev.diphoton_eta2[j] ) < max_etaveto ) ) continue;
+      //if ( fabs( ev.diphoton_eta1[j] ) > eta_cut || ( fabs( ev.diphoton_eta1[j] ) > min_etaveto && fabs( ev.diphoton_eta1[j] ) < max_etaveto ) ) continue;
+      //if ( fabs( ev.diphoton_eta2[j] ) > eta_cut || ( fabs( ev.diphoton_eta2[j] ) > min_etaveto && fabs( ev.diphoton_eta2[j] ) < max_etaveto ) ) continue;
       if ( ev.diphoton_r91[j] < 0.94 ) continue;
       if ( ev.diphoton_r92[j] < 0.94 ) continue;
       if ( ev.diphoton_mass[j] < 350. ) continue;
@@ -195,8 +196,8 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
                   xim = ( ev.diphoton_pt1[j]*exp( -ev.diphoton_eta1[j] ) + ev.diphoton_pt2[j]*exp( -ev.diphoton_eta2[j] ) ) / sqrt_s;
 
       //if ( xi < pots_accept_90pc[pot_id] || xi > 0.15 ) continue; //FIXME FIXME FIXME
-      if ( ( xim < pots_accept_90pc[102] && xim < pots_accept_90pc[103] ) || xim > 0.15 ) continue; //FIXME FIXME
-      if ( ( xip < pots_accept_90pc[2] && xip < pots_accept_90pc[3] ) || xip > 0.15 ) continue;
+//      if ( ( xim < pots_accept_90pc[102] && xim < pots_accept_90pc[103] ) || xim > 0.15 ) continue; //FIXME FIXME
+//      if ( ( xip < pots_accept_90pc[2] && xip < pots_accept_90pc[3] ) || xip > 0.15 ) continue;
 
       has_diph_cand = true;
 
@@ -244,6 +245,7 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
       float diphoton_mass_error = ev.diphoton_mass[j]*rel_err_mass;
       float diphoton_rapidity_error = fabs( ev.diphoton_rapidity[j] )*rel_err_rap;
 
+      size_t i = 0;
       for ( const auto cand : candidates ) {
         h_mass_all->Fill( cand.mass() );
         h_rap_all->Fill( cand.rapidity() );
@@ -253,6 +255,8 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
         h_rapdiff->Fill( cand.rapidity()-cms.Rapidity() );*/
         h_massratio->Fill( ( cms.M()-cand.mass() )/std::hypot( diphoton_mass_error, cand.mass_error() ) );
         h_rapdiff->Fill( ( cms.Rapidity()-cand.rapidity() )/std::hypot( diphoton_rapidity_error, cand.rapidity_error() ) );
+        gr_massrap.SetPoint( i, cand.mass()-cms.M(), cand.rapidity()-cms.Rapidity() );
+        gr_massrap.SetPointError( i, hypot( cand.mass_error(), diphoton_mass_error ), hypot( cand.rapidity_error(), diphoton_rapidity_error ) );
         if ( mass_match && rap_match ) {
           cout << "@@@ DOUBLE TAGGING" << endl;
           cout << "event:" << ev.run_id << ":" << ev.lumisection << ":" << ev.event_number << endl;
@@ -296,6 +300,7 @@ void massrap_matcher( double num_sigma = 2., const char* sample = "/eos/cms/stor
           num_nomatch++;
         }
         cout << "matching: " << mass_match << "\t" << rap_match << endl;
+        ++i;
       }
     } // loop on diphotons
     if ( has_diph_cand ) {
@@ -342,6 +347,14 @@ cout << "in plot:\n\t" << "not matching: " << num_nomatch << "\n\tmass match: " 
   plot_matching( num_sigma, "2d_massmatch", gr_mass_nomatch, gr_mass_rapmatch, gr_mass_massmatch, gr_mass_massrapmatch, 300., 1800. );
   //plot_matching( num_sigma, "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -3., 3., 0.15 );
   plot_matching( num_sigma, "2d_rapmatch", gr_rap_nomatch, gr_rap_rapmatch, gr_rap_massmatch, gr_rap_massrapmatch, -2., 2., false );
+  {
+    Canvas c( "2d_massrap_match", up_label.c_str(), "Preliminary" );
+    gr_massrap.SetTitle( "m_{pp}-m_{#gamma#gamma} (GeV)@@y_{pp}-y_{#gamma#gamma}" );
+    gr_massrap.SetMarkerStyle( 24 );
+    gr_massrap.Draw( "ap" );
+    c.Prettify( gr_massrap.GetHistogram() );
+    c.Save( "pdf,png", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
+  }
 
   for ( auto& nh : map<const char*,TH1D*>{ { "1d_massmatch", h_mass_all }, { "1d_rapmatch", h_rap_all } } ) {
     Canvas c( nh.first, up_label.c_str(), "Preliminary" );

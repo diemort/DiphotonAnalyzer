@@ -27,7 +27,7 @@ void plot_sel_efficiency_aqgc()
   vector<sample_t> samples = {
     //{ 0., 0., "/eos/cms/store/user/lforthom/twophoton/samples_80x/output_GammaGammaToGammaGamma_fpmc_justin_sm.root", 1.3988e-05, 100000 },
     //{ 0.,     0.,      "samples/ntuple-sm_gggg.root", 1.3988e-05, 0.1398, 5000 },
-    { 0.,     1.e-13,  "samples/ntuple-aqgc-zeta1_0_zeta2_1e-13.root",        1.3068e-4, 9.3727e-3, 5000 },
+    /*{ 0.,     1.e-13,  "samples/ntuple-aqgc-zeta1_0_zeta2_1e-13.root",        1.3068e-4, 9.3727e-3, 5000 },
     { 1.e-13, 0.,      "samples/ntuple-aqgc-zeta1_1e-13_zeta2_0.root",        5.7066e-4, 4.0904e-2, 5000 },
     { 1.e-13, 1.e-13,  "samples/ntuple-aqgc-zeta1_1e-13_zeta2_1e-13.root",    1.1770e-3, 8.4366e-2, 5000 },
     { 1.e-12, 0.,      "samples/ntuple-aqgc-zeta1_1e-12_zeta2_0.root",        5.7055e-2, 4.0906,    5000 },
@@ -50,7 +50,11 @@ void plot_sel_efficiency_aqgc()
     { 1.e-13, 1.e-12,  "samples/ntuple-aqgc-zeta1_1e-13_zeta2_1e-12.root",    1.8399e-2, 1.3192,    5000 },
     { 5.e-13, 0.,      "samples/ntuple-aqgc-zeta1_5e-13_zeta2_0.root",        1.4263e-2, 1.0227,    4900 },
     { 5.e-13, 5.e-13,  "samples/ntuple-aqgc-zeta1_5e-13_zeta2_5e-13.root",    2.9418e-2, 2.1092,    5000 },
-    { 5.e-13, 1.e-13,  "samples/ntuple-aqgc-zeta1_5e-13_zeta2_1e-13.root",    1.6771e-2, 1.2025,    5000 },
+    { 5.e-13, 1.e-13,  "samples/ntuple-aqgc-zeta1_5e-13_zeta2_1e-13.root",    1.6771e-2, 1.2025,    5000 },*/
+    { 1.e-12, 0., "samples/ntuple-aqgc-zeta1_1e-12_zeta2_0_tightxi.root", 3.90508e-2, 0., 10000 },
+    { 0., 1.e-12, "samples/ntuple-aqgc-zeta1_0_zeta2_1e-12_tightxi.root", 8.94720e-3, 0., 10000 },
+    { 1.e-13, 1.e-13, "samples/ntuple-aqgc-zeta1_1e-13_zeta2_1e-13_tightxi.root", 8.04886e-4, 0., 10000 },
+    { 1.e-13, 0., "samples/ntuple-aqgc-zeta1_1e-13_zeta2_0_tightxi.root", 3.90226e-4, 0., 10000 },
   };
   const size_t num_samples = samples.size();
   vector<TH1D> v_h_mass( num_samples ), v_h_ptpair( num_samples ), v_h_ptlead( num_samples ), v_h_acop( num_samples );

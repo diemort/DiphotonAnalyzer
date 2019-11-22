@@ -196,16 +196,16 @@ class Plotter
       c.Save( "pdf,png", out_path_ );
     }
 
-    void draw_multiplot( const char* filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, TString label = "", bool colours = true, bool logy = false, bool draw_legend = true, bool logx = false, double min_y = -0.4, double max_y = 2.4 ) const {
-      std::string ratio_plot_filename = Form( "%s_ratio", filename );
-      Canvas c( filename, top_label_, "Preliminary", true );
+    void draw_multiplot( const std::string& filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, const std::string& label = "", bool colours = true, bool logy = false, bool draw_legend = true, bool logx = false, double min_y = -0.4, double max_y = 2.4 ) const {
+      std::string ratio_plot_filename = filename+"_ratio";
+      Canvas c( filename.c_str(), top_label_, "Preliminary", true );
       TH1D* h_data = 0;
       double max_bin = 0.;
       unsigned short i = 0;
       THStack hs_mc, /*hs_data,*/ hs_sig;
       TGraphAsymmErrors* hist_data = 0;
       if ( draw_legend ) {
-        const float leg_size_y = TMath::Max( 0.15, 0.03*( h_map_data.size()+h_map_mc.size()+h_map_sig.size() ) );
+        const float leg_size_y = TMath::Max( 0.15, 0.032*( h_map_data.size()+h_map_mc.size()+h_map_sig.size() ) );
         c.SetLegendSizeY( leg_size_y );
         c.SetLegendX1( 0.45 );
         c.SetLegendY1( 0.75-leg_size_y+0.15 );
@@ -230,11 +230,10 @@ class Plotter
         //hs_data.Add( hist->GetHistogram() );
         i++;
       }
-      TH1D* hist = 0;
       TH1D* h_mc = 0;
       i = 0;
       for ( auto& h : h_map_mc ) {
-        hist = dynamic_cast<TH1D*>( h.second );
+        auto hist = dynamic_cast<TH1D*>( h.second );
         if ( i == 0 ) {
           h_mc = dynamic_cast<TH1D*>( hist->Clone() );
           h_mc->SetTitle( hist->GetTitle() );
@@ -254,24 +253,25 @@ class Plotter
       }
       i = 0;
       for ( auto& h : h_map_sig ) {
-        hist = dynamic_cast<TH1D*>( h.second );
+        auto hist = dynamic_cast<TH1D*>( h.second );
         hist->SetLineColor( kGreen+1 );
         hist->SetLineWidth( 3 );
-        TH1D* hist_stacked = dynamic_cast<TH1D*>( hist->Clone() );
         hist->SetLineStyle( i+1 );
-        if ( i == 0 ) // SM prediction comes first
-          hs_sig.Add( hist );
-        if ( i == 0 )
-          hs_sig.SetTitle( hist->GetTitle() );
         //hist_stacked->SetLineColor( kBlack );
-        if ( i == 0 ) { // only stack the SM prediction on the MC contributions
+        if ( i == 0 ) { // SM prediction comes first
+          hs_sig.SetTitle( hist->GetTitle() );
+          // only stack the SM prediction on the MC contributions
+          auto hist_stacked = dynamic_cast<TH1D*>( hist->Clone() );
           hist_stacked->SetFillColorAlpha( kGreen-9, 0.5 );
-          hs_mc.Add( hist_stacked );
+          hist_stacked->SetLineWidth( 3 );
+          //FIXME hs_mc.Add( hist_stacked );
+          if ( !h.first.empty() && draw_legend )
+            c.AddLegendEntry( hist_stacked, h.first.c_str(), "lf" );
+          //h_mc->Add( hist_stacked );
         }
-        hist_stacked->SetLineWidth( 3 );
-        if ( strcmp( h.first.c_str(), "" ) != 0 && draw_legend )
-          c.AddLegendEntry( hist_stacked, h.first.c_str(), ( i == 0 ) ? "lf" : "l" );
-        //h_mc->Add( hist_stacked );
+        else if ( !h.first.empty() && draw_legend )
+          c.AddLegendEntry( hist, h.first.c_str(), "l" );
+        hs_sig.Add( hist );
         i++;
       }
       hs_mc.Draw( "hist" );
@@ -290,10 +290,12 @@ class Plotter
       max_bin = TMath::Max( h_data->GetMaximum(), max_bin );
       max_bin = TMath::Max( hs_mc.GetMaximum(), max_bin );
       max_bin = TMath::Max( hs_sig.GetMaximum(), max_bin );
-      hist = ( TH1D* )hs_mc.GetHistogram();
       double min_bin = ( logy ) ? 5.e-1 : 0.;
       if ( h_mc->GetMinimum() < min_bin )
         min_bin /= 5.;
+      auto hist = hs_mc.GetHistogram();
+      if ( !hist )
+        throw runtime_error( "Failed to retrieve histogram for MC stack! ("+filename+")" );
       c.Prettify( hist );
       /*if ( logy ) {
         hs_mc.SetMaximum( max_bin*10. );
@@ -316,11 +318,11 @@ class Plotter
         h_data->SetLineWidth( 2 );
         hm.emplace_back( "data", h_data );
         hs_mc.SetTitle( "" );
-        ratio = c.RatioPlot( hm, min_y, max_y, "Data/MC", 1.0 );
+        ratio = c.RatioPlot( hm, min_y, max_y, "Data/Pred.", 1.0 );
         /*if ( angle != -1. )
           for ( unsigned short j = 1; j < ratio->GetNbinsX(); ++j )
             ratio->GetXaxis()->ChangeLabel( j, -45. );*/
-        //c.RatioPlot( hm, 0.05, 1.95, "Data/MC", 1.0 );
+        //c.RatioPlot( hm, 0.05, 1.95, "Data/Pred.", 1.0 );
         c.cd( 1 );
       }
       if ( logy ) dynamic_cast<TPad*>( c.GetPad( 1 ) )->SetLogy();
@@ -335,14 +337,14 @@ class Plotter
         //c.SetLogx();
       }
       c.cd();
-      if ( !label.IsNull() ) {
+      if ( !label.empty() ) {
         //auto lab = new PaveText( 0.135, 0.96, 0.2, 0.97 );
         auto lab = new PaveText( 0.135, 0.95, 0.2, 0.96 );
         //fTopLabel.reset( new PaveText( 0.5, 0.95, 0.925, 0.96 ) );
         //auto lab = new PaveText( 0.16, 0.87, 0.2, 0.89 );
         //lab->SetTextSize( 0.05 );
         lab->SetTextAlign( kVAlignBottom+kHAlignLeft );
-        lab->AddText( label );
+        lab->AddText( label.c_str() );
         lab->Draw( "same" );
       }
       c.Save( "pdf,png", out_path_ );

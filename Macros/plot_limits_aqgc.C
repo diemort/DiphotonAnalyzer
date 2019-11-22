@@ -1,4 +1,5 @@
 #include "Canvas.h"
+#include "EllipseTGraphRMM.cxx"
 
 #define OUT_PATH "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp/limits"
 
@@ -124,6 +125,7 @@ void plot_limits_aqgc( const char* path = "/afs/cern.ch/work/l/lforthom/private/
   auto gr_cont = static_cast<TGraph*>( cont->At( 0 ) );
   if ( !gr_cont )
     throw runtime_error( "failed to build contour graph!" );
+
   {
     Canvas c( "limits_aqgc_2d", "9.4 fb^{-1} (13 TeV)", "Preliminary", false, Canvas::Align::right );
     gr_cont->SetTitle( ";#zeta_{1} (#times 10^{-12});#zeta_{2} (#times 10^{-12})" );
@@ -147,6 +149,14 @@ void plot_limits_aqgc( const char* path = "/afs/cern.ch/work/l/lforthom/private/
     c.AddLegendEntry( &gr_1d, "CMS 1-D limit, 95% confidence region", "l" );
     c.Prettify( (TH1D*)gr_cont->GetHistogram() );
     c.SetLogz();
+    /*auto cont_1 = gr_xs.GetContourList( 1.e-2 );
+    if ( !cont || cont_1->GetSize() > 1 )
+      throw runtime_error( "invalid contour retrieved!" );
+    auto gr_cont_1 = static_cast<TGraph*>( cont_1->At( 0 ) );
+    if ( !gr_cont_1 )
+      throw runtime_error( "failed to build contour graph!" );
+    EllipseTGraphRMM( gr_cont_1 );*/
+    EllipseTGraphRMM( gr_cont );
     //gr_xs.GetXaxis()->SetRangeUser( -2.5e-12, 2.5e-12 );
     c.Save( "pdf,png", OUT_PATH );
   }
