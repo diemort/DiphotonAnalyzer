@@ -53,7 +53,7 @@ void analyze_efficiency()
     { 102, 0.045 },
     { 103, 0.038 }
   };
-  map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_y_win, h_denom_y_win, h_num_xi, h_denom_xi, h_num_xi_optbins, h_denom_xi_optbins;
+  map<unsigned short,TH1D*> h_num_x, h_denom_x, h_num_y, h_denom_y, h_num_y_win, h_denom_y_win, h_num_xi, h_denom_xi, h_num_xi_highxi, h_denom_xi_highxi, h_num_xi_optbins, h_denom_xi_optbins;
   map<unsigned short,TH2D*> h2_num_xy, h2_denom_xy;
   double y_bins[] = {
    -10., -9., -8., -7., -6.,
@@ -91,6 +91,8 @@ void analyze_efficiency()
     //h_num_xi[p.first] = new TH1D( Form( "h_num_xi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), 26, 0.02, 0.15 );
     h_num_xi[p.first] = new TH1D( Form( "h_num_xi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), 52, 0.02, 0.15 );
     h_denom_xi[p.first] = dynamic_cast<TH1D*>( h_num_xi[p.first]->Clone( Form( "h_denom_xi_%d", p.first ) ) );
+    h_num_xi_highxi[p.first] = new TH1D( Form( "h_num_xi_highxi_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), 20, 0.1, 0.15 );
+    h_denom_xi_highxi[p.first] = dynamic_cast<TH1D*>( h_num_xi_highxi[p.first]->Clone( Form( "h_denom_xi_highxi_%d", p.first ) ) );
     h_num_xi_optbins[p.first] = new TH1D( Form( "h_num_xi_optbins_%d", p.first ), Form( "Track #xi (%s)@@Entries@@?.3f", p.second ), sizeof( xi_bins )/sizeof( double )-1, xi_bins );
     h_denom_xi_optbins[p.first] = dynamic_cast<TH1D*>( h_num_xi_optbins[p.first]->Clone( Form( "h_denom_xi_optbins_%d", p.first ) ) );
     h2_num_xy[p.first] = new TH2D( Form( "h2_num_xy_%d", p.first ), Form( "Track x (%s) (mm)@@Track y (%s) (mm)", p.second, p.second ), 48, 0., 12., 64, -8., 8. );
@@ -123,6 +125,7 @@ void analyze_efficiency()
       h_denom_x[pid]->Fill( trk_x );
       h_denom_y[pid]->Fill( trk_y );
       h_denom_xi[pid]->Fill( xi );
+      h_denom_xi_highxi[pid]->Fill( xi );
       h_denom_xi_optbins[pid]->Fill( xi );
       if ( trk_x > pot_x_mineff[pid] ) h_denom_y_win[pid]->Fill( trk_y );
       h2_denom_xy[pid]->Fill( trk_x, trk_y );
@@ -159,11 +162,13 @@ void analyze_efficiency()
       h_num_x[pid]->Fill( trk_x );
       h_num_y[pid]->Fill( trk_y );
       h_num_xi[pid]->Fill( xi );
+      h_num_xi_highxi[pid]->Fill( xi );
       h_num_xi_optbins[pid]->Fill( xi );
       m_h_num_x[pid][mb_phys.fill_number]->Fill( trk_x );
       m_h_num_xi[pid][mb_phys.fill_number]->Fill( xi );
       if ( trk_x > pot_x_mineff[pid] ) h_num_y_win[pid]->Fill( trk_y );
-      h2_num_xy[pid]->Fill( trk_x, trk_y, 1./num_entries );
+      //h2_num_xy[pid]->Fill( trk_x, trk_y, 1./num_entries );
+      h2_num_xy[pid]->Fill( trk_x, trk_y );
       //m_p_xvsxi[pid]->Fill( xi, trk_x );
       m_p_xvsxi[pid]->Fill( xi, trk_x*1.e-3 );
     }
@@ -179,27 +184,22 @@ void analyze_efficiency()
     h_denom_y[p.first]->Sumw2();
     h_num_xi[p.first]->Sumw2();
     h_denom_xi[p.first]->Sumw2();
+    h_num_xi_highxi[p.first]->Sumw2();
+    h_denom_xi_highxi[p.first]->Sumw2();
     h_num_xi_optbins[p.first]->Sumw2();
     h_denom_xi_optbins[p.first]->Sumw2();
     h_num_y_win[p.first]->Sumw2();
     h_denom_y_win[p.first]->Sumw2();
-    h_num_x[p.first]->Scale( 1./h_num_x[p.first]->Integral() );
-    h_denom_x[p.first]->Scale( 1./h_denom_x[p.first]->Integral() );
     const auto limits = pot_fit_limits[p.first];
     const double weight_num = h_num_x[p.first]->Integral( h_num_x[p.first]->GetXaxis()->FindBin( limits.first ), h_num_x[p.first]->GetXaxis()->FindBin( limits.second ) );
     const double weight_denom = h_denom_x[p.first]->Integral( h_denom_x[p.first]->GetXaxis()->FindBin( limits.first ), h_denom_x[p.first]->GetXaxis()->FindBin( limits.second ) );
     //const double weight_denom2 = h_denom_x[p.first]->Integral( h_denom_x[p.first]->GetXaxis()->FindBin( ( p.first / 100 == 0 ) ? 9. : 7.5 ), h_denom_x[p.first]->GetXaxis()->FindBin( 13. ) );
     const double norm = weight_denom/weight_num;
     //cout << p.second << "::" << weight_num << "|" << weight_denom << "|ratio=" << norm << endl;
-    h_num_x[p.first]->Scale( norm );
-    h_num_y[p.first]->Scale( norm/h_num_y[p.first]->Integral() );
-    h_denom_y[p.first]->Scale( 1./h_denom_y[p.first]->Integral() );
-    h_num_y_win[p.first]->Scale( norm/h_num_y_win[p.first]->Integral() );
-    h_denom_y_win[p.first]->Scale( 1./h_denom_y_win[p.first]->Integral() );
-    h_num_xi[p.first]->Scale( norm/h_num_xi[p.first]->Integral() );
-    h_denom_xi_optbins[p.first]->Scale( 1./h_denom_xi[p.first]->Integral() );
-    h_num_xi_optbins[p.first]->Scale( norm/h_num_xi_optbins[p.first]->Integral() );
-    h_denom_xi[p.first]->Scale( 1./h_denom_xi[p.first]->Integral() );
+    for ( auto& hist : { h_num_x[p.first], h_num_y[p.first], h_num_y_win[p.first], h_num_xi[p.first], h_num_xi_highxi[p.first], h_num_xi_optbins[p.first] } )
+      hist->Scale( norm );
+    //h2_num_xy[p.first]->Scale( norm, "width" );
+    //h2_denom_xy[p.first]->Scale( 1., "width" );
     h2_num_xy[p.first]->Scale( norm/h2_num_xy[p.first]->Integral( "width" ) );
     h2_denom_xy[p.first]->Scale( 1./h2_denom_xy[p.first]->Integral( "width" ) );
     for ( auto& h_fill : m_h_num_x[p.first] ) {
@@ -225,12 +225,14 @@ void analyze_efficiency()
   text->SetTextSize( 0.035 );
 
   auto effErf = [](double* x, double* p) { return ( TMath::Erf( ( x[0] - p[0] )/p[1] )+1. )*0.5*p[2]; };
+  auto effErfInv = [](double* x, double* p) { return ( -TMath::Erf( ( x[0] - p[0] )/p[1] )+1. )*0.5*p[2]; };
 
   map<string,pair<map<unsigned short,TH1D*>,map<unsigned short,TH1D*> > > hists = {
     { "x", { h_num_x, h_denom_x } },
     { "y", { h_num_y, h_denom_y } },
     { "y_win", { h_num_y_win, h_denom_y_win } },
     { "xi", { h_num_xi, h_denom_xi } },
+    { "highxi", { h_num_xi_highxi, h_denom_xi_highxi } },
     { "xi_optbins", { h_num_xi_optbins, h_denom_xi_optbins } }
   };
   map<string,pair<map<unsigned short,map<unsigned short,TH1D*> >,pair<map<unsigned short,TH1D*>,map<unsigned short,TH1D*> > > > hists_perfill = {
@@ -238,26 +240,29 @@ void analyze_efficiency()
     { "xi", { m_h_num_xi, { h_num_xi, h_denom_xi } } }
   };
   unsigned short i = 0;
+  //auto file = TFile::Open( "/afs/cern.ch/user/l/lforthom/public/forJonathan/output_efficiencies.root", "RECREATE" );
+  auto file = TFile::Open( "output_efficiencies.root", "RECREATE" );
   for ( auto& h_map : hists ) {
     string distrib = h_map.first;
     auto hist = h_map.second;
     for ( const auto& p : pot_names ) {
       auto limits = pot_fit_limits[p.first];
-      auto range = new TArrow( limits.first, 0.015, limits.second, 0.015, 0.015, "<>" );
+      auto histo = hist.first[p.first];
+      auto range = new TArrow;
       //range->SetLineColor( kGray+3 );
       range->SetLineColor( kRed+1 );
       range->SetLineWidth( 3 );
       { // plot both the numerator and denominator
-        Canvas c( Form( "dist_%s_%s", distrib.c_str(), p.second ), top_title.c_str(), "Preliminary" );
+        Canvas c( Form( "dist_%s_%s", distrib.c_str(), p.second ), top_title.c_str(), "CMS-TOTEM", "Preliminary" );
         if ( distrib == "y" || distrib == "y_win" ) c.SetLegendX1( 0.15 );
         else c.SetLegendX1( 0.475 );
         c.SetLegendY1( 0.7 );
         THStack hs;
-        hs.Add( hist.first[p.first], "hist" );
-        c.AddLegendEntry( hist.first[p.first], "All runs in 2016B/C/G", "f" );
-        hist.first[p.first]->SetLineColor( kBlack );
-        hist.first[p.first]->SetFillStyle( 3004 );
-        hist.first[p.first]->SetFillColor( kBlack );
+        hs.Add( histo, "hist" );
+        c.AddLegendEntry( histo, "All runs in 2016B/C/G", "f" );
+        histo->SetLineColor( kBlack );
+        histo->SetFillStyle( 3004 );
+        histo->SetFillColor( kBlack );
         hs.Add( hist.second[p.first], "e" );
         c.AddLegendEntry( hist.second[p.first], Form( "Reference fill (%d)", ref_fill ), "lp" );
         hist.second[p.first]->SetMarkerStyle( 24 );
@@ -265,32 +270,35 @@ void analyze_efficiency()
         hist.second[p.first]->SetLineColor( kBlack );
         //hist.second[p.first]->SetLineWidth( 2 );
         hs.Draw( "nostack" );
-        hs.GetHistogram()->SetTitle( hist.first[p.first]->GetTitle() );
+        hs.GetHistogram()->SetTitle( histo->GetTitle() );
         c.Prettify( hs.GetHistogram() );
-        if ( distrib == "xi" ) hs.SetMaximum( 0.052 );
-        else hs.SetMaximum( 0.1 );
+        //if ( distrib == "xi" ) hs.SetMaximum( 0.052 );
+        //else if ( distrib != "highxi" ) hs.SetMaximum( 0.1 );
         if ( distrib == "x" ) {
-          range->Draw();
-          text->DrawText( 0.5*( limits.first+limits.second ), 0.0175, "Norm. range" );
+          range->DrawArrow( limits.first, histo->GetMaximum()*0.3, limits.second, histo->GetMaximum()*0.3, 0.015, "<>" );
+          text->DrawText( 0.5*( limits.first+limits.second ), histo->GetMaximum()*0.35, "Norm. range" );
         }
         c.Save( "pdf,png", loc_www );
+        c.Write();
       }
       { // plot the efficiencies
-        Canvas c( Form( "ratio_%s_%s", distrib.c_str(), p.second ), top_title.c_str(), "Preliminary" );
+        Canvas c( Form( "ratio_%s_%s", distrib.c_str(), p.second ), top_title.c_str(), "CMS-TOTEM", "Preliminary" );
         gStyle->SetOptStat( 0 );
-        auto ratio = dynamic_cast<TH1D*>( hist.first[p.first]->Clone() ), den = dynamic_cast<TH1D*>( hist.second[p.first]->Clone() );
+        auto ratio = dynamic_cast<TH1D*>( histo->Clone() );
+        auto den = dynamic_cast<TH1D*>( hist.second[p.first]->Clone() );
         ratio->SetTitle( TString( ratio->GetTitle() ).ReplaceAll( "Entries", "Efficiency" ) );
         ratio->Divide( den );
         ratio->Draw( "e0" );
-        /*auto ratio = new TGraphAsymmErrors( (TH1D*)hist.first[p.first]->Clone(), (TH1D*)hist.second[p.first]->Clone(), "pois" );
+        /*auto ratio = new TGraphAsymmErrors( (TH1D*)histo->Clone(), (TH1D*)hist.second[p.first]->Clone(), "pois" );
         ratio->Draw( "ap" );
-        ratio->SetTitle( TString( hist.first[p.first]->GetTitle() ).ReplaceAll( "Entries", "Efficiency" ) );
+        ratio->SetTitle( TString( histo->GetTitle() ).ReplaceAll( "Entries", "Efficiency" ) );
         c.Prettify( ratio->GetHistogram() );*/
         c.Prettify( ratio );
         ratio->SetMarkerStyle( 24 );
         ratio->SetLineColor( kBlack );
         ratio->GetYaxis()->SetRangeUser( 0.01, 1.49 );
-        if ( distrib == "x" || distrib == "xi" || distrib == "xi_optbins" ) {
+        if ( distrib == "x" || distrib == "xi" || distrib == "xi_optbins" || distrib == "highxi" ) {
+          //--- lower-bound fits will be performed on these distributions
           const double min_x = ( distrib == "x" )
             ? ( ( p.first / 100 == 0 ) ? 3. : 2. )
             : 0.03;
@@ -298,39 +306,60 @@ void analyze_efficiency()
           c.SetLegendX1( 0.45 );
           c.SetLegendY1( 0.18 );
           c.SetLegendSizeY( 0.2 );
-          double range_min = 0., range_max = 0.;
-          if ( distrib == "x" ) {
-            range_min = ( p.first/100 == 0 ) ? 5.2 : 3.2;
-            range_max = 12.;
+          if ( distrib != "highxi" ) {
+            double range_min = 0., range_max = 0.;
+            if ( distrib == "x" ) {
+              range_min = ( p.first/100 == 0 ) ? 5.2 : 3.2;
+              range_max = 12.;
+            }
+            else {
+              range_min = erf_fit_min_xi[p.first];
+              range_max = 0.15;
+            }
+            auto erf = new TF1( "myErf", effErf, range_min, range_max, 3 );
+            erf->SetParameter( 0, 0.05 );
+            erf->SetParameter( 1, 5. );
+            erf->SetParameter( 2, 1. );
+            ratio->Write( Form( "eff_%d", p.first ) );
+            auto fit_res = ratio->Fit( erf, "rsn", "", range_min, 0.14 );
+            erf->Draw( "same" );
+            erf->SetLineColor( kRed+1 );
+            erf->SetLineWidth( 2 );
+            erf->Write( Form( "erf_lowxi_%d", p.first ) );
+            if ( (int)fit_res == 0 ) {
+              c.AddLegendEntry( erf, Form( "Fit (%.3f, %.3f, %.2f),", fit_res->Parameter( 0 ), fit_res->Parameter( 1 ), fit_res->Parameter( 2 ) ), "l" );
+              c.AddLegendEntry( 0, Form( "#chi^{2}/ndf = %.2f/%d", fit_res->Chi2(), fit_res->Ndf() ), "" );
+              cout << distrib << "::" << p.first << "::" << erf->GetX( 0.85 ) << "|" << erf->GetX( 0.9 ) << "|" << erf->GetX( 0.95 ) << endl;
+              auto line90 = new TLine( erf->GetX( 0.9 ), 0.01, erf->GetX( 0.9 ), 0.9 );
+              line90->Draw( "same" );
+              line90->SetLineStyle( 2 );
+              line90->SetLineWidth( 3 );
+              line90->SetLineColor( kGray+2 );
+              c.AddLegendEntry( line90, Form( "90%% threshold (%.3f)", erf->GetX( 0.9 ) ), "l" );
+              auto line95 = new TLine( erf->GetX( 0.95 ), 0.01, erf->GetX( 0.95 ), 0.95 );
+              line95->Draw( "same" );
+              line95->SetLineStyle( 2 );
+              line95->SetLineWidth( 3 );
+              line95->SetLineColor( kGray+3 );
+              c.AddLegendEntry( line95, Form( "95%% threshold (%.3f)", erf->GetX( 0.95 ) ), "l" );
+            }
           }
-          else {
-            range_min = erf_fit_min_xi[p.first];
-            range_max = 0.15;
-          }
-          auto erf = new TF1( "myErf", effErf, range_min, range_max, 3 );
-          erf->SetParameter( 0, 0.05 );
-          erf->SetParameter( 1, 5. );
-          erf->SetParameter( 2, 1. );
-          auto fit_res = ratio->Fit( erf, "rsn" );
-          erf->Draw( "same" );
-          erf->SetLineColor( kRed+1 );
-          erf->SetLineWidth( 2 );
-          if ( (int)fit_res == 0 ) {
-            c.AddLegendEntry( erf, Form( "Fit (%.3f, %.3f, %.2f),", fit_res->Parameter( 0 ), fit_res->Parameter( 1 ), fit_res->Parameter( 2 ) ), "l" );
-            c.AddLegendEntry( 0, Form( "#chi^{2}/ndf = %.2f/%d", fit_res->Chi2(), fit_res->Ndf() ), "" );
-            cout << distrib << "::" << p.first << "::" << erf->GetX( 0.85 ) << "|" << erf->GetX( 0.9 ) << "|" << erf->GetX( 0.95 ) << endl;
-            auto line90 = new TLine( erf->GetX( 0.9 ), 0.01, erf->GetX( 0.9 ), 0.9 );
-            line90->Draw( "same" );
-            line90->SetLineStyle( 2 );
-            line90->SetLineWidth( 3 );
-            line90->SetLineColor( kGray+2 );
-            c.AddLegendEntry( line90, Form( "90%% threshold (%.3f)", erf->GetX( 0.9 ) ), "l" );
-            auto line95 = new TLine( erf->GetX( 0.95 ), 0.01, erf->GetX( 0.95 ), 0.95 );
-            line95->Draw( "same" );
-            line95->SetLineStyle( 2 );
-            line95->SetLineWidth( 3 );
-            line95->SetLineColor( kGray+3 );
-            c.AddLegendEntry( line95, Form( "95%% threshold (%.3f)", erf->GetX( 0.95 ) ), "l" );
+          else { // high-xi decreasing efficiency x acceptance
+            TF1* erf_decr = nullptr;
+            if ( p.first/100 == 0 ) // sector 4-5
+              erf_decr = new TF1( "pol0", "pol0", 0.12, 0.15 );
+            else { // sector 5-6
+              erf_decr = new TF1( "myErfDecr", effErfInv, 0.1, 0.15, 3 );
+              erf_decr->SetParameter( 0, 0.05 );
+              erf_decr->SetParameter( 1, 5. );
+              erf_decr->SetParameter( 2, 1. );
+            }
+            gStyle->SetOptFit( 111 );
+            auto fit_res = ratio->Fit( erf_decr, "rs" );
+            erf_decr->Draw( "same" );
+            erf_decr->SetLineColor( kBlue-2 );
+            erf_decr->SetLineWidth( 3 );
+            erf_decr->Write( Form( "erf_highxi_%d", p.first ) );
           }
         }
         if ( distrib == "x" ) range->Draw( "same" );
@@ -347,7 +376,8 @@ void analyze_efficiency()
           c.AddLegendEntry( ratio2, "With x cut", "p" );
         }
         c.SetGrid( 1, 1 );
-        c.Save( "pdf,png", loc_www );
+        c.Save( "pdf,png,root", loc_www );
+        c.Write();
       }
     }
     i++;
@@ -357,23 +387,24 @@ void analyze_efficiency()
   //TColor::InvertPalette();
   for ( const auto& p : pot_names ) {
     {
-      Canvas c( Form( "ratio2d_xy_%s", p.second ), top_title.c_str(), "Preliminary" );
+      Canvas c( Form( "ratio2d_xy_%s", p.second ), top_title.c_str(), "CMS-TOTEM", "Preliminary" );
       auto ratio = dynamic_cast<TH2D*>( h2_num_xy[p.first]->Clone() );
       ratio->Divide( h2_denom_xy[p.first] );
       ratio->Draw( "colz" );
       c.Pad()->SetRightMargin( 0.175 );
       c.Prettify( ratio );
       //ratio->Scale( 1./ratio->Integral() );
-      ratio->GetZaxis()->SetRangeUser( 0., 1. );
+//      ratio->GetZaxis()->SetRangeUser( 0., 1. );
       ratio->GetZaxis()->SetTitle( "All fills / reference fill" );
       ratio->GetZaxis()->SetTitleOffset( 1.4 );
       c.Save( "pdf,png", loc_www );
+      c.Write();
     }
     for ( auto& dist : hists_perfill ) {
       auto fills_map = dist.second.first[p.first];
       auto num = dist.second.second.first[p.first], denom = dist.second.second.second[p.first];
       {
-        Canvas c( Form( "dist_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "Preliminary" );
+        Canvas c( Form( "dist_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "CMS-TOTEM", "Preliminary" );
         THStack hs;
         c.SetLegendX1( 0.57 );
         c.AddLegendEntry( denom, "Reference fill", "l" );
@@ -399,9 +430,10 @@ void analyze_efficiency()
         c.Prettify( hs.GetHistogram() );
         hs.SetMaximum( denom->GetMaximum()*1.25 );
         c.Save( "pdf,png", loc_www );
+        c.Write();
       }
       {
-        Canvas c( Form( "ratio_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "Preliminary" );
+        Canvas c( Form( "ratio_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "CMS-TOTEM", "Preliminary" );
         THStack hs;
         for ( auto& h : fills_map ) {
           auto ratio = dynamic_cast<TH1D*>( h.second->Clone() );
@@ -427,9 +459,10 @@ void analyze_efficiency()
         one->SetLineWidth( 2 );
         one->Draw( "same" );
         c.Save( "pdf,png", loc_www );
+        c.Write();
       }
       {
-        Canvas c( Form( "ratio_ratio_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "Preliminary" );
+        Canvas c( Form( "ratio_ratio_%s_perfill_%s", dist.first.c_str(), p.second ), top_title.c_str(), "CMS-TOTEM", "Preliminary" );
         THStack hs;
         auto ratio_tot = dynamic_cast<TH1D*>( num->Clone() );
         ratio_tot->Divide( denom );
@@ -452,12 +485,13 @@ void analyze_efficiency()
         one->SetLineWidth( 2 );
         one->Draw( "same" );
         c.Save( "pdf,png", loc_www );
+        c.Write();
       }
     }
   }
 
   {
-    Canvas c( "x_vs_xi_profile", top_title.c_str(), "Preliminary" );
+    Canvas c( "x_vs_xi_profile", top_title.c_str(), "CMS-TOTEM", "Preliminary" );
     c.SetLegendY1( 0.7 );
     unsigned short i = 0;
     for ( const auto& plt : m_p_xvsxi ) {
@@ -478,6 +512,8 @@ void analyze_efficiency()
     }
     c.Prettify( m_p_xvsxi.begin()->second );
     c.Save( "pdf,png", loc_www );
+    c.Write();
   }
+  delete file;
 }
 

@@ -24,7 +24,8 @@ void plot_sel_efficiency_alp()
     double xsec, xsec_bare;
     unsigned int num_events;
   };
-  map<string,float> pots_accept_tight = { { "45N", 0.067 }, { "45F", 0.066 }, { "56N", 0.070 }, { "56F", 0.061 } };
+  //map<string,float> pots_accept_tight = { { "45N", 0.067 }, { "45F", 0.066 }, { "56N", 0.070 }, { "56F", 0.061 } };
+  map<string,float> pots_accept_tight = { { "45N", 0.068 }, { "45F", 0.064 }, { "56N", 0.069 }, { "56F", 0.060 } }; //may20
   TH1D h_binned_mass_data( "data_obs", ";m (GeV);Entries", alp::mass_bins.size()-1, alp::mass_bins.data() );
   const string combine_path = "/afs/cern.ch/work/l/lforthom/private/twophoton/CMSSW_8_1_0/src/HiggsAnalysis/CombinedLimit";
   const string aux_combine_file = "sum_bckg_mass.root";

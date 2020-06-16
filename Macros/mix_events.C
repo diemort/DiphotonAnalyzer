@@ -11,7 +11,7 @@
 //#define OUTPUT_DIR "/afs/cern.ch/user/l/lforthom/www/private/twophoton/test"
 #define OUTPUT_DIR "/afs/cern.ch/user/l/lforthom/www/private/twophoton/test_15may"
 
-void mix_events( const char* input_filename = "fits_results.root", bool scan = true, unsigned long long num_toys = 5000000 )
+void mix_events( const char* input_filename = "fits_results.root", bool scan = true, unsigned long long num_toys = 500000 )
 {
 //  const double exp_yield = 586.877;
 //  const double exp_yield = 525;
@@ -43,9 +43,9 @@ void mix_events( const char* input_filename = "fits_results.root", bool scan = t
   map<unsigned short,TH2D*> m_h2_xicorr;
   map<unsigned short,TH1D*> m_h_xireco;
   map<unsigned short,const char*> m_pot_names = { { 2, "45N" }, { 3, "45F" }, { 102, "56N" }, { 103, "56F" } };
-  map<unsigned short,double> m_pot_limits = { { 2, 0.067 }, { 3, 0.066 }, { 102, 0.070 }, { 103, 0.061 } }; // < 10% radiation damage
+  map<unsigned short,double> m_pot_limits = { { 2, 0.068 }, { 3, 0.064 }, { 102, 0.069 }, { 103, 0.060 } }; // < 10% radiation damage
+  map<unsigned short,double> m_pot_upper_limits = { { 2, 0.111 }, { 3, 0.111 }, { 102, 0.138 }, { 103, 0.138 } };
   //map<unsigned short,double> m_pot_limits = { { 2, 0.034 }, { 3, 0.023 }, { 102, 0.042 }, { 103, 0.032 } };
-  const double max_xigg = 0.15;
   for ( const auto& p : m_pot_names ) {
     m_h2_xicorr[p.first] = new TH2D( Form( "xi_corr_%d", p.first ), Form( ";#xi_{%s};#xi_{#gamma#gamma}", p.second ), 50, 0., 0.2, 50, 0., 0.2 );
     m_h_xireco[p.first] = new TH1D( Form( "xi_reco_%d", p.first ), Form( ";#xi_{%s};Events", p.second ), 50, 0., 0.2 );
@@ -65,7 +65,8 @@ void mix_events( const char* input_filename = "fits_results.root", bool scan = t
   const double weight = exp_yield/num_toys; //FIXME
   cout << "weight=" << weight << endl;
 
-  unsigned long long idx = TMath::Max( 0ll, (long long)( rand()*1./RAND_MAX*num_events-num_toys ) );
+//  unsigned long long idx = TMath::Max( 0ll, (long long)( rand()*1./RAND_MAX*num_events-num_toys ) );
+  unsigned long long idx = 0ull;
 
   unsigned short num_try = 1;
   if ( scan )
@@ -87,12 +88,13 @@ void mix_events( const char* input_filename = "fits_results.root", bool scan = t
     }
     for ( unsigned long long i = 0; i < num_toys; ++i ) {
       //tree->GetEntry( rand()*1./RAND_MAX*num_events );
-      tree->GetEntry( idx++ );
+      //tree->GetEntry( idx++ );
+      tree->GetEntry( idx++ % num_events );
       if ( !scan && fmod( i*1., num_toys*0.1 ) == 0 )
         cout << "event " << i << endl;
 
-      const double xi_45_rnd = mix_45->GetRandom( min( m_pot_limits[  2], m_pot_limits[  3] ), max_xigg );
-      const double xi_56_rnd = mix_56->GetRandom( min( m_pot_limits[102], m_pot_limits[103] ), max_xigg );
+      const double xi_45_rnd = mix_45->GetRandom( min( m_pot_limits[  2], m_pot_limits[  3] ), m_pot_upper_limits[2] );
+      const double xi_56_rnd = mix_56->GetRandom( min( m_pot_limits[102], m_pot_limits[103] ), m_pot_upper_limits[102] );
 
       const double m_diph = 13.e3*sqrt( xi_45_rnd*xi_56_rnd );
       const double y_diph = 0.5*log( xi_45_rnd/xi_56_rnd );
@@ -107,7 +109,7 @@ void mix_events( const char* input_filename = "fits_results.root", bool scan = t
 //        pot_align::align_t al;
         double xi, xi_err;
         xi_reco::reconstruct( ev.fwd_track_x[j]+al.x, ev.fwd_track_arm[j], ev.fwd_track_pot[j], xi, xi_err );
-        if ( xi < m_pot_limits[pot_id] || xi > 0.15 ) continue; //FIXME
+        if ( xi < m_pot_limits[pot_id] || xi > m_pot_upper_limits[pot_id] ) continue; //FIXME
         m_h_xireco[pot_id]->Fill( xi );
         if ( ev.fwd_track_arm[j] == 0 ) {
           m_h2_xicorr[pot_id]->Fill( xi, xi_45_rnd );
@@ -196,13 +198,13 @@ void mix_events( const char* input_filename = "fits_results.root", bool scan = t
   const string title = "2016 conditions (13 TeV)";
   for ( const auto& p : m_pot_names ) {
     {
-      Canvas c( Form( "toy_xi_corr_%s", p.second ), title.c_str() );
+      Canvas c( Form( "toy_xi_corr_%s", p.second ), title.c_str(), "CMS-TOTEM" );
       m_h2_xicorr[p.first]->Draw( "colz" );
       c.Prettify( m_h2_xicorr[p.first] );
       c.Save( "pdf,png", OUTPUT_DIR );
     }
     {
-      Canvas c( Form( "xi_reco_%s", p.second ), "9.4 fb^{-1} (13 TeV)", "Preliminary" );
+      Canvas c( Form( "xi_reco_%s", p.second ), "9.4 fb^{-1} (13 TeV)", "CMS-TOTEM", "Preliminary" );
       m_h_xireco[p.first]->Draw( "p" );
       m_h_xireco[p.first]->SetMarkerStyle( 24 );
       c.Prettify( m_h_xireco[p.first] );
@@ -212,7 +214,7 @@ void mix_events( const char* input_filename = "fits_results.root", bool scan = t
   auto diag = new TF1( "diag", "x" );
   unsigned short i = 0;
   for ( auto& h_mcorr : { h2_mcorr, h2_mcorr_2sigma, h2_mcorr_3sigma } ) {
-    Canvas c( ( i == 0 ) ? "toy_m_corr" : Form( "toy_m_corr_%dsigma", i+1 ), title.c_str(), "Pseudo-experiments", false, Canvas::Align::right );
+    Canvas c( ( i == 0 ) ? "toy_m_corr" : Form( "toy_m_corr_%dsigma", i+1 ), title.c_str(), "CMS-TOTEM", "Pseudo-experiments", false, Canvas::Align::right );
     c.Divide( 2, 2 );
     c.cd( 3 );
     h_mcorr->Draw( "col" );
@@ -256,7 +258,7 @@ void mix_events( const char* input_filename = "fits_results.root", bool scan = t
   }
   i = 0;
   for ( auto& h_ycorr : { h2_ycorr, h2_ycorr_2sigma, h2_ycorr_3sigma } ) {
-    Canvas c( ( i == 0 ) ? "toy_y_corr" : Form( "toy_y_corr_%dsigma", i+1 ), title.c_str(), "Pseudo-experiments", false, Canvas::Align::right );
+    Canvas c( ( i == 0 ) ? "toy_y_corr" : Form( "toy_y_corr_%dsigma", i+1 ), title.c_str(), "CMS-TOTEM", "Pseudo-experiments", false, Canvas::Align::right );
     c.Divide( 2, 2 );
     c.cd( 3 );
     h_ycorr->Draw( "col" );

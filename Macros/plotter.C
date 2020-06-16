@@ -53,7 +53,8 @@ const float the_lumi = ( 4.291753570355+1.438424638452+3.625791461729 ) * 1.e3; 
 //const float the_lumi = ( 9.732907106 ) * 1.e3;
 
 map<string,float> pots_accept = { { "45N", 0.033 }, { "45F", 0.024 }, { "56N", 0.050 }, { "56F", 0.037 } };
-map<string,float> pots_accept_tight = { { "45N", 0.067 }, { "45F", 0.066 }, { "56N", 0.070 }, { "56F", 0.061 } };
+//map<string,float> pots_accept_tight = { { "45N", 0.067 }, { "45F", 0.066 }, { "56N", 0.070 }, { "56F", 0.061 } };
+map<string,float> pots_accept_tight = { { "45N", 0.068 }, { "45F", 0.064 }, { "56N", 0.069 }, { "56F", 0.060 } }; //may20
 
 void
 plotter()
@@ -396,7 +397,7 @@ plotter()
 
       bool has_diphoton_cand = false, has_elastic_diphoton_cand = false;
       bool has_elastic_xicomp_cand = false, has_elastic_xitight_cand = false;
-      bool has_incl_diphoton_event = false;
+      bool has_incl_diphoton_cand = false;
 
       //if ( s.type() == Sample::kData && !ev_selector.isSelected( ev.run_id, ev.lumisection, ev.event_number ) ) continue;
 
@@ -616,7 +617,7 @@ plotter()
           h_diph_numleptons[incl][i]->Fill( num_matched_ele+num_matched_mu, s_weight );
           evts_sel[i][incl] += s_weight * sample_weight;
 
-          has_incl_diphoton_event = true;
+          has_incl_diphoton_cand = true;
         }
 
         is_preselected &= ( ev.diphoton_pt1[k] >= pt_cut && ev.diphoton_pt2[k] >= pt_cut );
@@ -1000,7 +1001,7 @@ plotter()
   //Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp", Form( "#sqrt{s} = 13 TeV, L = %g fb^{-1}", the_lumi*1.e-3 ) );
   Plotter plt( "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ) );
 
-  plt.draw_multiplot( "cutflow", hm_cutflow[0], hm_cutflow[1], hm_cutflow[2], "", false, true /*logy*/, true /*legend*/, false/*, 0.1, 1.9*/ );
+  plt.draw_multiplot( "cutflow", hm_cutflow[0], hm_cutflow[1], hm_cutflow[2], "", false, true /*logy*/, true /*legend*/, false/*, 0.0, 2.0*/ );
 
   for ( unsigned short i = 0; i < num_regions; ++i ) {
     const string class_name = Form( "#font[52]{%s}", kin_regions_label[i].c_str() );
@@ -1038,7 +1039,7 @@ plotter()
   }
   if ( !rescale_background_parametric ) {
     gStyle->SetOptFit( 1 );
-    Canvas c( "data_mc_dphi_presel", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "Preliminary" );
+    Canvas c( "data_mc_dphi_presel", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "CMS", "Preliminary" );
     const auto reg = incl;
 //    c.SetLogx();
     THStack hs_mc;
@@ -1066,7 +1067,7 @@ plotter()
     c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
   }
   {
-    Canvas c( "num_diph_vtxaround", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "Preliminary" );
+    Canvas c( "num_diph_vtxaround", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "CMS", "Preliminary" );
     THStack hs;
     c.SetLegendY1( 0.75 );
     TString label[4] = { "at 1 mm distance", "at 2 mm distance", "at 5 mm distance", "at 1 cm distance" };
@@ -1144,7 +1145,7 @@ plotter()
   TVirtualFitter::SetDefaultFitter( "Minuit" );
   for ( auto& hm : map<string,Plotter::HistsMap*>{ { "xim_incl", hm_xim[incl] }, { "xip_incl", hm_xip[incl] } } ) {
     gStyle->SetOptFit( 1 );
-    Canvas c( hm.first.c_str(), Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "Preliminary" );
+    Canvas c( hm.first.c_str(), Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "CMS", "Preliminary" );
     auto h_sum_data = (TH1D*)hm.second[the_data].begin()->second->Clone();
     h_sum_data->SetMarkerSize( 1.0 );
     h_sum_data->SetTitle( Form( "#xi_{#gamma#gamma}^{%s}@@Events@@?.2f", hm.first == "xim_incl" ? "-" : "+" ) );
@@ -1202,7 +1203,7 @@ plotter()
     c.Prettify( h_sum_data );
     c.Save( "png,pdf", "/afs/cern.ch/user/l/lforthom/www/private/twophoton/tmp" );
     //--- parameters correlation
-    Canvas c2( ( hm.first+"_param_corr" ).c_str(), Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "Preliminary" );
+    Canvas c2( ( hm.first+"_param_corr" ).c_str(), Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "CMS", "Preliminary" );
     c2.SetLegendX1( 0.6 );
     c2.SetLegendY1( 0.2 );
     gMinuit->SetErrorDef( 4 );
@@ -1262,7 +1263,7 @@ plotter()
   */
 
   for ( unsigned short i = 0; i < num_samples; ++i ) {
-    Canvas c( Form( "nosel_eleveto_%d", i ), Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "Preliminary" );
+    Canvas c( Form( "nosel_eleveto_%d", i ), Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "CMS", "Preliminary" );
     c.Pad()->SetRightMargin( 0.12 );
     gStyle->SetPalette( kLightTemperature );
     h2_eleveto[i]->Scale( 1./h2_eleveto[i]->Integral() );
@@ -1274,7 +1275,7 @@ plotter()
   }
 
   {
-    Canvas c( "presel_diphoton_pt_sigovbckg", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "Preliminary" );
+    Canvas c( "presel_diphoton_pt_sigovbckg", Form( "%.1f fb^{-1} (13 TeV)", the_lumi*1.e-3 ), "CMS", "Preliminary" );
     TH1D* hist_bck = (TH1D*)hm_ptpair[presel][1][0].second->Clone( "bck" ),
          *hist_sig = (TH1D*)hm_ptpair[presel][2][0].second->Clone( "sig" );
     hist_bck->Scale( 0. ); hist_sig->Scale( 0. );

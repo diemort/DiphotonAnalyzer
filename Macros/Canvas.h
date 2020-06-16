@@ -47,10 +47,10 @@ class Canvas : public TCanvas
   static const int* marker_pool;
   static const int* colour_pool;
   enum struct Align { left = 0, right = 1 };
-  inline Canvas( const char* name, const char* title = "", const char* type = "Preliminary", bool ratio = false, Align label_align = Align::left ) :
+  inline Canvas( const char* name, const char* title = "", const char* exper = "CMS", const char* type = "Preliminary", bool ratio = false, Align label_align = Align::left ) :
     //TCanvas(name, "", 450, 450),
     TCanvas( name, "", 600, 600 ),
-    fTitle( title ), fPlotType( type ),
+    fTitle( title ), fPlotExper( exper ), fPlotType( type ),
     fLegXpos( 0.5 ), fLegYpos( 0.775 ), fLegXsize( 0.35 ), fLegYsize( 0.15 ),
     fRatio( ratio ), divided_( false ), align_( label_align )
   {
@@ -254,6 +254,8 @@ class Canvas : public TCanvas
       bool good_format = false;
       good_format |= ( ext_str == "pdf" );
       good_format |= ( ext_str == "png" );
+      good_format |= ( ext_str == "root" );
+      good_format |= ( ext_str == "C" );
       if ( !good_format ) continue;
       TCanvas::SaveAs( Form( "%s/%s.%s", out_dir, TCanvas::GetName(), ext_str.Data() ) );
     }
@@ -277,7 +279,7 @@ class Canvas : public TCanvas
       fBanner.reset( new PaveText( 0.82, 0.855, 0.835, 0.932 ) );
       fBanner->SetTextAlign( kHAlignRight+kVAlignTop );
     }
-    fBanner->AddText( Form( "#font[62]{%s}", EXPERIMENT ) );
+    fBanner->AddText( Form( "#font[62]{%s}", fPlotExper.Data() ) );
     fBanner->AddText( Form( "#scale[0.75]{#font[52]{%s}}", fPlotType.Data() ) );
     fBanner->SetTextSize( 0.04 );
 
@@ -326,7 +328,7 @@ class Canvas : public TCanvas
     return ( h->GetXaxis()->GetXmax() - h->GetXaxis()->GetXmin() ) / h->GetXaxis()->GetNbins();
   }
 
-  TString fTitle, fPlotType;
+  TString fTitle, fPlotExper, fPlotType;
   std::unique_ptr<PaveText> fBanner, fTopLabel;
   std::unique_ptr<TLegend> fLeg;
   double fLegXpos, fLegYpos, fLegXsize, fLegYsize;

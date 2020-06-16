@@ -19,7 +19,7 @@
     {
       "type": "signal",
       "name": "SM #gamma#gamma#rightarrow#gamma#gamma",
-      "colour": 417, // kGreen+1
+      //"colour": 417, // kGreen+1
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_r9gt0.root",
       //"path": "Samples/output_GammaGammaToGammaGamma_fpmc_v2.root",

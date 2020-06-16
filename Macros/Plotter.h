@@ -28,7 +28,7 @@ class Plotter
     void plot_multihists( const char* name, HistsMap hm, float min_ratio_y = 0., float max_ratio_y = 0.55, bool draw_overflow = true ) const {
       if ( hm.size() == 0 ) return;
 
-      Canvas c( name, top_label_, "Preliminary", hm.size() > 1 );
+      Canvas c( name, top_label_, "CMS", "Preliminary", hm.size() > 1 );
       TH1* hist = 0;
 
       unsigned short i = 0;
@@ -198,7 +198,7 @@ class Plotter
 
     void draw_multiplot( const std::string& filename, HistsMap h_map_data, HistsMap h_map_mc, HistsMap h_map_sig, const std::string& label = "", bool colours = true, bool logy = false, bool draw_legend = true, bool logx = false, double min_y = -0.4, double max_y = 2.4 ) const {
       std::string ratio_plot_filename = filename+"_ratio";
-      Canvas c( filename.c_str(), top_label_, "Preliminary", true );
+      Canvas c( filename.c_str(), top_label_, "CMS", "Preliminary", true );
       TH1D* h_data = 0;
       double max_bin = 0.;
       unsigned short i = 0;
